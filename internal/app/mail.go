@@ -209,16 +209,19 @@ func buildMIME(m *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (a *App) fromAddress(p *Project) string {
-	addr := a.cfg.FromEmail
-	if addr == "" {
-		addr = "waitlist@localhost"
+func (a *App) senderEmail() string {
+	if a.cfg.FromEmail == "" {
+		return "waitlist@localhost"
 	}
+	return a.cfg.FromEmail
+}
+
+func (a *App) fromAddress(p *Project) string {
 	name := p.FromName
 	if name == "" {
 		name = p.Name
 	}
-	return (&mail.Address{Name: name, Address: addr}).String()
+	return (&mail.Address{Name: name, Address: a.senderEmail()}).String()
 }
 
 // email is one transactional message. render produces a plain-text part and a
@@ -227,11 +230,12 @@ type email struct {
 	Project   string // shown above the heading
 	Preheader string // inbox preview line
 	Heading   string
-	Paras     []string // plain text
-	Code      string   // optional, set apart in a box
-	CTA, URL  string   // optional button
-	Footer    string   // plain text
-	Unsub     string   // optional unsubscribe URL
+	Paras     []string    // plain text
+	Code      string      // optional, set apart in a box
+	Rows      [][2]string // optional label/value table
+	CTA, URL  string      // optional button
+	Footer    string      // plain text
+	Unsub     string      // optional unsubscribe URL
 }
 
 const (
@@ -253,6 +257,12 @@ func (e email) render() (string, string) {
 	}
 	if e.Code != "" {
 		t.WriteString("Invite code: " + e.Code + "\n\n")
+	}
+	for _, r := range e.Rows {
+		t.WriteString(r[0] + ": " + r[1] + "\n")
+	}
+	if len(e.Rows) > 0 {
+		t.WriteString("\n")
 	}
 	if e.URL != "" {
 		t.WriteString(e.CTA + ": " + e.URL + "\n\n")
@@ -283,6 +293,14 @@ func (e email) render() (string, string) {
 	}
 	if e.Code != "" {
 		h.WriteString(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px"><tr><td style="padding:10px 16px;background:#f4f4f5;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:18px;line-height:24px;letter-spacing:2px;font-weight:600;color:` + mailInk + `">` + esc(e.Code) + `</td></tr></table>`)
+	}
+	if len(e.Rows) > 0 {
+		h.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;border-top:1px solid #e4e4e7">`)
+		for _, r := range e.Rows {
+			h.WriteString(`<tr><td valign="top" style="padding:9px 12px 9px 0;border-bottom:1px solid #e4e4e7;font-size:13px;line-height:20px;color:` + mailMuted + `;white-space:nowrap;width:1%">` + esc(r[0]) + `</td>`)
+			h.WriteString(`<td valign="top" style="padding:9px 0;border-bottom:1px solid #e4e4e7;font-size:14px;line-height:20px;color:` + mailInk + `;word-break:break-word">` + esc(r[1]) + `</td></tr>`)
+		}
+		h.WriteString(`</table>`)
 	}
 	if e.URL != "" {
 		u := esc(e.URL)
@@ -337,6 +355,60 @@ func (a *App) composeStatus(p *Project, s *Signup) *Message {
 		Footer:    "You're getting this because this address is on the " + p.Name + " waitlist.",
 	}.render()
 	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "Your place on the " + p.Name + " waitlist", Text: text, HTML: htm}
+}
+
+// composeNotify tells the project owner about a new signup.
+func (a *App) composeNotify(ctx context.Context, p *Project, s *Signup) (*Message, error) {
+	var total int64
+	if err := a.db.R.QueryRowContext(ctx, `SELECT COUNT(*) FROM signups WHERE project_id = ? AND status != ?`, p.ID, StatusRemoved).Scan(&total); err != nil {
+		return nil, err
+	}
+	status := "Waiting for them to confirm their email"
+	if s.Status != StatusPending {
+		status = "Confirmed"
+	}
+	rows := [][2]string{
+		{"Email", s.Email},
+		{"Signup", fmt.Sprintf("#%d of %d", s.BasePosition, total)},
+		{"Status", status},
+	}
+	if s.ReferredBy != nil {
+		if ref, err := getSignup(ctx, a.db.R, p.ID, *s.ReferredBy); err == nil {
+			rows = append(rows, [2]string{"Referred by", ref.Email})
+		}
+	}
+	if s.SourceURL != "" {
+		rows = append(rows, [2]string{"Page", s.SourceURL})
+	}
+	if s.Referrer != "" {
+		rows = append(rows, [2]string{"Came from", s.Referrer})
+	}
+	var utm []string
+	for _, kv := range [][2]string{{"source", s.UTMSource}, {"medium", s.UTMMedium}, {"campaign", s.UTMCampaign}, {"term", s.UTMTerm}, {"content", s.UTMContent}} {
+		if kv[1] != "" {
+			utm = append(utm, kv[0]+"="+kv[1])
+		}
+	}
+	if len(utm) > 0 {
+		rows = append(rows, [2]string{"UTM", strings.Join(utm, ", ")})
+	}
+	rows = append(rows, [2]string{"Time", time.Unix(s.CreatedAt, 0).UTC().Format("2 Jan 2006, 15:04 UTC")})
+
+	text, htm := email{
+		Project:   p.Name,
+		Preheader: s.Email + " joined the " + p.Name + " waitlist.",
+		Heading:   "New signup",
+		Paras:     []string{s.Email + " just joined the " + p.Name + " waitlist."},
+		Rows:      rows,
+		CTA:       "View signups",
+		URL:       a.cfg.BaseURL + "/p/" + p.Slug + "/signups",
+		Footer:    "You get one of these for every new signup. Change or turn it off in the project's settings.",
+	}.render()
+	return &Message{
+		From: (&mail.Address{Name: p.Name + " waitlist", Address: a.senderEmail()}).String(),
+		To:   p.NotifyEmail, ReplyTo: s.Email,
+		Subject: "New signup on " + p.Name + ": " + s.Email, Text: text, HTML: htm,
+	}, nil
 }
 
 func (a *App) composeInvite(p *Project, s *Signup, inv *Invite) *Message {

@@ -136,6 +136,13 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 		m = a.composeConfirm(p, s)
 	case "email.status":
 		m = a.composeStatus(p, s)
+	case "email.notify":
+		if p.NotifyEmail == "" {
+			return nil
+		}
+		if m, err = a.composeNotify(ctx, p, s); err != nil {
+			return err
+		}
 	case "email.invite":
 		inv := &Invite{}
 		err := a.db.W.QueryRowContext(ctx, `SELECT id, code FROM invites WHERE id = ? AND signup_id = ? AND revoked_at IS NULL`, j.InviteID, s.ID).

@@ -334,3 +334,68 @@ func TestAdminAPI(t *testing.T) {
 		t.Fatalf("after logout: %d", code)
 	}
 }
+
+type captureMailer struct{ sent []*Message }
+
+func (c *captureMailer) Name() string { return "capture" }
+func (c *captureMailer) Send(_ context.Context, m *Message) error {
+	c.sent = append(c.sent, m)
+	return nil
+}
+
+func TestOwnerNotification(t *testing.T) {
+	a := newTestApp(t)
+	ctx := context.Background()
+	if err := a.CreateFirstAdmin(ctx, "owner@example.com", "a-long-password-1"); err != nil {
+		t.Fatal(err)
+	}
+	p := newTestProject(t, a, true)
+	if p.NotifyEmail != "owner@example.com" {
+		t.Fatalf("new projects should notify the admin, got %q", p.NotifyEmail)
+	}
+	mc := &captureMailer{}
+	a.mailer = mc
+	referrer := signup(t, a, p, "first@example.com", "", "1.1.1.1")
+	res, err := a.SubmitSignup(ctx, p, SignupInput{Email: "second@example.com", Ref: referrer.Signup.ReferralCode, IP: "2.2.2.2", DwellMs: -1,
+		SourceURL: "https://convox.ai/", UTMSource: "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.runJobs(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var notes []*Message
+	for _, m := range mc.sent {
+		if m.To == "owner@example.com" {
+			notes = append(notes, m)
+		}
+	}
+	if len(notes) != 2 || len(mc.sent) != 4 {
+		t.Fatalf("want 2 confirmations and 2 owner notes, got %d sent, %d notes", len(mc.sent), len(notes))
+	}
+	n := notes[1]
+	for _, want := range []string{"second@example.com", "#2 of 2", "first@example.com", "https://convox.ai/", "source=x", "/p/" + p.Slug + "/signups"} {
+		if !strings.Contains(n.Text, want) || !strings.Contains(n.HTML, want) {
+			t.Errorf("owner note is missing %q:\n%s", want, n.Text)
+		}
+	}
+	if n.ReplyTo != res.Signup.Email || !strings.Contains(n.Subject, "Convox") {
+		t.Errorf("reply-to %q subject %q", n.ReplyTo, n.Subject)
+	}
+
+	// Turning it off stops the notes; a bad address is rejected.
+	p.NotifyEmail = "nope"
+	if err := a.UpdateProject(ctx, p); err == nil {
+		t.Fatal("invalid notify address should be rejected")
+	}
+	p.NotifyEmail = ""
+	if err := a.UpdateProject(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	mc.sent = nil
+	signup(t, a, p, "third@example.com", "", "3.3.3.3")
+	a.runJobs(ctx)
+	if len(mc.sent) != 1 {
+		t.Fatalf("with notifications off only the confirmation should go out, got %d", len(mc.sent))
+	}
+}

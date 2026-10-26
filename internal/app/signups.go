@@ -206,6 +206,11 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 	if err != nil {
 		return nil, err
 	}
+	if p.NotifyEmail != "" {
+		if err := a.enqueue(ctx, tx, "email.notify", emailJob{ProjectID: p.ID, SignupID: id}); err != nil {
+			return nil, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}

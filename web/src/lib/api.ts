@@ -24,6 +24,7 @@ export interface Project {
   counter_floor: number
   from_name: string
   reply_to: string
+  notify_email: string
   headline: string
   description: string
   site_url: string

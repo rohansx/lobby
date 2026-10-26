@@ -163,6 +163,8 @@ var migrations = []string{
 		audience TEXT NOT NULL,
 		recipients INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL);`,
+	`ALTER TABLE projects ADD COLUMN notify_email TEXT NOT NULL DEFAULT '';
+	UPDATE projects SET notify_email = COALESCE((SELECT email FROM admins ORDER BY id LIMIT 1), '');`,
 }
 
 func (s *Store) migrate() error {

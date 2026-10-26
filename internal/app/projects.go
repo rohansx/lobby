@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"net/mail"
 	"net/url"
 	"regexp"
 	"strings"
@@ -29,6 +30,7 @@ type Project struct {
 	CounterFloor      int    `json:"counter_floor"`
 	FromName          string `json:"from_name"`
 	ReplyTo           string `json:"reply_to"`
+	NotifyEmail       string `json:"notify_email"` // gets an email for every new signup; empty is off
 	Headline          string `json:"headline"`
 	Description       string `json:"description"`
 	SiteURL           string `json:"site_url"`
@@ -41,7 +43,7 @@ type Project struct {
 
 const projectCols = `id, slug, name, public_key, secret_key_hash, allowed_origins, doi_enabled, position_mode,
 	points_per_referral, referral_ip_cap, referral_hourly_cap, show_position, counter_floor, from_name, reply_to,
-	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at`
+	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at, notify_email`
 
 type scanner interface{ Scan(...any) error }
 
@@ -50,7 +52,7 @@ func scanProject(row scanner) (*Project, error) {
 	err := row.Scan(&p.ID, &p.Slug, &p.Name, &p.PublicKey, &p.SecretKeyHash, &p.AllowedOrigins, &p.DOIEnabled,
 		&p.PositionMode, &p.PointsPerReferral, &p.ReferralIPCap, &p.ReferralHourlyCap, &p.ShowPosition,
 		&p.CounterFloor, &p.FromName, &p.ReplyTo, &p.Headline, &p.Description, &p.SiteURL, &p.RedirectURL, &p.InviteURL,
-		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt)
+		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt, &p.NotifyEmail)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -76,8 +78,8 @@ func (a *App) CreateProject(ctx context.Context, name, slug string) (*Project, s
 	}
 	pk := "pk_" + randHex(12)
 	sk := "sk_" + randHex(24)
-	res, err := a.db.W.ExecContext(ctx, `INSERT INTO projects (slug, name, public_key, secret_key_hash, from_name, headline, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`, slug, name, pk, hashKey(sk), name, "Join the "+name+" waitlist", now())
+	res, err := a.db.W.ExecContext(ctx, `INSERT INTO projects (slug, name, public_key, secret_key_hash, from_name, headline, created_at, notify_email)
+		VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT email FROM admins ORDER BY id LIMIT 1), ''))`, slug, name, pk, hashKey(sk), name, "Join the "+name+" waitlist", now())
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, "", errors.New("slug is already taken")
@@ -137,6 +139,12 @@ func (a *App) UpdateProject(ctx context.Context, p *Project) error {
 			return errors.New("URLs must start with http:// or https://")
 		}
 	}
+	p.NotifyEmail = strings.TrimSpace(p.NotifyEmail)
+	if p.NotifyEmail != "" {
+		if a, err := mail.ParseAddress(p.NotifyEmail); err != nil || a.Address != p.NotifyEmail {
+			return errors.New("the signup notification address isn't a valid email")
+		}
+	}
 	var origins []string
 	for _, o := range strings.FieldsFunc(p.AllowedOrigins, func(r rune) bool { return r == ',' || r == '\n' || r == ' ' || r == '\r' }) {
 		u, err := url.Parse(o)
@@ -148,11 +156,11 @@ func (a *App) UpdateProject(ctx context.Context, p *Project) error {
 	p.AllowedOrigins = strings.Join(origins, "\n")
 	_, err := a.db.W.ExecContext(ctx, `UPDATE projects SET name=?, allowed_origins=?, doi_enabled=?, position_mode=?,
 		points_per_referral=?, referral_ip_cap=?, referral_hourly_cap=?, show_position=?, counter_floor=?, from_name=?,
-		reply_to=?, headline=?, description=?, site_url=?, redirect_url=?, invite_url=?,
+		reply_to=?, notify_email=?, headline=?, description=?, site_url=?, redirect_url=?, invite_url=?,
 		consent_version = CASE WHEN consent_text != ? THEN consent_version + 1 ELSE consent_version END,
 		consent_text=? WHERE id=?`,
 		p.Name, p.AllowedOrigins, p.DOIEnabled, p.PositionMode, p.PointsPerReferral, p.ReferralIPCap,
-		p.ReferralHourlyCap, p.ShowPosition, p.CounterFloor, p.FromName, p.ReplyTo, p.Headline, p.Description,
+		p.ReferralHourlyCap, p.ShowPosition, p.CounterFloor, p.FromName, p.ReplyTo, p.NotifyEmail, p.Headline, p.Description,
 		p.SiteURL, p.RedirectURL, p.InviteURL, p.ConsentText, p.ConsentText, p.ID)
 	return err
 }

@@ -123,6 +123,9 @@ export default function Settings() {
             <Field label="Reply-to" id="reply_to">
               <Input id="reply_to" type="email" {...text("reply_to")} />
             </Field>
+            <Field label="Notify me of new signups" id="notify_email" hint="Gets an email with the details of every new signup. Leave empty to turn off.">
+              <Input id="notify_email" type="email" placeholder="you@example.com" {...text("notify_email")} />
+            </Field>
           </div>
         </Section>
 

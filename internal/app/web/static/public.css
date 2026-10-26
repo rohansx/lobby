@@ -96,7 +96,7 @@ button, .btn {
 .count { font-size: 14px; color: var(--ink-2); margin-top: 16px; }
 .count strong { color: var(--ink); }
 .place { display: flex; gap: 12px; margin: 22px 0; }
-.place div { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.place > div { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
 .place .n { font-size: 30px; font-weight: 700; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .place .l { font-size: 13px; color: var(--ink-3); }
 .copy { display: flex; gap: 8px; margin: 10px 0 12px; }

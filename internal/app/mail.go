@@ -221,52 +221,135 @@ func (a *App) fromAddress(p *Project) string {
 	return (&mail.Address{Name: name, Address: addr}).String()
 }
 
-// emailBody renders a short transactional email as plain text and minimal HTML.
-// Each paragraph is plain text; a single call-to-action link is set apart.
-func emailBody(paras []string, ctaLabel, ctaURL string, footer string) (string, string) {
+// email is one transactional message. render produces a plain-text part and a
+// table-based HTML part that holds up in Gmail, Apple Mail and Outlook.
+type email struct {
+	Project   string // shown above the heading
+	Preheader string // inbox preview line
+	Heading   string
+	Paras     []string // plain text
+	Code      string   // optional, set apart in a box
+	CTA, URL  string   // optional button
+	Footer    string   // plain text
+	Unsub     string   // optional unsubscribe URL
+}
+
+const (
+	mailFont  = `-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif`
+	mailInk   = "#18181b"
+	mailBody  = "#3f3f46"
+	mailMuted = "#71717a"
+)
+
+func (e email) render() (string, string) {
 	var t, h strings.Builder
-	h.WriteString(`<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#1a1a1a;max-width:520px">`)
-	for _, p := range paras {
+	esc := html.EscapeString
+
+	if e.Heading != "" {
+		t.WriteString(e.Heading + "\n\n")
+	}
+	for _, p := range e.Paras {
 		t.WriteString(p + "\n\n")
-		h.WriteString("<p>" + html.EscapeString(p) + "</p>")
 	}
-	if ctaURL != "" {
-		t.WriteString(ctaLabel + ":\n" + ctaURL + "\n\n")
-		h.WriteString(`<p style="margin:24px 0"><a href="` + html.EscapeString(ctaURL) + `" style="background:#1a1a1a;color:#fff;padding:11px 18px;border-radius:8px;text-decoration:none;display:inline-block">` +
-			html.EscapeString(ctaLabel) + `</a></p><p style="font-size:13px;color:#666">Or paste this link into your browser:<br>` + html.EscapeString(ctaURL) + `</p>`)
+	if e.Code != "" {
+		t.WriteString("Invite code: " + e.Code + "\n\n")
 	}
-	if footer != "" {
-		t.WriteString("--\n" + footer + "\n")
-		h.WriteString(`<p style="font-size:12px;color:#888;border-top:1px solid #eee;padding-top:12px;margin-top:28px">` + footer + `</p>`)
+	if e.URL != "" {
+		t.WriteString(e.CTA + ": " + e.URL + "\n\n")
 	}
-	h.WriteString("</div>")
+	if e.Footer != "" {
+		t.WriteString("--\n" + e.Footer + "\n")
+	}
+	if e.Unsub != "" {
+		t.WriteString("Unsubscribe: " + e.Unsub + "\n")
+	}
+
+	h.WriteString(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>`)
+	h.WriteString(`<body style="margin:0;padding:0;background:#f4f4f5;-webkit-text-size-adjust:100%">`)
+	if e.Preheader != "" {
+		h.WriteString(`<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">` + esc(e.Preheader) + strings.Repeat("&#8199;&#65279;&#847; ", 40) + `</div>`)
+	}
+	h.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5"><tr><td align="center" style="padding:40px 16px">`)
+	h.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;background:#ffffff;border:1px solid #e4e4e7;border-radius:12px">`)
+	h.WriteString(`<tr><td style="padding:32px 32px 28px;font-family:` + mailFont + `;color:` + mailInk + `">`)
+	if e.Project != "" {
+		h.WriteString(`<p style="margin:0 0 24px;font-size:14px;line-height:20px;font-weight:600;color:` + mailInk + `">` + esc(e.Project) + `</p>`)
+	}
+	if e.Heading != "" {
+		h.WriteString(`<h1 style="margin:0 0 12px;font-size:22px;line-height:28px;font-weight:600;color:` + mailInk + `">` + esc(e.Heading) + `</h1>`)
+	}
+	for _, p := range e.Paras {
+		h.WriteString(`<p style="margin:0 0 14px;font-size:15px;line-height:24px;color:` + mailBody + `">` + esc(p) + `</p>`)
+	}
+	if e.Code != "" {
+		h.WriteString(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px"><tr><td style="padding:10px 16px;background:#f4f4f5;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:18px;line-height:24px;letter-spacing:2px;font-weight:600;color:` + mailInk + `">` + esc(e.Code) + `</td></tr></table>`)
+	}
+	if e.URL != "" {
+		u := esc(e.URL)
+		// Bulletproof button: the cell carries the colour so clients that
+		// ignore padding on links (Outlook) still show a solid button.
+		h.WriteString(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 28px"><tr><td align="center" bgcolor="` + mailInk + `" style="border-radius:8px;background:` + mailInk + `">`)
+		h.WriteString(`<a href="` + u + `" target="_blank" style="display:inline-block;padding:12px 24px;border:1px solid ` + mailInk + `;border-radius:8px;font-family:` + mailFont + `;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;mso-padding-alt:0">` + esc(e.CTA) + `</a>`)
+		h.WriteString(`</td></tr></table>`)
+		h.WriteString(`<p style="margin:0;font-size:13px;line-height:20px;color:` + mailMuted + `">Or open this link:<br><a href="` + u + `" target="_blank" style="color:` + mailMuted + `;text-decoration:underline;word-break:break-all">` + u + `</a></p>`)
+	}
+	h.WriteString(`</td></tr></table>`)
+	if e.Footer != "" || e.Unsub != "" {
+		h.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px"><tr><td style="padding:20px 32px 0;font-family:` + mailFont + `;font-size:12px;line-height:18px;color:#a1a1aa;text-align:center">`)
+		h.WriteString(esc(e.Footer))
+		if e.Unsub != "" {
+			if e.Footer != "" {
+				h.WriteString("<br>")
+			}
+			h.WriteString(`<a href="` + esc(e.Unsub) + `" target="_blank" style="color:#a1a1aa;text-decoration:underline">Unsubscribe</a>`)
+		}
+		h.WriteString(`</td></tr></table>`)
+	}
+	h.WriteString(`</td></tr></table></body></html>`)
 	return t.String(), h.String()
 }
 
 func (a *App) composeConfirm(p *Project, s *Signup) *Message {
-	link := a.cfg.BaseURL + "/s/" + a.StatusToken(s) + "?confirm=1"
-	text, htm := emailBody([]string{
-		"Thanks for joining the " + p.Name + " waitlist.",
-		"Confirm your email to lock in your spot. The link also shows your place in line and a referral link that moves you up.",
-	}, "Confirm my spot", link, "You got this because someone entered this address on the "+p.Name+" waitlist. If it wasn't you, ignore this email and you won't hear from us again.")
-	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "Confirm your spot on the " + p.Name + " waitlist", Text: text, HTML: htm}
+	paras := []string{"Thanks for joining the " + p.Name + " waitlist. Confirm this is your address to keep your place in line."}
+	if p.PositionMode == "points" {
+		paras = append(paras, "You'll also get a link to share. Every friend who joins through it moves you up.")
+	}
+	text, htm := email{
+		Project:   p.Name,
+		Preheader: "One click to confirm your place on the " + p.Name + " waitlist.",
+		Heading:   "Confirm your email",
+		Paras:     paras,
+		CTA:       "Confirm email",
+		URL:       a.cfg.BaseURL + "/s/" + a.StatusToken(s) + "?confirm=1",
+		Footer:    "If you didn't sign up for " + p.Name + ", ignore this email. You won't hear from us again.",
+	}.render()
+	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "Confirm your email for " + p.Name, Text: text, HTML: htm}
 }
 
 func (a *App) composeStatus(p *Project, s *Signup) *Message {
-	link := a.cfg.BaseURL + "/s/" + a.StatusToken(s)
-	text, htm := emailBody([]string{
-		"You're on the " + p.Name + " waitlist.",
-		"Your status page shows your place in line and your referral link. Keep this email to get back to it.",
-	}, "See my spot", link, "You got this because this address is on the "+p.Name+" waitlist.")
-	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "Your spot on the " + p.Name + " waitlist", Text: text, HTML: htm}
+	text, htm := email{
+		Project:   p.Name,
+		Preheader: "Your place in line and your referral link.",
+		Heading:   "You're on the list",
+		Paras:     []string{"This link shows where you are in line for " + p.Name + " and your link to share. Keep this email to find it again."},
+		CTA:       "See my place",
+		URL:       a.cfg.BaseURL + "/s/" + a.StatusToken(s),
+		Footer:    "You're getting this because this address is on the " + p.Name + " waitlist.",
+	}.render()
+	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "Your place on the " + p.Name + " waitlist", Text: text, HTML: htm}
 }
 
 func (a *App) composeInvite(p *Project, s *Signup, inv *Invite) *Message {
-	link := a.InviteLink(p, s, inv.ID)
-	text, htm := emailBody([]string{
-		"Good news: you're in. Your spot on the " + p.Name + " waitlist just came up.",
-		"Your invite code is " + inv.Code + ". It only works with this email address.",
-	}, "Get started", link, "You got this because you joined the "+p.Name+" waitlist.")
+	text, htm := email{
+		Project:   p.Name,
+		Preheader: "Your invite to " + p.Name + " is ready.",
+		Heading:   "You're in",
+		Paras:     []string{"Your spot on the " + p.Name + " waitlist came up. Your invite is ready whenever you are.", "If you're asked for a code, use this one. It only works with this email address."},
+		Code:      inv.Code,
+		CTA:       "Get started",
+		URL:       a.InviteLink(p, s, inv.ID),
+		Footer:    "You're getting this because you joined the " + p.Name + " waitlist.",
+	}.render()
 	return &Message{From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: "You're in: your " + p.Name + " invite", Text: text, HTML: htm}
 }
 
@@ -278,9 +361,12 @@ func (a *App) composeBroadcast(p *Project, s *Signup, subject, body string) *Mes
 			paras = append(paras, para)
 		}
 	}
-	text, htm := emailBody(paras, "", "", "You're getting this because you joined the "+p.Name+" waitlist.")
-	text += "Unsubscribe: " + unsub + "\n"
-	htm = strings.TrimSuffix(htm, "</div>") + `<p style="font-size:12px"><a href="` + html.EscapeString(unsub) + `" style="color:#888">Unsubscribe</a></p></div>`
+	text, htm := email{
+		Project: p.Name,
+		Paras:   paras,
+		Footer:  "You're getting this because you joined the " + p.Name + " waitlist.",
+		Unsub:   unsub,
+	}.render()
 	return &Message{
 		From: a.fromAddress(p), To: s.Email, ReplyTo: p.ReplyTo, Subject: subject, Text: text, HTML: htm,
 		Headers: map[string]string{

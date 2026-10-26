@@ -1,0 +1,6 @@
+data/
+/lobby
+/wl
+*.db
+*.db-*
+.env

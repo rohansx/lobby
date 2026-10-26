@@ -1,0 +1,16 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{block "title" .}}Waitlist{{end}}</title>
+{{block "meta" .}}{{end}}
+<link rel="stylesheet" href="/static/public.css">
+</head>
+<body>
+<main>
+{{template "content" .}}
+</main>
+<footer>Waitlist powered by Lobby</footer>
+</body>
+</html>{{end}}

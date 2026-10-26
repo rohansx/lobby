@@ -1,0 +1,52 @@
+{{define "title"}}Your spot · {{.Project.Name}}{{end}}
+{{define "meta"}}<meta name="robots" content="noindex">{{end}}
+{{define "content"}}
+<div class="card">
+  <p class="eyebrow">{{.Project.Name}} waitlist</p>
+  {{if eq .Signup.Status "pending"}}
+    <h1>Confirm your spot</h1>
+    <p>One click to confirm this is your email. Then you'll see your place in line and your referral link.</p>
+    <form method="post" action="/s/{{.Token}}/confirm"><button type="submit">Confirm my spot</button></form>
+  {{else if eq .Signup.Status "confirmed"}}
+    {{if .JustConfirmed}}<p class="ok">✓ Email confirmed</p>{{end}}
+    <h1>You're on the list</h1>
+    {{if .Project.ShowPosition}}
+    <div class="place">
+      <div><div class="n">#{{num .Place.Position}}</div><div class="l">your place in line</div></div>
+      <div><div class="n">{{num .Place.Behind}}</div><div class="l">people behind you</div></div>
+    </div>
+    {{end}}
+    <p><strong>Move up the line.</strong> {{if eq .Project.PositionMode "points"}}Each friend who joins and confirms with your link moves you up {{.Project.PointsPerReferral}} places.{{else}}Share your link so your friends can join too.{{end}}
+      {{if .Place.Referrals}}You've referred {{.Place.Referrals}} so far.{{end}}</p>
+    <div class="copy">
+      <input type="text" id="ref" value="{{.ReferralLink}}" readonly aria-label="Your referral link">
+      <button type="button" class="btn ghost" id="copy">Copy</button>
+    </div>
+    <div class="share">
+      <a class="btn ghost" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text={{.ShareText}}&url={{.ReferralLink}}">Post on X</a>
+      <a class="btn ghost" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{.ReferralLink}}">LinkedIn</a>
+      <a class="btn ghost" href="mailto:?subject={{.Project.Name}}&body={{.ShareText}} {{.ReferralLink}}">Email a friend</a>
+    </div>
+    <p class="fine">Bookmark this page to check your spot later.</p>
+    <script>
+      document.getElementById('copy').onclick = function () {
+        var i = document.getElementById('ref'), b = this;
+        (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).catch(function () { i.select(); document.execCommand('copy'); });
+        b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+      };
+    </script>
+  {{else if eq .Signup.Status "invited"}}
+    <h1>You're in</h1>
+    <p>Your spot came up. Use the link below to get started{{if .Invite}}, or enter your invite code. It only works with this email address{{end}}.</p>
+    {{with .Invite}}<div class="code">{{.Code}}</div>{{end}}
+    {{with .InviteLink}}<p><a class="btn" href="{{.}}">Get started</a></p>{{end}}
+  {{else if eq .Signup.Status "joined"}}
+    <h1>You've joined</h1>
+    <p>You're past the waitlist and already in {{.Project.Name}}. Welcome.</p>
+    {{with .Project.SiteURL}}<p><a class="btn" href="{{.}}">Go to {{$.Project.Name}}</a></p>{{end}}
+  {{else}}
+    <h1>You're off the list</h1>
+    <p>This address is no longer on the {{.Project.Name}} waitlist.</p>
+  {{end}}
+</div>
+{{end}}

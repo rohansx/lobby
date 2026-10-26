@@ -1,0 +1,9 @@
+{{define "title"}}Unsubscribe{{end}}
+{{define "meta"}}<meta name="robots" content="noindex">{{end}}
+{{define "content"}}
+<div class="card">
+  <h1>Stop waitlist updates?</h1>
+  <p>You'll keep your place in line. You'll still get your invite when your turn comes, but no other updates.</p>
+  <form method="post" action="/u/{{.Token}}"><button type="submit">Unsubscribe</button></form>
+</div>
+{{end}}

@@ -1,0 +1,23 @@
+FROM golang:1.26-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ARG VERSION=dev
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/lobby ./cmd/lobby
+
+FROM litestream/litestream:0.5 AS litestream
+
+FROM alpine:3.22
+RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 lobby && mkdir /data && chown lobby /data
+COPY --from=build /out/lobby /usr/local/bin/lobby
+COPY --from=litestream /usr/local/bin/litestream /usr/local/bin/litestream
+COPY deploy/litestream.yml /etc/litestream.yml
+COPY deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN ln -s /usr/local/bin/lobby /usr/local/bin/wl
+USER lobby
+ENV LOBBY_DATA=/data LOBBY_ADDR=:8080
+VOLUME /data
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

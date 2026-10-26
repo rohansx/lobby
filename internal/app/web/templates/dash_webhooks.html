@@ -1,0 +1,73 @@
+{{define "title"}}Webhooks · {{.Project.Name}}{{end}}
+{{define "content"}}
+<div class="wrap">
+  {{template "tabs" .}}
+  <div class="panel">
+    <h2>Endpoints</h2>
+    {{if .Hooks}}
+    <div class="scroll">
+    <table>
+      <thead><tr><th>URL</th><th>Kind</th><th>Events</th><th>Signing secret</th><th></th></tr></thead>
+      <tbody>
+      {{range .Hooks}}
+      <tr>
+        <td style="word-break:break-all">{{.URL}}{{if not .Active}}<br><span class="chip failed">disabled</span> <span class="muted">{{.DisabledReason}}</span>{{end}}</td>
+        <td>{{.Kind}}</td>
+        <td>{{if eq .Events "*"}}all{{else}}{{.Events}}{{end}}</td>
+        <td>{{if eq .Kind "standard"}}<details><summary>Show</summary><code style="word-break:break-all">{{.Secret}}</code></details>{{else}}<span class="muted">n/a</span>{{end}}</td>
+        <td>
+          <form method="post" action="/p/{{$.Project.Slug}}/webhooks" class="row" style="flex-wrap:nowrap">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button name="action" value="test" class="ghost">Test</button>
+            {{if .Active}}<button name="action" value="disable" class="ghost">Disable</button>{{else}}<button name="action" value="enable" class="ghost">Enable</button>{{end}}
+            <button name="action" value="delete" class="danger" onclick="return confirm('Delete this webhook?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{else}}<p class="muted">No webhooks yet.</p>{{end}}
+  </div>
+
+  <form class="panel" method="post" action="/p/{{.Project.Slug}}/webhooks">
+    <input type="hidden" name="action" value="create">
+    <h2>Add an endpoint</h2>
+    <label for="url">URL</label>
+    <input type="url" id="url" name="url" required placeholder="https://example.com/hooks/waitlist">
+    <label for="kind">Format</label>
+    <select id="kind" name="kind">
+      <option value="standard">Standard Webhooks (signed JSON)</option>
+      <option value="slack">Slack incoming webhook (text message)</option>
+    </select>
+    <label>Events <span class="hint">(none checked means all)</span></label>
+    <div class="row">{{range .Events}}<label class="check" style="margin:0 12px 0 0"><input type="checkbox" name="events" value="{{.}}">{{.}}</label>{{end}}</div>
+    <p style="margin:16px 0 0"><button type="submit">Add webhook</button></p>
+  </form>
+
+  <div class="panel">
+    <h2>Recent deliveries</h2>
+    {{if .Deliveries}}
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Event</th><th>Status</th><th class="num">Attempts</th><th>Response</th><th>When</th><th></th></tr></thead>
+      <tbody>
+      {{range .Deliveries}}
+      <tr>
+        <td><details><summary>{{.Event}}</summary><pre class="payload">{{.Payload}}</pre></details></td>
+        <td><span class="chip {{.Status}}">{{.Status}}</span></td>
+        <td class="num">{{.Attempts}}</td>
+        <td>{{if .ResponseCode}}HTTP {{.ResponseCode}}{{end}} <span class="muted">{{.LastError}}</span></td>
+        <td class="muted">{{datetime .CreatedAt}}</td>
+        <td><form method="post" action="/p/{{$.Project.Slug}}/webhooks"><input type="hidden" name="id" value="{{.ID}}"><button name="action" value="redeliver" class="ghost">Redeliver</button></form></td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+    {{else}}<p class="muted">Deliveries show up here as events fire.</p>{{end}}
+    <p class="muted" style="margin:12px 0 0">Signed per <a href="https://www.standardwebhooks.com/" target="_blank" rel="noopener">Standard Webhooks</a>: <code>webhook-id</code>, <code>webhook-timestamp</code>, <code>webhook-signature</code>. Failed deliveries retry over about a day; an HTTP 410 disables the endpoint.</p>
+  </div>
+</div>
+{{end}}

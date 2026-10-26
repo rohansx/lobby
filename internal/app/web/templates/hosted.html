@@ -1,0 +1,27 @@
+{{define "title"}}{{.Project.Headline}}{{end}}
+{{define "meta"}}
+<meta name="description" content="{{if .Project.Description}}{{.Project.Description}}{{else}}Join the {{.Project.Name}} waitlist.{{end}}">
+<meta property="og:title" content="{{.Project.Headline}}">
+<meta property="og:description" content="{{if .Project.Description}}{{.Project.Description}}{{else}}Join the {{.Project.Name}} waitlist.{{end}}">
+<meta property="og:url" content="{{.PageURL}}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+{{end}}
+{{define "content"}}
+<div class="card">
+  <p class="eyebrow">{{.Project.Name}}</p>
+  <h1>{{.Project.Headline}}</h1>
+  {{with .Project.Description}}{{range lines .}}<p class="lead">{{.}}</p>{{end}}{{end}}
+  <form class="join" method="post" action="{{.Action}}">
+    <label class="hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    <input type="hidden" name="_t" value="{{.FormTime}}">
+    <input type="hidden" name="ref" value="{{.Ref}}">
+    <input type="hidden" name="source_url" value="{{.PageURL}}">
+    <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" value="{{.Email}}" aria-label="Email address">
+    <button type="submit">Join the waitlist</button>
+  </form>
+  {{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}
+  {{if ge .Count 0}}<p class="count"><strong>{{num .Count}}</strong> people are already waiting.</p>{{end}}
+  <p class="fine">{{.Project.ConsentText}}{{if .Project.DOIEnabled}} We'll email you a link to confirm.{{end}}</p>
+</div>
+{{end}}

@@ -1,0 +1,16 @@
+services:
+  lobby:
+    image: ghcr.io/rohansx/lobby:latest
+    restart: unless-stopped
+    expose:
+      - 8080
+    volumes:
+      - lobby-data:/data
+    environment:
+      LOBBY_BASE_URL: ${LOBBY_BASE_URL}
+      LOBBY_FROM_EMAIL: ${LOBBY_FROM_EMAIL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      LITESTREAM_REPLICA_URL: ${LITESTREAM_REPLICA_URL}
+
+volumes:
+  lobby-data:

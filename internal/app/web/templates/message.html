@@ -1,0 +1,10 @@
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+<div class="card">
+  {{with .Project}}<p class="eyebrow">{{.Name}}</p>{{end}}
+  <h1>{{.Title}}</h1>
+  <p>{{.Message}}</p>
+  {{with .Hint}}<p class="fine">{{.}}</p>{{end}}
+  {{with .Back}}<p><a class="btn ghost" href="{{.}}">Go back</a></p>{{end}}
+</div>
+{{end}}

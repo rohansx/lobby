@@ -1,0 +1,21 @@
+services:
+  lobby:
+    build: .
+    image: lobby:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - lobby-data:/data
+    environment:
+      LOBBY_BASE_URL: ${LOBBY_BASE_URL:-http://localhost:8080}
+      LOBBY_FROM_EMAIL: ${LOBBY_FROM_EMAIL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
+      SMTP_URL: ${SMTP_URL:-}
+      LITESTREAM_REPLICA_URL: ${LITESTREAM_REPLICA_URL:-}
+      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
+      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
+
+volumes:
+  lobby-data:

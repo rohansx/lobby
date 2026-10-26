@@ -1,0 +1,50 @@
+{{define "title"}}Signups · {{.Project.Name}}{{end}}
+{{define "content"}}
+<div class="wrap">
+  {{template "tabs" .}}
+  <form method="get" class="row" style="margin-bottom:12px">
+    <input type="text" name="q" value="{{.Filter.Query}}" placeholder="Search email, source or referrer">
+    <select name="status" style="flex:0 0 160px">
+      <option value="">All statuses</option>
+      {{range .Statuses}}<option value="{{.}}" {{if eq . $.Filter.Status}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+    <button type="submit" class="ghost">Filter</button>
+  </form>
+  <form method="post" action="/p/{{.Project.Slug}}/signups/action">
+    <input type="hidden" name="return" value="/p/{{.Project.Slug}}/signups?status={{.Filter.Status}}&q={{.Filter.Query}}">
+    <div class="row" style="margin-bottom:12px">
+      <span class="muted">Selected:</span>
+      <button type="submit" name="action" value="invite" class="ghost">Invite</button>
+      <button type="submit" name="action" value="joined" class="ghost">Mark joined</button>
+      <button type="submit" name="action" value="confirm" class="ghost">Confirm manually</button>
+      <button type="submit" name="action" value="resend" class="ghost">Resend email</button>
+      <button type="submit" name="action" value="remove" class="danger">Remove</button>
+      <button type="submit" name="action" value="delete" class="danger" onclick="return confirm('Delete permanently? The address is also blocked from signing up again.')">Delete</button>
+    </div>
+    <div class="panel scroll" style="padding:0">
+      <table>
+        <thead><tr>
+          <th style="width:28px"><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('input[name=id]').forEach(c => c.checked = this.checked)"></th>
+          <th>Email</th><th>Status</th><th class="num">Place</th><th class="num">Referrals</th><th>Source</th><th>Signed up</th>
+        </tr></thead>
+        <tbody>
+        {{range .Rows}}
+        <tr>
+          <td><input type="checkbox" name="id" value="{{.ID}}" aria-label="Select {{.Email}}"></td>
+          <td>{{.Email}}</td>
+          <td><span class="chip {{.Status}}">{{.Status}}</span></td>
+          <td class="num">{{if .Position}}#{{num .Position}}{{else}}<span class="muted">–</span>{{end}}</td>
+          <td class="num">{{if .Referrals}}{{.Referrals}}{{else}}<span class="muted">0</span>{{end}}</td>
+          <td>{{if .UTMSource}}{{.UTMSource}}{{if .UTMCampaign}} / {{.UTMCampaign}}{{end}}{{else if .ReferredBy}}referral{{else if .Referrer}}{{.Referrer}}{{else}}<span class="muted">direct</span>{{end}}</td>
+          <td class="muted">{{datetime .CreatedAt}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="muted" style="padding:24px">Nobody here yet.</td></tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  {{if .Next}}<p><a class="btn ghost" href="?status={{.Filter.Status}}&q={{.Filter.Query}}&before={{.Next}}">Older</a></p>{{end}}
+</div>
+{{end}}

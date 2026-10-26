@@ -1,0 +1,14 @@
+[variables]
+main_domain = "${domain}"
+
+[config]
+[[config.domains]]
+serviceName = "lobby"
+port = 8080
+host = "${main_domain}"
+
+[config.env]
+LOBBY_BASE_URL = "https://${main_domain}"
+LOBBY_FROM_EMAIL = ""
+RESEND_API_KEY = ""
+LITESTREAM_REPLICA_URL = ""

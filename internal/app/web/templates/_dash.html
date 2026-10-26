@@ -1,0 +1,48 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{block "title" .}}Lobby{{end}}</title>
+<link rel="stylesheet" href="/static/dash.css">
+</head>
+<body>
+{{if not .Bare}}
+<header class="top">
+  <a class="brand" href="/">Lobby</a>
+  {{with .Project}}<span class="muted">/</span> <a href="/p/{{.Slug}}" style="text-decoration:none;font-weight:600">{{.Name}}</a>{{end}}
+  <span class="spacer"></span>
+  <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
+</header>
+{{end}}
+{{template "content" .}}
+<script>
+document.querySelectorAll('[data-copy]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById(b.dataset.copy);
+    navigator.clipboard.writeText(t.innerText || t.value);
+    b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1400);
+  });
+});
+</script>
+</body>
+</html>{{end}}
+
+{{define "tabs"}}
+<div class="row" style="justify-content:space-between">
+  <div>
+    <h1>{{.Project.Name}}</h1>
+    <p class="sub" style="margin:0"><a href="{{.BaseURL}}/w/{{.Project.Slug}}" target="_blank" rel="noopener">{{.BaseURL}}/w/{{.Project.Slug}}</a></p>
+  </div>
+</div>
+<nav class="tabs">
+  <a href="/p/{{.Project.Slug}}" {{if eq .Section "overview"}}class="on"{{end}}>Overview</a>
+  <a href="/p/{{.Project.Slug}}/signups" {{if eq .Section "signups"}}class="on"{{end}}>Signups</a>
+  <a href="/p/{{.Project.Slug}}/broadcast" {{if eq .Section "broadcast"}}class="on"{{end}}>Broadcast</a>
+  <a href="/p/{{.Project.Slug}}/webhooks" {{if eq .Section "webhooks"}}class="on"{{end}}>Webhooks</a>
+  <a href="/p/{{.Project.Slug}}/settings" {{if eq .Section "settings"}}class="on"{{end}}>Settings</a>
+</nav>
+{{with .Flash}}<div class="flash">{{.}}</div>{{end}}
+{{with .Error}}<div class="err">{{.}}</div>{{end}}
+{{end}}

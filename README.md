@@ -13,6 +13,7 @@ docker compose up -d          # then open http://localhost:8080 and create the a
 or without Docker:
 
 ```sh
+(cd web && npm ci && npm run build)   # dashboard, embedded into the binary
 go build -o lobby ./cmd/lobby
 LOBBY_BASE_URL=https://wait.example.com ./lobby serve
 ```
@@ -79,6 +80,12 @@ lobby export --format csv > list.csv
 ```
 
 The full API is in [`/llms.txt`](internal/app/llms.go) on every instance, so coding agents can operate it.
+
+## Dashboard
+
+The dashboard is a React app in `web/` (Vite, Tailwind, shadcn/ui) that talks to a JSON API under `/api/admin` with the session cookie. `npm run build` writes it to `internal/app/web/dist`, which is embedded into the binary, so production is still one file. For UI work, run `lobby serve` on :8080 and `npm run dev` in `web/`; Vite proxies the API to it.
+
+Public pages (hosted page, status page, unsubscribe) stay server-rendered with no JavaScript.
 
 ## Deploying on Dokploy
 

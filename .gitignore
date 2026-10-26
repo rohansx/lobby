@@ -4,3 +4,6 @@ data/
 *.db
 *.db-*
 .env
+node_modules/
+/internal/app/web/dist/*
+!/internal/app/web/dist/.gitkeep

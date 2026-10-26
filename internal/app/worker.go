@@ -216,11 +216,11 @@ func (a *App) Broadcast(ctx context.Context, p *Project, subject, body, audience
 }
 
 type Broadcast struct {
-	ID         int64
-	Subject    string
-	Audience   string
-	Recipients int
-	CreatedAt  int64
+	ID         int64  `json:"id"`
+	Subject    string `json:"subject"`
+	Audience   string `json:"audience"`
+	Recipients int    `json:"recipients"`
+	CreatedAt  int64  `json:"created_at"`
 }
 
 func (a *App) Broadcasts(ctx context.Context, p *Project) ([]Broadcast, error) {

@@ -72,9 +72,6 @@ func NewServer(a *App) (*Server, error) {
 			continue
 		}
 		layout := "web/templates/_public.html"
-		if strings.HasPrefix(name, "dash_") {
-			layout = "web/templates/_dash.html"
-		}
 		t, err := template.New(name).Funcs(funcs).ParseFS(templateFS, layout, page)
 		if err != nil {
 			return nil, fmt.Errorf("template %s: %w", name, err)
@@ -130,29 +127,34 @@ func (s *Server) Handler() http.Handler {
 		mux.Handle(p, s.requireKey(api))
 	}
 
-	// Dashboard: session cookie, cross-origin POSTs rejected.
-	dash := http.NewServeMux()
-	dash.HandleFunc("GET /{$}", s.dashHome)
-	dash.HandleFunc("GET /setup", s.setupPage)
-	dash.HandleFunc("POST /setup", s.setupPost)
-	dash.HandleFunc("GET /login", s.loginPage)
-	dash.HandleFunc("POST /login", s.loginPost)
-	dash.HandleFunc("POST /logout", s.logout)
-	dash.HandleFunc("POST /p", s.dashCreateProject)
-	dash.HandleFunc("GET /p/{slug}", s.dashProject)
-	dash.HandleFunc("GET /p/{slug}/signups", s.dashSignups)
-	dash.HandleFunc("POST /p/{slug}/signups/action", s.dashSignupAction)
-	dash.HandleFunc("POST /p/{slug}/invite", s.dashInviteNext)
-	dash.HandleFunc("GET /p/{slug}/export/{fmt}", s.dashExport)
-	dash.HandleFunc("GET /p/{slug}/settings", s.dashSettings)
-	dash.HandleFunc("POST /p/{slug}/settings", s.dashSettingsPost)
-	dash.HandleFunc("POST /p/{slug}/rotate", s.dashRotate)
-	dash.HandleFunc("POST /p/{slug}/delete", s.dashDelete)
-	dash.HandleFunc("GET /p/{slug}/webhooks", s.dashWebhooks)
-	dash.HandleFunc("POST /p/{slug}/webhooks", s.dashWebhookPost)
-	dash.HandleFunc("GET /p/{slug}/broadcast", s.dashBroadcast)
-	dash.HandleFunc("POST /p/{slug}/broadcast", s.dashBroadcastPost)
-	mux.Handle("/", http.NewCrossOriginProtection().Handler(dash))
+	// Dashboard: a single-page app plus a JSON API behind the session cookie.
+	// Cross-origin writes are refused for both.
+	admin := http.NewServeMux()
+	admin.HandleFunc("GET /api/admin/me", s.adminMe)
+	admin.HandleFunc("POST /api/admin/setup", s.adminSetup)
+	admin.HandleFunc("POST /api/admin/login", s.adminLogin)
+	admin.HandleFunc("POST /api/admin/logout", s.adminLogout)
+	authed := http.NewServeMux()
+	authed.HandleFunc("GET /api/admin/projects", s.adminProjects)
+	authed.HandleFunc("POST /api/admin/projects", s.adminCreateProject)
+	authed.HandleFunc("GET /api/admin/projects/{slug}", s.adminGetProject)
+	authed.HandleFunc("PATCH /api/admin/projects/{slug}", s.adminUpdateProject)
+	authed.HandleFunc("DELETE /api/admin/projects/{slug}", s.adminDeleteProject)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/rotate", s.adminRotate)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/signups", s.adminSignups)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/signups/action", s.adminSignupAction)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/invite", s.adminInviteNext)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/export/{fmt}", s.adminExport)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/webhooks", s.adminWebhooks)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/webhooks", s.adminCreateWebhook)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/webhooks/{id}/{action}", s.adminWebhookAction)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/deliveries/{id}/redeliver", s.adminRedeliver)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/broadcasts", s.adminBroadcasts)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/broadcasts", s.adminBroadcast)
+	admin.Handle("/api/admin/", s.requireSession(authed))
+	csrf := http.NewCrossOriginProtection()
+	mux.Handle("/api/admin/", csrf.Handler(admin))
+	mux.Handle("/", s.spa())
 
 	return s.timing(mux)
 }

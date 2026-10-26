@@ -97,3 +97,9 @@ func (a *App) SessionAdmin(ctx context.Context, tok string) (int64, bool) {
 func (a *App) Logout(ctx context.Context, tok string) {
 	a.db.W.ExecContext(ctx, `DELETE FROM sessions WHERE token_hash = ?`, hashKey(tok))
 }
+
+func (a *App) AdminEmail(ctx context.Context, id int64) string {
+	var email string
+	a.db.R.QueryRowContext(ctx, `SELECT email FROM admins WHERE id = ?`, id).Scan(&email)
+	return email
+}

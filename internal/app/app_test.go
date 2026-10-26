@@ -264,3 +264,73 @@ func errorsAs(err error, target **ValidationError) bool {
 	}
 	return ok
 }
+
+func TestAdminAPI(t *testing.T) {
+	a := newTestApp(t)
+	srv, err := NewServer(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := srv.Handler()
+	var cookie *http.Cookie
+	do := func(method, path, body string, hdr ...string) (int, map[string]any) {
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		for i := 0; i+1 < len(hdr); i += 2 {
+			req.Header.Set(hdr[i], hdr[i+1])
+		}
+		if cookie != nil {
+			req.AddCookie(cookie)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		for _, c := range rec.Result().Cookies() {
+			if c.Name == sessionCookie {
+				cookie = c
+			}
+		}
+		var out map[string]any
+		json.Unmarshal(rec.Body.Bytes(), &out)
+		return rec.Code, out
+	}
+
+	if code, me := do("GET", "/api/admin/me", ""); code != 200 || me["setup"] != true {
+		t.Fatalf("fresh install should ask for setup: %d %v", code, me)
+	}
+	if code, _ := do("GET", "/api/admin/projects", ""); code != 401 {
+		t.Fatalf("projects without a session: %d", code)
+	}
+	if code, out := do("POST", "/api/admin/setup", `{"email":"admin@example.com","password":"correct horse battery"}`); code != 200 || cookie == nil {
+		t.Fatalf("setup: %d %v", code, out)
+	}
+	if code, _ := do("POST", "/api/admin/setup", `{"email":"second@example.com","password":"correct horse battery"}`); code != 400 {
+		t.Fatalf("second setup must fail: %d", code)
+	}
+	if code, out := do("POST", "/api/admin/projects", `{"name":"Convox","slug":"convox"}`); code != 201 || !strings.HasPrefix(out["secret_key"].(string), "sk_") {
+		t.Fatalf("create project: %d %v", code, out)
+	}
+	if code, out := do("PATCH", "/api/admin/projects/convox", `{"headline":"Be first","slug":"hijack","public_key":"pk_x"}`); code != 200 || out["headline"] != "Be first" || out["slug"] != "convox" || out["name"] != "Convox" {
+		t.Fatalf("patch should change headline only: %d %v", code, out)
+	}
+	if code, _ := do("POST", "/api/admin/projects", `{"name":"Evil"}`, "Sec-Fetch-Site", "cross-site"); code != 403 {
+		t.Fatalf("cross-site write must be refused: %d", code)
+	}
+	if code, _ := do("DELETE", "/api/admin/projects/convox", ""); code != 400 {
+		t.Fatalf("delete without confirmation: %d", code)
+	}
+
+	// Client-side routes fall back to the app shell; the API never does.
+	req := httptest.NewRequest("GET", "/p/convox/signups", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<title>Lobby</title>") {
+		t.Fatalf("spa fallback: %d", rec.Code)
+	}
+	if code, _ := do("GET", "/api/admin/nope", ""); code != 404 {
+		t.Fatalf("unknown api route: %d", code)
+	}
+	do("POST", "/api/admin/logout", "")
+	if code, _ := do("GET", "/api/admin/projects", ""); code != 401 {
+		t.Fatalf("after logout: %d", code)
+	}
+}

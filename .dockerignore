@@ -5,3 +5,4 @@ internal/app/web/dist
 *.db
 *.db-*
 .env
+site

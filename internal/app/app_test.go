@@ -399,3 +399,11 @@ func TestOwnerNotification(t *testing.T) {
 		t.Fatalf("with notifications off only the confirmation should go out, got %d", len(mc.sent))
 	}
 }
+
+func TestReferralLinkOnBareDomain(t *testing.T) {
+	a := newTestApp(t)
+	p := &Project{Slug: "x", SiteURL: "https://orbit.example"}
+	if got := a.ReferralLink(p, &Signup{ReferralCode: "abc"}); got != "https://orbit.example/?ref=abc" {
+		t.Fatalf("got %q", got)
+	}
+}

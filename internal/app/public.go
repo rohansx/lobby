@@ -22,6 +22,9 @@ func (a *App) ReferralLink(p *Project, s *Signup) string {
 	if err != nil {
 		return base
 	}
+	if u.Path == "" {
+		u.Path = "/"
+	}
 	q := u.Query()
 	q.Set("ref", s.ReferralCode)
 	u.RawQuery = q.Encode()

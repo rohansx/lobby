@@ -12,7 +12,7 @@
     "form{display:flex;gap:8px;flex-wrap:wrap}" +
     "input{flex:1 1 200px;min-width:0;padding:var(--wl-pad,11px 13px);border:1px solid var(--wl-border,#d4d3cf);border-radius:var(--wl-radius,10px);background:var(--wl-bg,#fff);color:var(--wl-ink,#17171a)}" +
     "button{padding:var(--wl-pad,11px 16px);border:0;border-radius:var(--wl-radius,10px);background:var(--wl-accent,#17171a);color:var(--wl-accent-ink,#fff);font-weight:600;cursor:pointer}" +
-    "button[disabled]{opacity:.6}.hp{position:absolute;left:-9999px}" +
+    "button[disabled]{opacity:.6}.hp{position:absolute;left:-9999px}[hidden]{display:none!important}" +
     "p{margin:10px 0 0;color:var(--wl-muted,#55545c);font-size:.92em}.err{color:var(--wl-error,#b3261e)}" +
     "b{color:var(--wl-ink,#17171a)}.row{display:flex;gap:8px;margin-top:8px}.row input{font-size:.9em}";
   root.innerHTML =

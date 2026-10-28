@@ -1,4 +1,6 @@
-# Lobby
+<p align="center"><img src="site/logo.svg" width="64" height="64" alt="Lobby logo"></p>
+
+<h1 align="center">Lobby</h1>
 
 **A self-hosted waitlist for every product you're launching.** One binary, one SQLite file, no monthly bill.
 

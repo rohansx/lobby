@@ -5,233 +5,275 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lobby: the self-hosted waitlist</title>
 <meta name="description" content="Waitlists for every product you launch. Referrals, double opt-in, invite waves and a dashboard. One Go binary, one SQLite file, MIT licensed.">
+<meta name="theme-color" content="#fbfaf7">
 <meta property="og:title" content="Lobby: the self-hosted waitlist">
 <meta property="og:description" content="Referrals, double opt-in, invite waves and a dashboard. One binary, one SQLite file, no monthly bill.">
 <meta property="og:image" content="/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #fafafa; --surface: #fff; --ink: #0a0a0b; --body: #3f3f46; --muted: #71717a; --line: #e4e4e7; --line-soft: #f0f0f2;
-  --accent: #2a78d6; --accent-ink: #fff; --accent-soft: #eaf2fc; --code-bg: #0f1012; --code-ink: #e4e4e7;
-  --radius: 14px; --max: 1160px;
-  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #fbfaf7; --surface: #fff; --sunk: #f5f3ee;
+  --ink: #1f1c17; --body: #4a453d; --muted: #7a746a; --faint: #a8a296;
+  --line: #e9e5dd; --line-soft: #f1eee8;
+  --accent: #2f6fd6; --accent-soft: #e8f0fc;
+  --code-bg: #1f1c17; --code-ink: #ece8e1;
+  --radius: 18px; --max: 1120px;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--body); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; background: var(--bg); color: var(--body); font: 400 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
 img, video { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-decoration: none; }
-h1, h2, h3 { color: var(--ink); margin: 0; letter-spacing: -0.025em; font-weight: 600; }
+h1, h2, h3 { color: var(--ink); margin: 0; font-weight: 400; }
 p { margin: 0; }
 code, pre { font-family: var(--mono); }
-.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
-.btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 10px; font-weight: 500; font-size: 15px; border: 1px solid transparent; transition: background .15s, border-color .15s, transform .15s; white-space: nowrap; }
+::selection { background: #dbe7fb; }
+
+/* The page sits inside a frame of hairlines, like a sheet of paper. */
+.page { max-width: 1280px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 32px; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; font: 500 15px var(--sans); letter-spacing: -0.01em; border: 1px solid transparent; transition: background .15s, border-color .15s, transform .15s; white-space: nowrap; cursor: pointer; }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--ink); color: #fff; }
-.btn-primary:hover { background: #27272a; }
-.btn-ghost { background: var(--surface); border-color: var(--line); color: var(--ink); }
-.btn-ghost:hover { border-color: #d4d4d8; background: #fff; }
-.btn svg { width: 16px; height: 16px; flex: none; }
+.btn-primary { background: var(--ink); color: var(--bg); }
+.btn-primary:hover { background: #3a352d; }
+.btn-ghost { background: var(--surface); border-color: var(--line); color: var(--ink); box-shadow: 0 1px 2px rgba(31,28,23,.04); }
+.btn-ghost:hover { border-color: #d9d3c8; }
+.btn svg { width: 15px; height: 15px; flex: none; }
 
 /* nav */
-.nav { position: sticky; top: 0; z-index: 50; background: rgba(250,250,250,.82); backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid transparent; transition: border-color .2s; }
+.nav { position: sticky; top: 0; z-index: 50; background: rgba(251,250,247,.85); backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px); border-bottom: 1px solid transparent; transition: border-color .2s; }
 .nav.scrolled { border-bottom-color: var(--line); }
-.nav .wrap { display: flex; align-items: center; height: 64px; gap: 32px; }
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--ink); font-size: 17px; letter-spacing: -0.01em; }
-.logo img { width: 26px; height: 26px; }
-.nav-links { display: flex; gap: 26px; font-size: 14.5px; color: var(--muted); }
+.nav .wrap { display: flex; align-items: center; height: 68px; gap: 24px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 500 19px var(--sans); letter-spacing: -0.035em; color: var(--ink); }
+.logo img { width: 28px; height: 28px; }
+.nav-links { display: flex; gap: 28px; font-size: 14.5px; color: var(--body); margin: 0 auto; }
 .nav-links a:hover { color: var(--ink); }
-.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.nav .btn { height: 36px; padding: 0 14px; font-size: 14px; }
-.stars { display: inline-flex; align-items: center; gap: 6px; }
-.stars b { font-weight: 500; color: var(--muted); border-left: 1px solid var(--line); padding-left: 8px; margin-left: 2px; }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.nav .btn { height: 38px; padding: 0 16px; font-size: 14px; }
+.gh { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 12px; border-radius: 999px; color: var(--ink); font-size: 14px; }
+.gh:hover { background: var(--sunk); }
+.gh svg { width: 18px; height: 18px; }
+.gh b { font-weight: 500; color: var(--muted); }
 
-/* hero */
-.hero { padding: 88px 0 0; text-align: center; position: relative; }
-.hero::before { content: ""; position: absolute; inset: -64px 0 auto; height: 720px; z-index: -1;
-  background-image: linear-gradient(var(--line-soft) 1px, transparent 1px), linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-  background-size: 48px 48px; mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 30%, transparent 75%); }
-.pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13.5px; color: var(--body); }
-.pill span { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 999px; }
-.pill:hover { border-color: #d4d4d8; }
-.hero h1 { font-size: clamp(40px, 6.6vw, 76px); line-height: 1.02; letter-spacing: -0.045em; margin: 26px auto 0; max-width: 900px; }
-.hero h1 em { font-style: normal; color: var(--accent); }
-.hero .sub { font-size: clamp(17px, 1.9vw, 20px); color: var(--body); max-width: 640px; margin: 22px auto 0; line-height: 1.55; }
-.hero-ctas { display: flex; gap: 12px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
-.cmd { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; padding: 8px 8px 8px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font: 13.5px var(--mono); color: var(--body); max-width: 100%; }
-.cmd code { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+/* hero: headline on the left, pitch and actions on the right */
+.hero { padding: 72px 0 0; }
+.kicker { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
+.kicker i { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px #dcfce7; }
+.kicker a { color: var(--ink); border-bottom: 1px solid var(--line); }
+.kicker a:hover { border-color: var(--ink); }
+.hero-grid > * { min-width: 0; }
+.hero-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 56px; align-items: end; margin-top: 48px; }
+.hero h1 { font-size: clamp(42px, 5.3vw, 70px); line-height: 1; letter-spacing: -0.048em; }
+.hero h1 span { color: var(--faint); display: block; }
+.hero-side .sub { font-size: 18px; line-height: 1.6; color: var(--body); }
+.hero-ctas { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+.cmd { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 7px 7px 7px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; font: 13px var(--mono); color: var(--body); max-width: 100%; }
+.cmd code { overflow-x: auto; white-space: nowrap; scrollbar-width: none; flex: 1; }
 .cmd code::-webkit-scrollbar { display: none; }
-.cmd .dollar { color: #a1a1aa; user-select: none; }
-.copy { flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; }
+.cmd .dollar { color: var(--faint); user-select: none; }
+.copy { flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; }
 .copy:hover { color: var(--ink); }
 .copy svg { width: 14px; height: 14px; }
 .copy.ok { color: #16a34a; }
 
-.stage { margin: 64px auto 0; max-width: 1080px; position: relative; }
-.stage::before { content: ""; position: absolute; inset: 8% 6% -4%; background: radial-gradient(closest-side, rgba(42,120,214,.22), transparent); filter: blur(40px); z-index: -1; }
-.window { border-radius: 16px; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 24px 64px -16px rgba(15,23,42,.18); overflow: hidden; }
-.window-bar { display: flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--line); background: #f8f8f9; }
-.window-bar i { width: 11px; height: 11px; border-radius: 50%; background: #e4e4e7; }
-.window-bar .url { margin: 0 auto; transform: translateX(-24px); font: 12px var(--mono); color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 40px; }
+.stage { margin: 64px 24px 0; border-radius: 26px; padding: 56px 56px 0; position: relative; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 120%, #c8dafa 0%, #e6edf9 38%, #f4efe6 75%, #f6f1e8 100%); }
+.stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(31,28,23,.06); }
+.stage-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: -32px -32px 24px; flex-wrap: wrap; }
+.chips { display: flex; gap: 4px; padding: 4px; background: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.8); border-radius: 999px; backdrop-filter: blur(8px); font-size: 13.5px; }
+.chips span { padding: 5px 13px; border-radius: 999px; color: var(--muted); transition: background .25s, color .25s; }
+.chips span.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(31,28,23,.08); }
+.stage-note { font-size: 13.5px; color: var(--body); background: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.9); padding: 6px 14px; border-radius: 999px; }
+.window { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; border-radius: 14px 14px 0 0; border: 1px solid rgba(31,28,23,.1); border-bottom: 0; background: var(--surface); box-shadow: 0 30px 80px -30px rgba(31,28,23,.35); overflow: hidden; }
+.window-bar { display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-bottom: 1px solid var(--line-soft); background: #faf9f6; }
+.window-bar i { width: 10px; height: 10px; border-radius: 50%; background: #e4dfd6; }
 .window video, .window img { width: 100%; aspect-ratio: 1200 / 750; object-fit: cover; background: #fff; }
-.caption { text-align: center; font-size: 13.5px; color: var(--muted); margin-top: 16px; }
 
 /* numbers */
-.numbers { margin-top: 96px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); }
-.numbers .wrap { display: grid; grid-template-columns: repeat(5, 1fr); }
-.num { padding: 28px 20px; border-left: 1px solid var(--line); }
+.numbers { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.num { padding: 34px 28px 30px; border-left: 1px solid var(--line); }
 .num:first-child { border-left: 0; }
-.num b { display: block; color: var(--ink); font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
-.num span { font-size: 14px; color: var(--muted); }
+.num b { display: block; color: var(--ink); font-size: 44px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; }
+.num span { display: block; margin-top: 12px; font-size: 14px; color: var(--muted); }
 
 /* sections */
-section { padding: 112px 0 0; }
-.eyebrow { font: 500 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
-.head { max-width: 680px; }
-.head.center { margin: 0 auto; text-align: center; }
-.head h2 { font-size: clamp(30px, 4vw, 46px); line-height: 1.08; margin-top: 14px; letter-spacing: -0.035em; }
-.head p { font-size: 18px; margin-top: 16px; color: var(--body); }
+section { padding: 120px 0 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); }
+.eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.head { max-width: 720px; }
+.head.split { max-width: none; display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: end; }
+.head h2 { font-size: clamp(34px, 4.4vw, 56px); line-height: 1.04; margin-top: 18px; letter-spacing: -0.042em; }
+.head h2 span { color: var(--faint); }
+.head p { font-size: 17.5px; color: var(--body); }
+.head:not(.split) p { margin-top: 18px; }
 
 /* bento */
-.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 56px; }
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 56px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.card h3 { font-size: 19px; letter-spacing: -0.02em; }
+.card h3 { font-size: 19px; font-weight: 500; letter-spacing: -0.025em; }
 .card p { margin-top: 8px; font-size: 15px; color: var(--body); }
-.card .ico { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 18px; }
-.card .ico svg { width: 18px; height: 18px; }
+.card .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--sunk); color: var(--ink); margin-bottom: 22px; }
+.card .ico svg { width: 17px; height: 17px; }
 .span-3 { grid-column: span 3; } .span-2 { grid-column: span 2; } .span-4 { grid-column: span 4; }
-.card .shot { margin: 24px -28px -28px; border-top: 1px solid var(--line); background: #f8f8f9; }
+.card .shot { margin: 26px -28px -28px; border-top: 1px solid var(--line-soft); background: var(--sunk); }
 .card .shot img { width: 100%; }
-.card .shot.pad { padding: 20px 20px 0; }
-.card .shot.pad img { border-radius: 10px 10px 0 0; border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 8px 24px -12px rgba(0,0,0,.15); }
+.card .shot.pad { padding: 22px 22px 0; }
+.card .shot.pad img { border-radius: 10px 10px 0 0; border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 10px 30px -14px rgba(31,28,23,.2); }
+.stat { margin-top: auto; padding-top: 22px; display: flex; gap: 12px; align-items: baseline; font-size: 14px; color: var(--muted); }
+.stat b { font-size: 34px; font-weight: 300; color: var(--ink); letter-spacing: -0.04em; }
 
 /* flow */
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 56px; counter-reset: step; }
-.step { position: relative; padding: 24px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.step::before { counter-increment: step; content: "0" counter(step); font: 500 13px var(--mono); color: var(--accent); }
-.step h3 { font-size: 17px; margin-top: 10px; }
-.step p { font-size: 14.5px; margin-top: 6px; }
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 56px; border-top: 1px solid var(--line); counter-reset: step; }
+.step { padding: 28px 28px 0 0; }
+.step + .step { padding-left: 28px; border-left: 1px solid var(--line); }
+.step::before { counter-increment: step; content: "0" counter(step); font: 400 13px var(--mono); color: var(--faint); }
+.step h3 { font-size: 20px; font-weight: 500; letter-spacing: -0.025em; margin-top: 18px; }
+.step p { font-size: 15px; margin-top: 8px; }
 
 /* showcase */
-.showcase { display: grid; grid-template-columns: 1fr 1.35fr; gap: 64px; align-items: center; margin-top: 96px; }
-.showcase.flip { grid-template-columns: 1.35fr 1fr; }
+.showcase { display: grid; grid-template-columns: 1fr 1.3fr; gap: 72px; align-items: center; margin-top: 112px; }
+.showcase.flip { grid-template-columns: 1.3fr 1fr; }
 .showcase.flip .copy-col { order: 2; }
-.copy-col h3 { font-size: clamp(26px, 3vw, 34px); line-height: 1.12; letter-spacing: -0.03em; margin-top: 12px; }
-.copy-col > p { margin-top: 14px; font-size: 17px; }
-.ticks { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 10px; font-size: 15px; }
-.ticks li { display: flex; gap: 10px; align-items: flex-start; }
-.ticks li::before { content: ""; flex: none; width: 18px; height: 18px; margin-top: 3px; border-radius: 50%; background: var(--accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232a78d6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 11px no-repeat; }
-.frame { border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); overflow: hidden; box-shadow: 0 20px 50px -24px rgba(15,23,42,.25); min-width: 0; }
-.theme-toggle { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); margin-top: 24px; }
-.theme-toggle button { border: 0; background: none; font: 500 13px var(--sans); color: var(--muted); padding: 5px 12px; border-radius: 6px; cursor: pointer; }
-.theme-toggle button[aria-pressed=true] { background: var(--ink); color: #fff; }
+.copy-col h3 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.08; letter-spacing: -0.04em; margin-top: 16px; }
+.copy-col > p { margin-top: 16px; font-size: 17px; }
+.ticks { list-style: none; padding: 0; margin: 24px 0 0; font-size: 15px; border-top: 1px solid var(--line); }
+.ticks li { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ticks li::before { content: ""; flex: none; width: 16px; height: 16px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fd6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px no-repeat; }
+.frame { border-radius: var(--radius); border: 1px solid var(--line); background: var(--sunk); padding: 12px; min-width: 0; }
+.frame img { border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 16px 40px -22px rgba(31,28,23,.3); }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); margin-top: 26px; }
+.seg button { border: 0; background: none; font: 500 13.5px var(--sans); color: var(--muted); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
 
 /* code tabs */
 .embed { display: grid; grid-template-columns: 1fr 1.3fr; gap: 56px; align-items: start; margin-top: 56px; }
-.tabs { display: grid; gap: 10px; }
-.tab { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 18px 20px; cursor: pointer; font: inherit; color: var(--body); transition: border-color .15s, box-shadow .15s; }
-.tab h3 { font-size: 16px; }
+.tabs { display: grid; border-top: 1px solid var(--line); }
+.tab { text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 20px 0 20px 18px; cursor: pointer; font: inherit; color: var(--body); position: relative; }
+.tab::before { content: ""; position: absolute; left: 0; top: 20px; bottom: 20px; width: 2px; border-radius: 2px; background: transparent; transition: background .2s; }
+.tab[aria-selected=true]::before { background: var(--accent); }
+.tab h3 { font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--muted); transition: color .2s; }
+.tab[aria-selected=true] h3 { color: var(--ink); }
 .tab p { font-size: 14.5px; margin-top: 4px; }
-.tab[aria-selected=true] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.code { background: var(--code-bg); border-radius: var(--radius); color: var(--code-ink); overflow: hidden; min-width: 0; box-shadow: 0 20px 50px -24px rgba(15,23,42,.4); }
-.code-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 18px; border-bottom: 1px solid #26272b; font: 12.5px var(--mono); color: #a1a1aa; }
-.code-bar .copy { background: #1c1d21; border-color: #2e2f34; color: #a1a1aa; }
-.code pre { margin: 0; padding: 22px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; }
+.tab code { font-size: 13px; }
+.code { background: var(--code-bg); border-radius: var(--radius); color: var(--code-ink); overflow: hidden; min-width: 0; }
+.code-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 20px; border-bottom: 1px solid #36322b; font: 12.5px var(--mono); color: #a8a296; }
+.code-bar .copy { background: #2a2620; border-color: #3d382f; color: #a8a296; }
+.code pre { margin: 0; padding: 24px; overflow-x: auto; font-size: 13.5px; line-height: 1.75; }
 .code [hidden] { display: none; }
-.t { color: #7dd3fc; } .a { color: #c4b5fd; } .s { color: #86efac; } .c { color: #71717a; }
+.t { color: #93c5fd; } .a { color: #d8b4fe; } .s { color: #bef264; } .c { color: #8a8478; }
 
 /* compare */
-.compare { margin-top: 56px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
-.compare table { width: 100%; border-collapse: collapse; font-size: 15px; }
-.compare th, .compare td { padding: 16px 22px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
-.compare tr:last-child td { border-bottom: 0; }
-.compare thead th { font-size: 13px; font-weight: 500; color: var(--muted); background: #f8f8f9; }
-.compare thead th:nth-child(2) { color: var(--accent); }
-.compare td:first-child { color: var(--ink); font-weight: 500; width: 28%; }
-.compare td:nth-child(2) { color: var(--ink); }
-.compare td:nth-child(3) { color: var(--muted); }
+.compare { margin-top: 56px; border-top: 1px solid var(--line); }
+.compare table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+.compare th, .compare td { padding: 20px 24px 20px 0; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare thead th { font-size: 13.5px; font-weight: 400; color: var(--muted); padding-top: 16px; padding-bottom: 16px; }
+.compare thead th:nth-child(2) { color: var(--ink); font-weight: 500; }
+.compare td:first-child { color: var(--muted); width: 24%; }
+.compare td:nth-child(2) { color: var(--ink); width: 42%; }
+.compare td:nth-child(3) { color: var(--faint); }
 
 /* deploy */
-.deploy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
-.deploy .card pre { margin: 18px 0 0; padding: 14px 16px; background: var(--code-bg); color: var(--code-ink); border-radius: 10px; font-size: 12.5px; line-height: 1.65; overflow-x: auto; }
+.deploy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 56px; }
+.deploy .card pre { margin: 20px 0 0; padding: 16px 18px; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; font-size: 12.5px; line-height: 1.7; overflow-x: auto; }
+.card code { font-size: 13.5px; }
 
 /* faq */
-.faq { max-width: 760px; margin: 48px auto 0; }
+.faq-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 64px; }
+.faq { border-top: 1px solid var(--line); }
 details { border-bottom: 1px solid var(--line); }
-summary { list-style: none; cursor: pointer; padding: 22px 0; display: flex; justify-content: space-between; gap: 24px; color: var(--ink); font-weight: 500; font-size: 17px; }
+summary { list-style: none; cursor: pointer; padding: 22px 0; display: flex; justify-content: space-between; gap: 24px; color: var(--ink); font-size: 18px; letter-spacing: -0.02em; }
 summary::-webkit-details-marker { display: none; }
-summary::after { content: "+"; font: 400 22px/1 var(--sans); color: var(--muted); transition: transform .2s; }
+summary::after { content: "+"; font: 300 24px/1 var(--sans); color: var(--muted); transition: transform .2s; }
 details[open] summary::after { transform: rotate(45deg); }
-details p { padding: 0 0 22px; font-size: 15.5px; max-width: 680px; }
-details code { font-size: 13.5px; background: var(--line-soft); padding: 2px 6px; border-radius: 5px; }
+details p { padding: 0 0 24px; font-size: 15.5px; max-width: 640px; }
+details code { font-size: 13.5px; background: var(--sunk); padding: 2px 6px; border-radius: 6px; }
+.inline-link { color: var(--ink); border-bottom: 1px solid var(--line); }
+.inline-link:hover { border-color: var(--ink); }
 
 /* final */
-.final { margin-top: 128px; padding: 96px 24px; text-align: center; background: var(--ink); color: #a1a1aa; position: relative; overflow: hidden; }
-.final::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 50%, #000, transparent 75%); }
+.final { margin: 128px 24px 0; padding: 104px 24px 96px; text-align: center; border-radius: 26px; color: #c9c2b6; position: relative; overflow: hidden;
+  background: radial-gradient(90% 120% at 50% 130%, #2f6fd6 0%, #1f3b6b 35%, #1f1c17 75%); }
 .final > * { position: relative; }
-.final h2 { color: #fff; font-size: clamp(32px, 4.6vw, 54px); letter-spacing: -0.04em; line-height: 1.05; }
-.final p { margin: 18px auto 0; max-width: 520px; font-size: 18px; }
-.final .hero-ctas .btn-primary { background: #fff; color: var(--ink); }
-.final .hero-ctas .btn-primary:hover { background: #e4e4e7; }
-.final .hero-ctas .btn-ghost { background: transparent; color: #fff; border-color: #3f3f46; }
-.final .hero-ctas .btn-ghost:hover { border-color: #71717a; }
+.final img { width: 52px; height: 52px; margin: 0 auto 28px; border-radius: 13px; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 10px 30px rgba(0,0,0,.35); }
+.final h2 { color: #fbfaf7; font-size: clamp(36px, 5vw, 64px); letter-spacing: -0.048em; line-height: 1.02; }
+.final h2 span { color: #8f887c; }
+.final p { margin: 22px auto 0; max-width: 480px; font-size: 17.5px; }
+.final .hero-ctas { justify-content: center; margin-top: 34px; }
+.final .btn-primary { background: #fbfaf7; color: var(--ink); }
+.final .btn-primary:hover { background: #ece8e1; }
+.final .btn-ghost { background: rgba(255,255,255,.06); color: #fbfaf7; border-color: rgba(255,255,255,.18); box-shadow: none; }
+.final .btn-ghost:hover { border-color: rgba(255,255,255,.4); }
 
-footer { background: var(--ink); color: #71717a; border-top: 1px solid #27272a; font-size: 14px; }
-footer .wrap { display: flex; align-items: center; gap: 24px; padding: 28px 24px; flex-wrap: wrap; }
-footer .logo { color: #fff; font-size: 15px; }
-footer nav { display: flex; gap: 22px; margin-left: auto; flex-wrap: wrap; }
-footer a:hover { color: #fff; }
+footer .wrap { display: flex; align-items: center; gap: 24px; padding: 32px 32px 40px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+footer .logo { font-size: 16px; }
+footer .logo img { width: 22px; height: 22px; }
+footer nav { display: flex; gap: 24px; margin-left: auto; flex-wrap: wrap; }
+footer a:hover { color: var(--ink); }
 
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity .7s ease, transform .7s ease; }
 .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
 
-@media (max-width: 960px) {
+@media (max-width: 1000px) {
   .nav-links { display: none; }
-  .numbers .wrap { grid-template-columns: repeat(3, 1fr); }
+  .nav-right { margin-left: auto; }
+  .hero-grid, .head.split, .faq-grid { grid-template-columns: 1fr; gap: 28px; }
+  .numbers { grid-template-columns: repeat(3, 1fr); }
   .num:nth-child(4) { border-left: 0; }
   .num:nth-child(n+4) { border-top: 1px solid var(--line); }
   .bento .span-2, .bento .span-4 { grid-column: span 3; }
   .flow { grid-template-columns: repeat(2, 1fr); }
+  .step:nth-child(3) { border-left: 0; padding-left: 0; }
+  .step { padding-bottom: 28px; }
   .showcase, .showcase.flip, .embed { grid-template-columns: 1fr; gap: 36px; }
   .showcase.flip .copy-col { order: 0; }
   .deploy { grid-template-columns: 1fr; }
+  .stage { padding: 48px 28px 0; }
 }
 @media (max-width: 640px) {
+  .page { border: 0; }
   .wrap { padding: 0 16px; }
-  .nav .stars b, .nav .hide-sm { display: none; }
-  .hero { padding-top: 56px; }
-  .stage { margin-top: 44px; }
-  .window-bar .url { display: none; }
-  .numbers .wrap { grid-template-columns: repeat(2, 1fr); }
-  .num { border-left: 0 !important; border-top: 1px solid var(--line); padding: 20px 16px; }
+  .gh b, .gh span { display: none; }
+  .hero { padding-top: 40px; }
+  .hero-grid { margin-top: 28px; }
+  .stage { margin: 44px 8px 0; padding: 40px 12px 0; border-radius: 20px; }
+  .stage-top { margin: -28px 0 18px; }
+  .chips { display: none; }
+  .numbers { grid-template-columns: repeat(2, 1fr); }
+  .num { border-left: 0 !important; border-top: 1px solid var(--line); padding: 24px 16px; }
   .num:nth-child(-n+2) { border-top: 0; }
   .num:nth-child(odd) { border-right: 1px solid var(--line); }
   .num:last-child { grid-column: span 2; border-right: 0; }
-  section { padding-top: 80px; }
+  .num b { font-size: 36px; }
+  section { padding-top: 88px; }
   .bento { grid-template-columns: 1fr; }
   .bento > * { grid-column: auto !important; }
-  .card { padding: 22px; } .card .shot { margin: 20px -22px -22px; }
+  .card { padding: 22px; } .card .shot { margin: 22px -22px -22px; }
   .flow { grid-template-columns: 1fr; }
-  .showcase { margin-top: 72px; }
-  .compare th, .compare td { padding: 12px 14px; font-size: 14px; }
-  .compare td:first-child { width: auto; }
-  .final { margin-top: 96px; padding: 72px 16px; }
+  .step, .step + .step { padding: 22px 0; border-left: 0; border-bottom: 1px solid var(--line); }
+  .showcase { margin-top: 80px; }
+  .compare th, .compare td { padding: 14px 12px 14px 0; font-size: 14px; }
+  .compare td:first-child, .compare td:nth-child(2) { width: auto; }
+  .final { margin: 96px 8px 0; padding: 72px 18px; border-radius: 20px; }
   footer nav { margin-left: 0; }
 }
 </style>
 </head>
 <body>
+<div class="page">
 
 <header class="nav" id="nav">
   <div class="wrap">
-    <a class="logo" href="#"><img src="/favicon.svg" alt="">Lobby</a>
+    <a class="logo" href="#"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links">
       <a href="#features">Features</a>
       <a href="#how">How it works</a>
@@ -240,11 +282,12 @@ footer a:hover { color: #fff; }
       <a href="#faq">FAQ</a>
     </nav>
     <div class="nav-right">
-      <a class="btn btn-ghost stars" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
+      <a class="gh" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        <span class="hide-sm">Star</span><b data-stars hidden></b>
+        <span>GitHub</span><b data-stars hidden></b>
       </a>
-      <a class="btn btn-primary" href="#self-host">Get started</a>
+      <a class="btn btn-primary" href="#self-host">Get started
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
 </header>
@@ -252,47 +295,56 @@ footer a:hover { color: #fff; }
 <main>
   <div class="hero">
     <div class="wrap">
-      <a class="pill" href="https://github.com/rohansx/lobby"><span>Open source</span> MIT licensed and self-hosted →</a>
-      <h1>The waitlist you <em>own</em>, for every product you launch</h1>
-      <p class="sub">Lobby gives each product a signup form, double opt-in, a place in line, referral links that move people up and invite waves. It's one binary and one SQLite file, with no monthly bill.</p>
-      <div class="hero-ctas">
-        <a class="btn btn-primary" href="#self-host">Deploy in a minute
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a class="btn btn-ghost" href="https://github.com/rohansx/lobby">View on GitHub</a>
-      </div>
-      <div class="cmd">
-        <code><span class="dollar">$ </span>docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby</code>
-        <button class="copy" data-copy="docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby" aria-label="Copy command"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
-      </div>
-
-      <div class="stage reveal">
-        <div class="window">
-          <div class="window-bar"><i></i><i></i><i></i><span class="url">A real signup, end to end</span></div>
-          <video id="demo" autoplay muted loop playsinline preload="auto" poster="/poster.jpg" aria-label="A visitor joins a waitlist, confirms by email, sees their place in line, and shows up in the Lobby dashboard">
-            <source src="/demo.webm" type='video/webm; codecs="vp9"'>
-          </video>
+      <div class="kicker"><i></i>Open source, MIT licensed · <a href="https://github.com/rohansx/lobby">rohansx/lobby</a></div>
+      <div class="hero-grid">
+        <h1>Your waitlist.<span>On your server.</span></h1>
+        <div class="hero-side">
+          <p class="sub">Lobby gives every product you launch a signup form, double opt-in, a place in line, referral links that move people up and invite waves. One binary and one SQLite file, with no monthly bill.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href="#self-host">Deploy in a minute
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn btn-ghost" href="#demo">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+              Watch the demo</a>
+          </div>
+          <div class="cmd">
+            <code><span class="dollar">$ </span>docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby</code>
+            <button class="copy" data-copy="docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby" aria-label="Copy command"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+          </div>
         </div>
-        <p class="caption">Visitor joins from your landing page → confirms by email → sees their place in line → shows up in your dashboard.</p>
+      </div>
+    </div>
+
+    <div class="stage reveal" id="demo">
+      <div class="stage-top">
+        <div class="chips" aria-hidden="true"><span class="on">Sign up</span><span>Confirm</span><span>Share</span><span>Dashboard</span></div>
+        <div class="stage-note">One real signup, start to finish · 19s</div>
+      </div>
+      <div class="window">
+        <div class="window-bar"><i></i><i></i><i></i></div>
+        <video id="video" autoplay muted loop playsinline preload="auto" poster="/poster.jpg" aria-label="A visitor joins a waitlist, confirms by email, sees their place in line, and shows up in the Lobby dashboard">
+          <source src="/demo.webm" type='video/webm; codecs="vp9"'>
+        </video>
       </div>
     </div>
   </div>
 
   <div class="numbers reveal">
-    <div class="wrap">
-      <div class="num"><b>14 MB</b><span>single binary</span></div>
-      <div class="num"><b>~20 MB</b><span>memory at idle</span></div>
-      <div class="num"><b>&lt;2 KB</b><span>embed widget, gzipped</span></div>
-      <div class="num"><b>1 file</b><span>SQLite holds everything</span></div>
-      <div class="num"><b>$0</b><span>per month, per list</span></div>
-    </div>
+    <div class="num"><b>14 MB</b><span>single binary</span></div>
+    <div class="num"><b>~20 MB</b><span>memory at idle</span></div>
+    <div class="num"><b>&lt;2 KB</b><span>embed widget, gzipped</span></div>
+    <div class="num"><b>1 file</b><span>SQLite holds everything</span></div>
+    <div class="num"><b>$0</b><span>per month, per list</span></div>
   </div>
 
   <section id="features">
     <div class="wrap">
-      <div class="head reveal">
-        <div class="eyebrow">Features</div>
-        <h2>Everything a launch needs, nothing you'll pay for monthly</h2>
-        <p>The parts hosted waitlist tools charge for are included: referrals, invites, webhooks, broadcasts and a dashboard for all your products.</p>
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Features</div>
+          <h2>Everything a launch needs. <span>Nothing you pay for monthly.</span></h2>
+        </div>
+        <p>The parts hosted waitlist tools charge extra for are built in: referrals, invite waves, webhooks, broadcasts, and one dashboard for all your products.</p>
       </div>
 
       <div class="bento">
@@ -305,8 +357,9 @@ footer a:hover { color: #fff; }
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 8v6M22 11h-6"/></svg></div>
           <h3>Referrals that move people up</h3>
-          <p>Every confirmed friend moves the referrer 10 places up (configurable), or keep a strict first-come line.</p>
-          <p style="margin-top:14px">Credit only lands after the friend confirms, and it's capped per IP address and per hour, so a script can't farm it.</p>
+          <p>Every friend who confirms moves the referrer up the line, or keep a strict first-come order.</p>
+          <p style="margin-top:12px">Credit lands only after the friend confirms, capped per IP address and per hour, so a script can't farm it.</p>
+          <div class="stat"><b>+10</b>places per referral, configurable</div>
         </div>
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
@@ -315,24 +368,24 @@ footer a:hover { color: #fff; }
         </div>
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg></div>
-          <h3>Invite waves</h3>
+          <h3>Invite in waves</h3>
           <p>Click <b>Invite next 50</b>. The front of the line gets a magic link and a code bound to their address. Your app redeems it with one API call.</p>
         </div>
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
           <h3>Know the moment it happens</h3>
-          <p>An email to you for each new signup, with its source and referrer. Signed webhooks and a Slack preset for everything else.</p>
+          <p>An email to you for every new signup, with where they came from and who referred them. Signed webhooks and a Slack preset for the rest.</p>
         </div>
         <div class="card span-3 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
           <h3>Emails that land, and look right</h3>
-          <p>Double opt-in, status, invite and launch-broadcast emails through Resend or any SMTP server, with one-click unsubscribe and bounce suppression.</p>
+          <p>Confirmation, status, invite and launch emails through Resend or any SMTP server, with one-click unsubscribe and bounce suppression.</p>
           <div class="shot"><img src="/email.png" alt="Confirmation email" loading="lazy" width="2000" height="1280"></div>
         </div>
         <div class="card span-3 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <h3>Private by default</h3>
-          <p>IP addresses are kept only as keyed hashes and cleared after 30 days. Public pages set no cookies. Consent text is versioned per signup. Export to CSV or NDJSON any time.</p>
+          <p>IP addresses are kept only as keyed hashes and cleared after 30 days. Public pages set no cookies. Export to CSV or NDJSON any time.</p>
           <div class="shot"><img src="/signups.png" alt="Signups list" loading="lazy" width="2880" height="1800"></div>
         </div>
       </div>
@@ -341,26 +394,26 @@ footer a:hover { color: #fff; }
 
   <section id="how">
     <div class="wrap">
-      <div class="head center reveal">
+      <div class="head reveal">
         <div class="eyebrow">How it works</div>
-        <h2>From first visit to first invite</h2>
+        <h2>From first visit <span>to first invite.</span></h2>
       </div>
-      <div class="flow">
-        <div class="step reveal"><h3>Sign up</h3><p>From your widget, a plain HTML form or the hosted page. Gmail dots and +tags fold together, so nobody signs up twice.</p></div>
-        <div class="step reveal"><h3>Confirm</h3><p>The confirmation link opens their status page: their place in line, how many are behind them, and a link to share.</p></div>
-        <div class="step reveal"><h3>Refer</h3><p>Friends who join and confirm through that link move the referrer up the line. Your dashboard shows who's driving growth.</p></div>
-        <div class="step reveal"><h3>Invite</h3><p>Send invites in waves from the front of the line, then a launch broadcast to everyone when you're live.</p></div>
+      <div class="flow reveal">
+        <div class="step"><h3>Sign up</h3><p>From your widget, a plain HTML form or the hosted page. Gmail dots and +tags fold together, so nobody signs up twice.</p></div>
+        <div class="step"><h3>Confirm</h3><p>The confirmation link opens their status page: their place in line, how many are behind them, and a link to share.</p></div>
+        <div class="step"><h3>Refer</h3><p>Friends who join and confirm through that link move the referrer up. Your dashboard shows who's driving growth.</p></div>
+        <div class="step"><h3>Invite</h3><p>Send invites in waves from the front of the line, then a launch broadcast to everyone when you go live.</p></div>
       </div>
 
       <div class="showcase reveal">
         <div class="copy-col">
           <div class="eyebrow">For your signups</div>
           <h3>A status page worth sharing</h3>
-          <p>Every confirmed signup gets their own page showing where they stand and a referral link to copy. It's server-rendered, needs no JavaScript and sets no cookies.</p>
+          <p>Every confirmed signup gets a page showing where they stand and a referral link to copy. It's server-rendered, needs no JavaScript and sets no cookies.</p>
           <ul class="ticks">
             <li>Place in line and how many people are behind</li>
-            <li>One-click copy of their referral link</li>
-            <li>Your project name, with no Lobby account needed to view it</li>
+            <li>One-click copy, plus share to X, LinkedIn or email</li>
+            <li>No account or login needed to view it</li>
           </ul>
         </div>
         <div class="frame"><img src="/status.png" alt="Status page with place in line and referral link" loading="lazy" width="2000" height="1400"></div>
@@ -370,29 +423,34 @@ footer a:hover { color: #fff; }
         <div class="copy-col">
           <div class="eyebrow">For you</div>
           <h3>Every number that matters, in light or dark</h3>
-          <p>See where signups come from, who refers the most, and how many confirmed. Invite, export, broadcast and manage webhooks from the same place.</p>
-          <div class="theme-toggle" role="group" aria-label="Dashboard theme">
-            <button type="button" aria-pressed="true" data-theme-shot="/dashboard.png">Light</button>
-            <button type="button" aria-pressed="false" data-theme-shot="/dashboard-dark.png">Dark</button>
+          <p>See where signups come from, who refers the most and how many confirmed. Invite, export, broadcast and manage webhooks from the same place.</p>
+          <div class="seg" role="group" aria-label="Dashboard theme">
+            <button type="button" aria-pressed="false" data-theme-shot="/dashboard.png">Light</button>
+            <button type="button" aria-pressed="true" data-theme-shot="/dashboard-dark.png">Dark</button>
           </div>
         </div>
-        <div class="frame"><img id="themeShot" src="/dashboard.png" alt="Lobby dashboard" loading="lazy" width="2880" height="1800"></div>
+        <div class="frame"><img id="themeShot" src="/dashboard-dark.png" alt="Lobby dashboard" loading="lazy" width="2880" height="1800"></div>
       </div>
     </div>
   </section>
 
   <section id="embed">
     <div class="wrap">
-      <div class="head reveal">
-        <div class="eyebrow">Embed</div>
-        <h2>Drop it into any site in one line</h2>
-        <p>Every project gives you three ways in. The dashboard shows each snippet with your keys already filled in.</p>
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Embed</div>
+          <h2>Drop it into any site. <span>One line.</span></h2>
+        </div>
+        <p>Every project gives you three ways in, and the dashboard shows each snippet with your keys already filled in.</p>
       </div>
       <div class="embed">
-        <div class="tabs" role="tablist">
-          <button class="tab reveal" role="tab" aria-selected="true" data-tab="widget"><h3>Script widget</h3><p>A form in a shadow DOM that won't clash with your CSS. Picks up <code>?ref=</code> and UTM tags.</p></button>
-          <button class="tab reveal" role="tab" aria-selected="false" data-tab="form"><h3>Plain HTML form</h3><p>No JavaScript at all. Works in any static site builder.</p></button>
-          <button class="tab reveal" role="tab" aria-selected="false" data-tab="hosted"><h3>Hosted page</h3><p>No site yet? Share a link to a ready-made signup page.</p></button>
+        <div class="reveal">
+          <div class="tabs" role="tablist">
+            <button class="tab" role="tab" aria-selected="true" data-tab="widget"><h3>Script widget</h3><p>A form in a shadow DOM that won't clash with your CSS. Picks up <code>?ref=</code> and UTM tags.</p></button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="form"><h3>Plain HTML form</h3><p>No JavaScript at all. Works in any static site builder.</p></button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="hosted"><h3>Hosted page and API</h3><p>No site yet? Share a link to a ready-made page, or drive it from code.</p></button>
+          </div>
+          <div class="frame" style="margin-top:28px"><img src="/widget.png" alt="The widget embedded on a product landing page" loading="lazy" width="2880" height="1520"></div>
         </div>
         <div class="reveal" style="min-width:0">
           <div class="code">
@@ -406,14 +464,20 @@ footer a:hover { color: #fff; }
 
 <span class="c">&lt;!-- Theme it with CSS variables --&gt;</span>
 <span class="t">&lt;style&gt;</span>
-  #waitlist { --wl-accent: #2a78d6; --wl-radius: 10px; }
+  #waitlist {
+    --wl-accent: #2f6fd6;
+    --wl-radius: 999px;
+  }
 <span class="t">&lt;/style&gt;</span></pre>
 <pre data-pane="form" hidden><span class="t">&lt;form</span> <span class="a">method</span>=<span class="s">"post"</span>
   <span class="a">action</span>=<span class="s">"https://wait.example.com/v1/w/pk_…/signup"</span><span class="t">&gt;</span>
   <span class="t">&lt;input</span> <span class="a">type</span>=<span class="s">"email"</span> <span class="a">name</span>=<span class="s">"email"</span> <span class="a">required</span><span class="t">&gt;</span>
-  <span class="c">&lt;!-- honeypot: humans never see it --&gt;</span>
-  <span class="t">&lt;input</span> <span class="a">type</span>=<span class="s">"text"</span> <span class="a">name</span>=<span class="s">"website"</span> <span class="a">tabindex</span>=<span class="s">"-1"</span>
-    <span class="a">autocomplete</span>=<span class="s">"off"</span> <span class="a">style</span>=<span class="s">"position:absolute;left:-9999px"</span><span class="t">&gt;</span>
+
+  <span class="c">&lt;!-- honeypot: people never see it --&gt;</span>
+  <span class="t">&lt;input</span> <span class="a">type</span>=<span class="s">"text"</span> <span class="a">name</span>=<span class="s">"website"</span>
+    <span class="a">tabindex</span>=<span class="s">"-1"</span> <span class="a">autocomplete</span>=<span class="s">"off"</span>
+    <span class="a">style</span>=<span class="s">"position:absolute;left:-9999px"</span><span class="t">&gt;</span>
+
   <span class="t">&lt;button&gt;</span>Join the waitlist<span class="t">&lt;/button&gt;</span>
 <span class="t">&lt;/form&gt;</span></pre>
 <pre data-pane="hosted" hidden><span class="c"># Every project gets a hosted page</span>
@@ -424,9 +488,12 @@ https://wait.example.com/w/your-project?ref=k3x9
 
 <span class="c"># Or drive it from code</span>
 curl https://wait.example.com/v1/signups \
-  -H <span class="s">"Authorization: Bearer sk_…"</span></pre>
+  -H <span class="s">"Authorization: Bearer sk_…"</span>
+
+curl -X POST https://wait.example.com/v1/invites \
+  -H <span class="s">"Authorization: Bearer sk_…"</span> \
+  -d <span class="s">'{"count": 50}'</span></pre>
           </div>
-          <div class="frame" style="margin-top:16px"><img src="/widget.png" alt="The widget embedded on a product landing page" loading="lazy" width="2880" height="1520"></div>
         </div>
       </div>
     </div>
@@ -434,10 +501,12 @@ curl https://wait.example.com/v1/signups \
 
   <section id="why">
     <div class="wrap">
-      <div class="head center reveal">
-        <div class="eyebrow">Why self-host</div>
-        <h2>Your launch list is your most valuable list</h2>
-        <p>It's the people who asked to hear from you before you existed. Keep it on your own server.</p>
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Why self-host</div>
+          <h2>Your launch list is <span>your most valuable list.</span></h2>
+        </div>
+        <p>It's the people who asked to hear from you before you existed. Keep it on your own server, under your own domain.</p>
       </div>
       <div class="compare reveal">
         <table>
@@ -448,7 +517,7 @@ curl https://wait.example.com/v1/signups \
             <tr><td>Multiple products</td><td>Unlimited projects in one install</td><td>Often one list per plan</td></tr>
             <tr><td>Referrals and invites</td><td>Included, with fraud checks</td><td>Often on higher tiers</td></tr>
             <tr><td>Email sender</td><td>Your domain, through Resend or any SMTP server</td><td>Varies, often their domain</td></tr>
-            <tr><td>Leaving</td><td>CSV or NDJSON export, or just copy the file</td><td>Export, if your plan includes it</td></tr>
+            <tr><td>Leaving</td><td>CSV or NDJSON export, or copy the file</td><td>Export, if your plan includes it</td></tr>
           </tbody>
         </table>
       </div>
@@ -457,49 +526,53 @@ curl https://wait.example.com/v1/signups \
 
   <section id="self-host">
     <div class="wrap">
-      <div class="head reveal">
-        <div class="eyebrow">Self-host</div>
-        <h2>Running in under a minute</h2>
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Self-host</div>
+          <h2>Running in <span>under a minute.</span></h2>
+        </div>
         <p>Start the container, open it in a browser, create your admin account and your first project. Then paste a snippet onto your site.</p>
       </div>
       <div class="deploy">
         <div class="card reveal">
           <h3>Docker</h3>
-          <p>The image is multi-arch (amd64 and arm64) and includes Litestream for backups.</p>
+          <p>Multi-arch (amd64 and arm64), with Litestream built in for backups.</p>
 <pre>docker run -d -p 8080:8080 \
   -v lobby-data:/data \
-  -e LOBBY_BASE_URL=https://wait.you.com \
+  -e LOBBY_BASE_URL=$URL \
   -e RESEND_API_KEY=re_… \
-  ghcr.io/rohansx/lobby:latest</pre>
+  ghcr.io/rohansx/lobby</pre>
         </div>
         <div class="card reveal">
           <h3>Dokploy, Coolify, any VPS</h3>
-          <p>Point your PaaS at the image or the repo, mount a volume at <code>/data</code> and set the public URL. A Dokploy template is included.</p>
-<pre>git clone https://github.com/rohansx/lobby
+          <p>Point your PaaS at the image or the repo, mount a volume at <code>/data</code> and set the public URL.</p>
+<pre>git clone \
+  https://github.com/rohansx/lobby
 cd lobby
-LOBBY_BASE_URL=https://wait.you.com \
+LOBBY_BASE_URL=$URL \
   docker compose up -d</pre>
         </div>
         <div class="card reveal">
           <h3>Drive it from the CLI</h3>
-          <p>The binary is also a CLI, and every instance serves its whole API at <code>/llms.txt</code> for coding agents.</p>
-<pre>export LOBBY_URL=https://wait.you.com
+          <p>The binary is also a CLI, and every instance serves its API at <code>/llms.txt</code> for agents.</p>
+<pre>export LOBBY_URL=$URL
 export LOBBY_KEY=sk_…
 lobby stats
 lobby invite --next 50
-lobby export --format csv &gt; list.csv</pre>
+lobby export --format csv</pre>
         </div>
       </div>
     </div>
   </section>
 
   <section id="faq">
-    <div class="wrap">
-      <div class="head center reveal">
+    <div class="wrap faq-grid">
+      <div class="head reveal">
         <div class="eyebrow">FAQ</div>
-        <h2>Questions</h2>
+        <h2>Questions, <span>answered.</span></h2>
+        <p>Something else? <a class="inline-link" href="https://github.com/rohansx/lobby/issues">Open an issue</a>.</p>
       </div>
-      <div class="faq">
+      <div class="faq reveal">
         <details><summary>Is it really free?</summary><p>Yes. Lobby is MIT licensed with no paid tier, no signup limits and no phone-home. You pay for the server it runs on and for your email provider, and Resend's free tier is enough for a small launch.</p></details>
         <details><summary>What do I need to run it?</summary><p>Anything that runs a Docker container: a small VPS, Dokploy, Coolify, Fly.io or Railway. It idles at about 20 MB of memory. Mount a volume at <code>/data</code> so your list survives restarts.</p></details>
         <details><summary>Can I run waitlists for several products?</summary><p>Yes. Each project has its own form, keys, allowed origins, emails, referral rules and settings, and they all share one dashboard.</p></details>
@@ -510,8 +583,9 @@ lobby export --format csv &gt; list.csv</pre>
     </div>
   </section>
 
-  <div class="final">
-    <h2>Start your waitlist today</h2>
+  <div class="final reveal">
+    <img src="/logo.svg" alt="">
+    <h2>Open the doors <span>on your terms.</span></h2>
     <p>One command, your own server, and a list that stays yours.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="https://github.com/rohansx/lobby#quick-start">Read the quick start</a>
@@ -522,8 +596,8 @@ lobby export --format csv &gt; list.csv</pre>
 
 <footer>
   <div class="wrap">
-    <a class="logo" href="#"><img src="/favicon.svg" alt="" style="width:22px;height:22px">Lobby</a>
-    <span>MIT licensed. Made by <a href="https://github.com/rohansx">@rohansx</a>.</span>
+    <a class="logo" href="#"><img src="/logo.svg" alt="">Lobby</a>
+    <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
       <a href="https://github.com/rohansx/lobby">GitHub</a>
       <a href="https://github.com/rohansx/lobby#configuration">Docs</a>
@@ -532,6 +606,7 @@ lobby export --format csv &gt; list.csv</pre>
     </nav>
   </div>
 </footer>
+</div>
 
 <script>
 (() => {
@@ -540,11 +615,19 @@ lobby export --format csv &gt; list.csv</pre>
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
   // Browsers that can't play VP9 WebM get the GIF instead.
-  const v = document.getElementById('demo');
+  const v = document.getElementById('video');
   if (!v.canPlayType('video/webm; codecs="vp9"')) {
     const img = document.createElement('img');
     img.src = '/demo.gif'; img.alt = v.getAttribute('aria-label');
     v.replaceWith(img);
+  } else {
+    // Light up the chip for the part of the demo that's playing.
+    const chips = document.querySelectorAll('.chips span');
+    const marks = [0, 6.5, 9.3, 13.8];
+    v.addEventListener('timeupdate', () => {
+      let i = 0; marks.forEach((m, j) => { if (v.currentTime >= m) i = j; });
+      chips.forEach((c, j) => c.classList.toggle('on', j === i));
+    });
   }
 
   const done = (btn) => { btn.classList.add('ok'); setTimeout(() => btn.classList.remove('ok'), 1400); };
@@ -576,7 +659,7 @@ lobby export --format csv &gt; list.csv</pre>
   }
 
   fetch('https://api.github.com/repos/rohansx/lobby').then(r => r.ok ? r.json() : null).then(d => {
-    if (!d || !d.stargazers_count) return;
+    if (!d || d.stargazers_count < 10) return;
     const el = document.querySelector('[data-stars]');
     el.textContent = d.stargazers_count >= 1000 ? (d.stargazers_count / 1000).toFixed(1) + 'k' : d.stargazers_count;
     el.hidden = false;

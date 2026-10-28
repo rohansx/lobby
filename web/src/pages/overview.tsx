@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api, projectPath } from "@/lib/api"
+import { toastError } from "@/lib/errors"
 import { num, pct } from "@/lib/format"
 import { useSession } from "@/lib/session"
 import { useProject } from "@/lib/use-project"
@@ -103,7 +104,7 @@ export default function Overview() {
                   reload()
                   refreshProjects()
                 } catch (err) {
-                  toast.error((err as Error).message)
+                  toastError(err)
                 } finally {
                   setInviting(false)
                 }
@@ -181,7 +182,7 @@ export default function Overview() {
                       const r = await api<{ secret_key: string }>(projectPath(slug, "/rotate"), { method: "POST" })
                       setSecret(r.secret_key)
                     } catch (err) {
-                      toast.error((err as Error).message)
+                      toastError(err)
                     }
                   }}
                 >

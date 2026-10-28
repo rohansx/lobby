@@ -17,7 +17,23 @@ type Config struct {
 	ResendKey  string // RESEND_API_KEY
 	ResendHook string // RESEND_WEBHOOK_SECRET, for bounce and complaint suppression
 	CheckMX    bool   // LOBBY_CHECK_MX, default on
+
+	// Cloud mode turns one instance into a hosted service: anyone can sign up,
+	// each account sees only its own projects, and plans set the limits.
+	Cloud bool        // LOBBY_CLOUD
+	Polar PolarConfig // POLAR_*, billing for cloud mode
 }
+
+type PolarConfig struct {
+	Token         string            // POLAR_ACCESS_TOKEN, an organization access token
+	WebhookSecret string            // POLAR_WEBHOOK_SECRET
+	Sandbox       bool              // POLAR_SANDBOX=1 uses sandbox-api.polar.sh
+	APIURL        string            // POLAR_API_URL overrides both, for tests
+	Products      map[string]string // "launch_month" etc. to Polar product IDs, from POLAR_PRODUCT_LAUNCH_MONTHLY etc.
+}
+
+// Enabled reports whether checkout can work at all.
+func (p PolarConfig) Enabled() bool { return p.Token != "" && len(p.Products) > 0 }
 
 func ConfigFromEnv() Config {
 	c := Config{
@@ -30,6 +46,21 @@ func ConfigFromEnv() Config {
 		ResendKey:  env("RESEND_API_KEY", ""),
 		ResendHook: env("RESEND_WEBHOOK_SECRET", ""),
 		CheckMX:    env("LOBBY_CHECK_MX", "1") != "0",
+		Cloud:      env("LOBBY_CLOUD", "") == "1",
+		Polar: PolarConfig{
+			Token:         env("POLAR_ACCESS_TOKEN", ""),
+			WebhookSecret: env("POLAR_WEBHOOK_SECRET", ""),
+			Sandbox:       env("POLAR_SANDBOX", "") == "1",
+			APIURL:        strings.TrimRight(env("POLAR_API_URL", ""), "/"),
+			Products:      map[string]string{},
+		},
+	}
+	for _, plan := range []string{"launch", "pro"} {
+		for interval, suffix := range map[string]string{"month": "MONTHLY", "year": "YEARLY"} {
+			if id := env("POLAR_PRODUCT_"+strings.ToUpper(plan)+"_"+suffix, ""); id != "" {
+				c.Polar.Products[plan+"_"+interval] = id
+			}
+		}
 	}
 	return c
 }

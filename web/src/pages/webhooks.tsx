@@ -1,7 +1,7 @@
 import { PlusIcon, RotateCwIcon, Trash2Icon, ZapIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-import { useParams } from "wouter"
+import { Link, useParams } from "wouter"
 import { CopyButton } from "@/components/copy-field"
 import { Page } from "@/components/page"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,9 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { api, projectPath, type Delivery, type Webhook } from "@/lib/api"
+import { toastError } from "@/lib/errors"
 import { ago, dateTime } from "@/lib/format"
+import { useSession } from "@/lib/session"
 import { useApi } from "@/lib/use-api"
 import { cn } from "@/lib/utils"
 
@@ -30,6 +32,8 @@ interface Data {
 export default function Webhooks() {
   const { slug } = useParams<{ slug: string }>()
   const { data, reload } = useApi<Data>(projectPath(slug, "/webhooks"))
+  const { me } = useSession()
+  const locked = me.cloud && me.plan && !me.plan.webhooks
 
   async function act(path: string, ok: string) {
     try {
@@ -37,7 +41,7 @@ export default function Webhooks() {
       toast.success(ok)
       reload()
     } catch (err) {
-      toast.error((err as Error).message)
+      toastError(err)
     }
   }
 
@@ -45,9 +49,21 @@ export default function Webhooks() {
     <Page
       title="Webhooks"
       description="Signed with the Standard Webhooks scheme, retried for about a day. A 410 response disables the endpoint."
-      actions={data && <AddWebhook slug={slug} events={data.events} onAdded={reload} />}
+      actions={data && !locked && <AddWebhook slug={slug} events={data.events} onAdded={reload} />}
     >
-      {!data ? (
+      {locked ? (
+        <Card className="border-dashed">
+          <CardHeader className="text-center">
+            <CardTitle>Webhooks come with Launch</CardTitle>
+            <CardDescription>Send every signup, confirmation and invite to your app, Zapier or Slack, and use the REST API with your secret key. From $4 a month.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button asChild>
+              <Link href="/billing">See plans</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : !data ? (
         <Skeleton className="h-40" />
       ) : data.webhooks.length === 0 ? (
         <Card className="border-dashed">

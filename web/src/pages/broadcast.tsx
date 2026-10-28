@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { api, projectPath, type Broadcast, type Status } from "@/lib/api"
+import { toastError } from "@/lib/errors"
 import { dateTime, num } from "@/lib/format"
 import { useApi } from "@/lib/use-api"
 
@@ -37,7 +38,7 @@ export default function BroadcastPage() {
       setBody("")
       reload()
     } catch (err) {
-      toast.error((err as Error).message)
+      toastError(err)
     } finally {
       setBusy(false)
     }

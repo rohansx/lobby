@@ -13,7 +13,7 @@ export function Home() {
   return (
     <Page
       title="Projects"
-      description="Every waitlist on this instance."
+      description={me.cloud ? "Your waitlists." : "Every waitlist on this instance."}
       actions={
         <NewProjectDialog>
           <Button>
@@ -23,7 +23,8 @@ export function Home() {
         </NewProjectDialog>
       }
     >
-      {me.mailer.startsWith("log") && (
+      {me.cloud && me.plan && me.plan.signups > 0 && projects && <FreeUsage used={projects.reduce((n, p) => n + p.total, 0)} limit={me.plan.signups} />}
+      {!me.cloud && me.mailer.startsWith("log") && (
         <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
           Emails are only written to the server log. Set <code className="font-mono">RESEND_API_KEY</code> or <code className="font-mono">SMTP_URL</code>, plus <code className="font-mono">LOBBY_FROM_EMAIL</code>, before you share a waitlist.
         </div>
@@ -67,6 +68,25 @@ export function Home() {
         </div>
       )}
     </Page>
+  )
+}
+
+// FreeUsage warns as the Free plan's signup cap gets close.
+function FreeUsage({ used, limit }: { used: number; limit: number }) {
+  if (used < limit * 0.8) return null
+  const full = used >= limit
+  return (
+    <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${full ? "border-destructive/30 bg-destructive/10" : "border-amber-500/30 bg-amber-500/10"}`}>
+      <span>
+        {full
+          ? `Your waitlists have reached the ${num(limit)} signups on the Free plan, so new visitors can't join.`
+          : `${num(used)} of ${num(limit)} free signups used.`}{" "}
+        Launch has no signup limit.
+      </span>
+      <Button asChild size="sm">
+        <Link href="/billing">Upgrade</Link>
+      </Button>
+    </div>
   )
 }
 

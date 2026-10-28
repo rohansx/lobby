@@ -42,6 +42,8 @@ code, pre { font-family: var(--mono); }
 .nav .btn { height: 38px; padding: 0 16px; font-size: 14px; }
 .gh { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 12px; border-radius: 999px; color: var(--ink); font-size: 14px; }
 .gh:hover { background: var(--sunk); }
+.signin { display: inline-flex; white-space: nowrap; align-items: center; height: 38px; padding: 0 12px; border-radius: 999px; color: var(--ink); font-size: 14px; }
+.signin:hover { background: var(--sunk); }
 .gh svg { width: 18px; height: 18px; }
 .gh b { font-weight: 500; color: var(--muted); }
 
@@ -225,6 +227,7 @@ footer a:hover { color: var(--ink); }
   .page { border: 0; }
   .wrap { padding: 0 16px; }
   .gh b, .gh span { display: none; }
+  .signin { display: none; }
   .hero { padding-top: 40px; }
   .stage { margin: 44px 8px 0; padding: 40px 12px 0; border-radius: 20px; }
   .stage-top { margin: -28px 0 18px; }

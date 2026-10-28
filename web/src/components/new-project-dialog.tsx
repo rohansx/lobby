@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react"
-import { useLocation } from "wouter"
+import { Link, useLocation } from "wouter"
 import { SecretKeyDialog } from "@/components/secret-key-dialog"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { api, type Project } from "@/lib/api"
+import { api, ApiError, type Project } from "@/lib/api"
 import { useSession } from "@/lib/session"
 
 const slugify = (s: string) =>
@@ -22,7 +22,7 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [slugEdited, setSlugEdited] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<Error | null>(null)
   const [busy, setBusy] = useState(false)
   const [secret, setSecret] = useState<string | null>(null)
 
@@ -36,7 +36,7 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
             setName("")
             setSlug("")
             setSlugEdited(false)
-            setError("")
+            setError(null)
           }
         }}
       >
@@ -47,7 +47,7 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
             onSubmit={async (e) => {
               e.preventDefault()
               setBusy(true)
-              setError("")
+              setError(null)
               try {
                 const r = await api<{ project: Project; secret_key: string }>("/projects", { body: { name, slug: slug || slugify(name) } })
                 await refreshProjects()
@@ -55,7 +55,7 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
                 setSecret(r.secret_key)
                 navigate(`/p/${r.project.slug}`)
               } catch (err) {
-                setError((err as Error).message)
+                setError(err as Error)
               } finally {
                 setBusy(false)
               }
@@ -92,7 +92,16 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
               />
               <p className="text-xs text-muted-foreground">Used in the hosted page URL: /w/{slug || "slug"}</p>
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <p className="text-sm text-destructive">
+                {error.message}{" "}
+                {error instanceof ApiError && error.upgrade && (
+                  <Link href="/billing" onClick={() => setOpen(false)} className="font-medium text-foreground underline underline-offset-2">
+                    See plans
+                  </Link>
+                )}
+              </p>
+            )}
             <DialogFooter>
               <Button type="submit" disabled={busy || !name.trim()}>
                 Create

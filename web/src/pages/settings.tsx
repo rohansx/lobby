@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { api, projectPath, type Project } from "@/lib/api"
+import { toastError } from "@/lib/errors"
 import { useSession } from "@/lib/session"
 import { invalidate } from "@/lib/use-api"
 import { useProject } from "@/lib/use-project"
@@ -46,7 +47,7 @@ export default function Settings() {
       refreshProjects()
       toast.success("Saved")
     } catch (err) {
-      toast.error((err as Error).message)
+      toastError(err)
     } finally {
       setSaving(false)
     }
@@ -153,7 +154,7 @@ export default function Settings() {
                 toast.success("Project deleted")
                 navigate("/")
               } catch (err) {
-                toast.error((err as Error).message)
+                toastError(err)
               }
             }}
           >

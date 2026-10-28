@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { api, type Me, type ProjectSummary } from "@/lib/api"
 import { SessionContext } from "@/lib/session"
-import { AuthPage } from "@/pages/auth"
+import { AuthPage, type AuthMode } from "@/pages/auth"
 import { Home } from "@/pages/home"
 
 // Project pages are split out so the first paint (login or home) stays small.
@@ -14,6 +14,10 @@ const Signups = lazy(() => import("@/pages/signups"))
 const Webhooks = lazy(() => import("@/pages/webhooks"))
 const Broadcast = lazy(() => import("@/pages/broadcast"))
 const Settings = lazy(() => import("@/pages/settings"))
+const BillingPage = lazy(() => import("@/pages/billing"))
+
+// Signed-out pages: cloud instances have open signup and password reset.
+const publicModes: AuthMode[] = ["login", "signup", "forgot", "reset"]
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null)
@@ -48,7 +52,12 @@ export default function App() {
   if (me.setup) {
     body = location === "/setup" ? <AuthPage mode="setup" onDone={refreshMe} me={me} /> : <Redirect to="/setup" replace />
   } else if (!me.email) {
-    body = location === "/login" ? <AuthPage mode="login" onDone={refreshMe} me={me} /> : <Redirect to={`/login?next=${encodeURIComponent(location)}`} replace />
+    const mode = publicModes.find((m) => location === `/${m}` && (m === "login" || me.cloud))
+    body = mode ? (
+      <AuthPage key={mode} mode={mode} onDone={refreshMe} me={me} />
+    ) : (
+      <Redirect to={`/login?next=${encodeURIComponent(location + window.location.search)}`} replace />
+    )
   } else {
     body = (
       <AppShell>
@@ -58,6 +67,12 @@ export default function App() {
             <Route path="/login">
               <Redirect to={safeNext()} replace />
             </Route>
+            {["/signup", "/forgot", "/reset"].map((p) => (
+              <Route key={p} path={p}>
+                <Redirect to="/" replace />
+              </Route>
+            ))}
+            {me.cloud && <Route path="/billing" component={BillingPage} />}
             <Route path="/setup">
               <Redirect to="/" replace />
             </Route>

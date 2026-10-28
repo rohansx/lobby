@@ -39,11 +39,12 @@ type Project struct {
 	ConsentText       string `json:"consent_text"`
 	ConsentVersion    int    `json:"consent_version"`
 	CreatedAt         int64  `json:"created_at"`
+	OwnerID           int64  `json:"-"`
 }
 
 const projectCols = `id, slug, name, public_key, secret_key_hash, allowed_origins, doi_enabled, position_mode,
 	points_per_referral, referral_ip_cap, referral_hourly_cap, show_position, counter_floor, from_name, reply_to,
-	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at, notify_email`
+	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at, notify_email, COALESCE(owner_id, 0)`
 
 type scanner interface{ Scan(...any) error }
 
@@ -52,7 +53,7 @@ func scanProject(row scanner) (*Project, error) {
 	err := row.Scan(&p.ID, &p.Slug, &p.Name, &p.PublicKey, &p.SecretKeyHash, &p.AllowedOrigins, &p.DOIEnabled,
 		&p.PositionMode, &p.PointsPerReferral, &p.ReferralIPCap, &p.ReferralHourlyCap, &p.ShowPosition,
 		&p.CounterFloor, &p.FromName, &p.ReplyTo, &p.Headline, &p.Description, &p.SiteURL, &p.RedirectURL, &p.InviteURL,
-		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt, &p.NotifyEmail)
+		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt, &p.NotifyEmail, &p.OwnerID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -66,8 +67,11 @@ func hashKey(k string) string {
 
 var slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,40}$`)
 
+// slugReserved keeps names that would read as ours off shared cloud hosted pages.
+var slugReserved = map[string]bool{"lobby": true, "admin": true, "api": true, "app": true, "billing": true, "support": true, "help": true, "login": true, "signup": true, "www": true}
+
 // CreateProject returns the project and its secret key, which is only ever shown once.
-func (a *App) CreateProject(ctx context.Context, name, slug string) (*Project, string, error) {
+func (a *App) CreateProject(ctx context.Context, ownerID int64, name, slug string) (*Project, string, error) {
 	slug = strings.ToLower(strings.TrimSpace(slug))
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -76,10 +80,13 @@ func (a *App) CreateProject(ctx context.Context, name, slug string) (*Project, s
 	if !slugRe.MatchString(slug) {
 		return nil, "", errors.New("slug must be lowercase letters, digits and dashes")
 	}
+	if a.cfg.Cloud && slugReserved[slug] {
+		return nil, "", errors.New("slug is already taken")
+	}
 	pk := "pk_" + randHex(12)
 	sk := "sk_" + randHex(24)
-	res, err := a.db.W.ExecContext(ctx, `INSERT INTO projects (slug, name, public_key, secret_key_hash, from_name, headline, created_at, notify_email)
-		VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT email FROM admins ORDER BY id LIMIT 1), ''))`, slug, name, pk, hashKey(sk), name, "Join the "+name+" waitlist", now())
+	res, err := a.db.W.ExecContext(ctx, `INSERT INTO projects (slug, name, public_key, secret_key_hash, from_name, headline, created_at, owner_id, notify_email)
+		VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), COALESCE((SELECT email FROM admins WHERE id = ?), (SELECT email FROM admins ORDER BY id LIMIT 1), ''))`, slug, name, pk, hashKey(sk), name, "Join the "+name+" waitlist", now(), ownerID, ownerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, "", errors.New("slug is already taken")
@@ -113,8 +120,9 @@ func (a *App) ProjectBySecret(ctx context.Context, sk string) (*Project, error) 
 	return scanProject(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE secret_key_hash = ?`, hashKey(sk)))
 }
 
-func (a *App) Projects(ctx context.Context) ([]*Project, error) {
-	rows, err := a.db.R.QueryContext(ctx, `SELECT `+projectCols+` FROM projects ORDER BY name`)
+// Projects lists the projects an account can see: its own in cloud mode, all of them otherwise.
+func (a *App) Projects(ctx context.Context, ownerID int64) ([]*Project, error) {
+	rows, err := a.db.R.QueryContext(ctx, `SELECT `+projectCols+` FROM projects WHERE ? = 0 OR owner_id = ? ORDER BY name`, a.scope(ownerID), a.scope(ownerID))
 	if err != nil {
 		return nil, err
 	}

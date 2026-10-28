@@ -165,6 +165,30 @@ var migrations = []string{
 		created_at INTEGER NOT NULL);`,
 	`ALTER TABLE projects ADD COLUMN notify_email TEXT NOT NULL DEFAULT '';
 	UPDATE projects SET notify_email = COALESCE((SELECT email FROM admins ORDER BY id LIMIT 1), '');`,
+	`ALTER TABLE admins ADD COLUMN verified_at INTEGER;
+	UPDATE admins SET verified_at = created_at;
+	ALTER TABLE admins ADD COLUMN plan TEXT NOT NULL DEFAULT 'free';
+	ALTER TABLE admins ADD COLUMN plan_interval TEXT NOT NULL DEFAULT '';
+	ALTER TABLE admins ADD COLUMN sub_status TEXT NOT NULL DEFAULT '';
+	ALTER TABLE admins ADD COLUMN period_end INTEGER;
+	ALTER TABLE admins ADD COLUMN cancel_at_period_end INTEGER NOT NULL DEFAULT 0;
+	ALTER TABLE admins ADD COLUMN polar_customer_id TEXT NOT NULL DEFAULT '';
+	ALTER TABLE admins ADD COLUMN polar_subscription_id TEXT NOT NULL DEFAULT '';
+	ALTER TABLE admins ADD COLUMN limit_mailed_at INTEGER;
+	ALTER TABLE projects ADD COLUMN owner_id INTEGER REFERENCES admins(id) ON DELETE CASCADE;
+	UPDATE projects SET owner_id = (SELECT id FROM admins ORDER BY id LIMIT 1);
+	CREATE INDEX projects_owner ON projects(owner_id);
+	CREATE TABLE auth_tokens (
+		token_hash TEXT PRIMARY KEY,
+		admin_id INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+		purpose TEXT NOT NULL,
+		expires_at INTEGER NOT NULL);
+	CREATE TABLE email_usage (
+		admin_id INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+		month TEXT NOT NULL,
+		sent INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (admin_id, month));
+	CREATE TABLE billing_events (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL);`,
 }
 
 func (s *Store) migrate() error {

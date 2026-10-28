@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -102,6 +103,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /u/{token}", s.unsubscribePage)
 	mux.HandleFunc("POST /u/{token}", s.unsubscribePost)
 	mux.HandleFunc("POST /v1/hooks/resend", s.resendHook)
+	mux.HandleFunc("POST /v1/hooks/polar", s.polarHook)
+	mux.HandleFunc("GET /verify/{token}", s.verifyPage)
 
 	// Admin API: project secret key as a bearer token.
 	api := http.NewServeMux()
@@ -134,7 +137,15 @@ func (s *Server) Handler() http.Handler {
 	admin.HandleFunc("POST /api/admin/setup", s.adminSetup)
 	admin.HandleFunc("POST /api/admin/login", s.adminLogin)
 	admin.HandleFunc("POST /api/admin/logout", s.adminLogout)
+	admin.HandleFunc("POST /api/admin/signup", s.cloudOnly(s.adminSignup))
+	admin.HandleFunc("POST /api/admin/forgot", s.cloudOnly(s.adminForgot))
+	admin.HandleFunc("POST /api/admin/reset", s.cloudOnly(s.adminReset))
 	authed := http.NewServeMux()
+	authed.HandleFunc("POST /api/admin/verify/resend", s.cloudOnly(s.adminResendVerification))
+	authed.HandleFunc("GET /api/admin/billing", s.cloudOnly(s.adminBilling))
+	authed.HandleFunc("POST /api/admin/billing/checkout", s.cloudOnly(s.adminCheckout))
+	authed.HandleFunc("POST /api/admin/billing/portal", s.cloudOnly(s.adminPortal))
+	authed.HandleFunc("DELETE /api/admin/account", s.cloudOnly(s.adminDeleteAccount))
 	authed.HandleFunc("GET /api/admin/projects", s.adminProjects)
 	authed.HandleFunc("POST /api/admin/projects", s.adminCreateProject)
 	authed.HandleFunc("GET /api/admin/projects/{slug}", s.adminGetProject)
@@ -242,6 +253,10 @@ func (s *Server) render(w http.ResponseWriter, code int, name string, data map[s
 		data = map[string]any{}
 	}
 	data["BaseURL"] = s.app.cfg.BaseURL
+	// Paid cloud plans drop the "powered by Lobby" footer.
+	if p, ok := data["Project"].(*Project); ok && s.app.cfg.Cloud && !s.app.branded(context.Background(), p) {
+		data["Unbranded"] = true
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	if err := t.ExecuteTemplate(w, "layout", data); err != nil {

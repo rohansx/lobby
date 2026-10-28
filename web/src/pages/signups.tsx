@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api, projectPath, STATUSES, type Signup } from "@/lib/api"
+import { toastError } from "@/lib/errors"
 import { ago, dateTime, num } from "@/lib/format"
 import { useSession } from "@/lib/session"
 import { invalidate, useApi } from "@/lib/use-api"
@@ -80,7 +81,7 @@ export default function Signups() {
       reload()
       refreshProjects()
     } catch (err) {
-      toast.error((err as Error).message)
+      toastError(err)
     }
   }
 

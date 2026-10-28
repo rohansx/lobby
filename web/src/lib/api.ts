@@ -3,10 +3,42 @@ export const STATUSES: Status[] = ["pending", "confirmed", "invited", "joined", 
 
 export interface Me {
   setup: boolean
+  cloud: boolean
   email?: string
+  verified?: boolean
+  plan?: Plan
   mailer: string
   from: string
   base_url: string
+}
+
+// Cloud plans; -1 means unlimited.
+export interface Plan {
+  id: "free" | "launch" | "pro" | "self"
+  name: string
+  signups: number
+  projects: number
+  emails: number
+  webhooks: boolean
+  branding: boolean
+  monthly: number
+  yearly: number
+}
+
+export interface Billing {
+  account: {
+    email: string
+    verified: boolean
+    plan: string
+    interval: "" | "month" | "year"
+    status: string
+    period_end: number | null
+    cancel_at_period_end: boolean
+  }
+  plan: Plan
+  usage: { signups: number; projects: number; emails: number }
+  plans: Plan[]
+  billing_enabled: boolean
 }
 
 export interface Project {
@@ -109,9 +141,11 @@ export interface Broadcast {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  upgrade: boolean
+  constructor(status: number, message: string, upgrade = false) {
     super(message)
     this.status = status
+    this.upgrade = upgrade
   }
 }
 
@@ -124,10 +158,10 @@ export async function api<T = unknown>(path: string, init?: { method?: string; b
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    if (res.status === 401 && !path.startsWith("/login") && !path.startsWith("/setup")) {
+    if (res.status === 401 && !["/login", "/setup", "/signup", "/reset"].some((p) => path.startsWith(p))) {
       window.dispatchEvent(new Event("lobby:signed-out"))
     }
-    throw new ApiError(res.status, data.error ?? res.statusText)
+    throw new ApiError(res.status, data.error ?? res.statusText, res.status === 402)
   }
   return data as T
 }

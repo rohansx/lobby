@@ -120,6 +120,9 @@ func clip(s string, n int) string {
 	return s
 }
 
+// ErrWaitlistFull means the owner's plan has no room for another signup.
+var ErrWaitlistFull = &ValidationError{"This waitlist isn't taking new signups right now. Please check back soon."}
+
 // SubmitSignup is the hot path: validate, one transaction that inserts the
 // signup and enqueues its email and webhooks, then wake the worker.
 func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*SignupResult, error) {
@@ -139,6 +142,7 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 	if a.isSuppressed(ctx, p.ID, email) {
 		return &SignupResult{Fake: true}, nil
 	}
+	plan, owner := a.planForOwner(ctx, p.OwnerID)
 
 	tx, err := a.db.W.BeginTx(ctx, nil)
 	if err != nil {
@@ -155,6 +159,10 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 		return &SignupResult{Signup: existing}, nil
 	} else if !errors.Is(err, ErrNotFound) {
 		return nil, err
+	}
+
+	if !a.signupAllowed(ctx, tx, p, plan, owner) {
+		return nil, ErrWaitlistFull
 	}
 
 	var referredBy *int64

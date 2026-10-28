@@ -23,7 +23,7 @@ func newTestApp(t *testing.T) *App {
 
 func newTestProject(t *testing.T, a *App, doi bool) *Project {
 	t.Helper()
-	p, _, err := a.CreateProject(context.Background(), "Convox", "convox-"+randCode(4))
+	p, _, err := a.CreateProject(context.Background(), 0, "Convox", "convox-"+randCode(4))
 	if err != nil {
 		t.Fatal(err)
 	}

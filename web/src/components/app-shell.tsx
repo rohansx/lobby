@@ -1,4 +1,4 @@
-import { ChevronsUpDownIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, SettingsIcon, UsersIcon, WebhookIcon } from "lucide-react"
+import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, SettingsIcon, UsersIcon, WebhookIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useRoute } from "wouter"
 import { NewProjectDialog } from "@/components/new-project-dialog"
@@ -22,6 +22,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { VerifyBanner } from "@/components/verify-banner"
 import { api } from "@/lib/api"
 import { num } from "@/lib/format"
 import { useSession } from "@/lib/session"
@@ -110,7 +111,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           {queue.failed > 0 && (
-            <p className="px-2 text-xs text-destructive group-data-[collapsible=icon]:hidden">{queue.failed} emails failed to send. Check the server log.</p>
+            <p className="px-2 text-xs text-destructive group-data-[collapsible=icon]:hidden">
+              {queue.failed} emails failed to send.{me.cloud ? "" : " Check the server log."}
+            </p>
           )}
           <SidebarMenu>
             <SidebarMenuItem>
@@ -120,16 +123,27 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs font-semibold uppercase">{me.email?.[0]}</div>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">{me.email}</span>
-                      <span className="truncate text-xs text-muted-foreground">{me.mailer.startsWith("log") ? "Email to log only" : `Email via ${me.mailer}`}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {me.cloud ? `${me.plan?.name ?? "Free"} plan` : me.mailer.startsWith("log") ? "Email to log only" : `Email via ${me.mailer}`}
+                      </span>
                     </div>
                     <ChevronsUpDownIcon className="ml-auto size-4" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="text-xs text-muted-foreground">Sending from</div>
-                    <div className="truncate">{me.from || "LOBBY_FROM_EMAIL not set"}</div>
-                  </DropdownMenuLabel>
+                  {me.cloud ? (
+                    <DropdownMenuItem asChild>
+                      <Link href="/billing">
+                        <CreditCardIcon />
+                        Plan and billing
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="text-xs text-muted-foreground">Sending from</div>
+                      <div className="truncate">{me.from || "LOBBY_FROM_EMAIL not set"}</div>
+                    </DropdownMenuLabel>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={async () => {
@@ -150,9 +164,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur">
           <SidebarTrigger />
-          <div className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name ?? (slug ? "" : "Projects")}</div>
+          <div className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name ?? (slug ? "" : location === "/billing" ? "Billing" : "Projects")}</div>
+          {me.cloud && me.plan?.id === "free" && (
+            <Link href="/billing" className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
+              Upgrade
+            </Link>
+          )}
           <ThemeToggle />
         </header>
+        <VerifyBanner />
         <div className="min-w-0 flex-1">{children}</div>
       </SidebarInset>
     </SidebarProvider>

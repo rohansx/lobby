@@ -59,6 +59,9 @@ func (a *App) lineIDs(ctx context.Context, p *Project, n int) ([]int64, error) {
 // InviteIDs invites specific people. Anyone already invited, joined, removed
 // or still unconfirmed is skipped.
 func (a *App) InviteIDs(ctx context.Context, p *Project, ids []int64) ([]*Signup, error) {
+	if err := a.checkBulkEmail(ctx, p, int64(len(ids))); err != nil {
+		return nil, err
+	}
 	tx, err := a.db.W.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err

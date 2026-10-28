@@ -165,7 +165,14 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 	default:
 		return fmt.Errorf("%w: unknown job kind %q", ErrPermanent, kind)
 	}
-	return a.mailer.Send(ctx, m)
+	if err := a.mailer.Send(ctx, m); err != nil {
+		return err
+	}
+	// Notifications to the owner don't count against their plan.
+	if kind != "email.notify" {
+		a.countEmail(ctx, p)
+	}
+	return nil
 }
 
 // Broadcast queues one email per recipient. It is the single launch email the
@@ -183,6 +190,13 @@ func (a *App) Broadcast(ctx context.Context, p *Project, subject, body, audience
 	if statuses == nil {
 		return 0, errors.New("audience must be confirmed, invited or all")
 	}
+	ph := strings.TrimSuffix(strings.Repeat("?,", len(statuses)), ",")
+	var n int64
+	a.db.R.QueryRowContext(ctx, `SELECT COUNT(*) FROM signups WHERE project_id = ? AND unsubscribed_at IS NULL AND status IN (`+ph+`)`,
+		append([]any{p.ID}, statuses...)...).Scan(&n)
+	if err := a.checkBulkEmail(ctx, p, n); err != nil {
+		return 0, err
+	}
 	tx, err := a.db.W.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -194,7 +208,6 @@ func (a *App) Broadcast(ctx context.Context, p *Project, subject, body, audience
 		return 0, err
 	}
 	bid, _ := res.LastInsertId()
-	ph := strings.TrimSuffix(strings.Repeat("?,", len(statuses)), ",")
 	rows, err := tx.QueryContext(ctx, `SELECT id FROM signups WHERE project_id = ? AND unsubscribed_at IS NULL AND status IN (`+ph+`)`,
 		append([]any{p.ID}, statuses...)...)
 	if err != nil {
@@ -246,9 +259,11 @@ func (a *App) Broadcasts(ctx context.Context, p *Project) ([]Broadcast, error) {
 }
 
 // QueueStats reports outstanding and failed email jobs for the dashboard.
-func (a *App) QueueStats(ctx context.Context) (queued, failed int) {
-	a.db.R.QueryRowContext(ctx, `SELECT COUNT(*) FROM jobs WHERE status = 'queued'`).Scan(&queued)
-	a.db.R.QueryRowContext(ctx, `SELECT COUNT(*) FROM jobs WHERE status = 'failed'`).Scan(&failed)
+func (a *App) QueueStats(ctx context.Context, ownerID int64) (queued, failed int) {
+	const q = `SELECT COUNT(*) FROM jobs WHERE status = ? AND (? = 0 OR json_extract(payload, '$.project_id') IN (SELECT id FROM projects WHERE owner_id = ?))`
+	o := a.scope(ownerID)
+	a.db.R.QueryRowContext(ctx, q, "queued", o, o).Scan(&queued)
+	a.db.R.QueryRowContext(ctx, q, "failed", o, o).Scan(&failed)
 	return
 }
 
@@ -258,6 +273,8 @@ func (a *App) maintain(ctx context.Context) {
 	cutoff := now() - 30*86400
 	a.db.W.ExecContext(ctx, `UPDATE signups SET ip_hmac = '' WHERE ip_hmac != '' AND created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at < ?`, now())
+	a.db.W.ExecContext(ctx, `DELETE FROM auth_tokens WHERE expires_at < ?`, now())
+	a.db.W.ExecContext(ctx, `DELETE FROM billing_events WHERE created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM jobs WHERE status = 'done' AND created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM deliveries WHERE status IN ('success', 'skipped') AND created_at < ?`, now()-90*86400)
 }

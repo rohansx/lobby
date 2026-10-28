@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pricing · Lobby</title>
-<meta name="description" content="Self-host Lobby free forever, or let us run it from $5 a month. Custom domain, no branding, webhooks and API on every paid plan.">
+<meta name="description" content="Self-host Lobby free forever, or let us run it from $4 a month. Unlimited signups, no branding, webhooks and API on every paid plan.">
 <meta name="theme-color" content="#fbfaf7">
 <meta property="og:title" content="Lobby pricing">
 <meta property="og:description" content="Free to self-host. Cloud from $5 a month, with the features others charge $19 to $199 for.">
@@ -99,7 +99,8 @@
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         <span>GitHub</span>
       </a>
-      <a class="btn btn-primary" href="/#self-host">Get started
+      <a class="signin" href="https://app.lobby.rohan.sh/login">Sign in</a>
+      <a class="btn btn-primary" href="https://app.lobby.rohan.sh/signup">Get started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
@@ -113,7 +114,7 @@
       <p class="sub">Every feature is in the free, self-hosted version. Cloud is for when you'd rather not run a server, and it costs less than any hosted waitlist we could find.</p>
       <div class="billing" role="group" aria-label="Billing period">
         <button type="button" aria-pressed="true" data-period="month">Monthly</button>
-        <button type="button" aria-pressed="false" data-period="year">Yearly <em>2 months free</em></button>
+        <button type="button" aria-pressed="false" data-period="year">Yearly <em>save 20%</em></button>
       </div>
     </div>
   </div>
@@ -141,10 +142,11 @@
         <h2>Free</h2>
         <div class="price"><b>$0</b><span>per month</span></div>
         <p class="note">For trying an idea. Five times the free signups most hosted tools give you.</p>
-        <a class="btn btn-ghost" data-cloud href="https://wait.rohan.sh/w/lobby-cloud">Join early access</a>
+        <a class="btn btn-ghost" href="https://app.lobby.rohan.sh/signup">Start free</a>
         <ul>
           <li><span><b>500</b> signups</span></li>
           <li>1 waitlist</li>
+          <li><span><b>1,000</b> emails a month</span></li>
           <li>Referrals and double opt-in</li>
           <li>Hosted page, widget and HTML form</li>
           <li>CSV and NDJSON export</li>
@@ -158,12 +160,11 @@
         <h2>Launch</h2>
         <div class="price"><b data-month="$5" data-year="$4">$5</b><span data-month="per month" data-year="per month, billed $48 yearly">per month</span></div>
         <p class="note">Everything a launch needs. What others charge $19 to $199 a month for.</p>
-        <a class="btn btn-primary" data-cloud href="https://wait.rohan.sh/w/lobby-cloud">Join early access</a>
+        <a class="btn btn-primary" href="https://app.lobby.rohan.sh/signup?plan=launch">Start with Launch</a>
         <ul>
           <li><span><b>Unlimited</b> signups</span></li>
           <li><span><b>3</b> waitlists</span></li>
           <li><span><b>5,000</b> emails a month</span></li>
-          <li>Custom domain for your hosted page</li>
           <li>No Lobby branding</li>
           <li>Webhooks, Slack and full API</li>
           <li>Invite waves and launch broadcasts</li>
@@ -175,18 +176,16 @@
         <h2>Pro</h2>
         <div class="price"><b data-month="$12" data-year="$10">$12</b><span data-month="per month" data-year="per month, billed $120 yearly">per month</span></div>
         <p class="note">For studios and serial launchers running many products at once.</p>
-        <a class="btn btn-ghost" data-cloud href="https://wait.rohan.sh/w/lobby-cloud">Join early access</a>
+        <a class="btn btn-ghost" href="https://app.lobby.rohan.sh/signup?plan=pro">Start with Pro</a>
         <ul>
           <li><span><b>Unlimited</b> signups and waitlists</span></li>
           <li><span><b>25,000</b> emails a month</span></li>
-          <li><span><b>3</b> custom domains</span></li>
-          <li>Send from your own email domain</li>
           <li>Everything in Launch</li>
           <li>Priority email support</li>
         </ul>
       </div>
     </div>
-    <p class="cloud-note"><i></i>Lobby Cloud is in early access. Join the list, which runs on Lobby itself, and we'll let people in by wave.</p>
+    <p class="cloud-note"><i></i>Every Cloud account starts on Free. Upgrade from the dashboard when you need more; payments go through Polar, and you can cancel any time.</p>
   </div>
 
   <section id="compare">
@@ -196,7 +195,7 @@
           <div class="eyebrow">Compare</div>
           <h2>The same features, <span>for a lot less.</span></h2>
         </div>
-        <p>The cheapest plan from each tool that includes a custom domain, no branding, and webhooks or an API.</p>
+        <p>The cheapest plan from each tool that removes their branding and includes webhooks or an API.</p>
       </div>
       <div class="vs">
         <table>
@@ -224,7 +223,8 @@
       </div>
       <div class="faq">
         <details><summary>Why is self-hosting free?</summary><p>Lobby is open source under the MIT license. Every feature ships in the binary, with no paid tier and no limits. Cloud exists for people who'd rather not run a server, not to hold features back.</p></details>
-        <details><summary>Is Cloud available now?</summary><p>Cloud is in early access. Join the list and we'll invite people in waves. Until then, self-hosting takes about a minute with Docker.</p></details>
+        <details><summary>What happens at 500 signups on Free?</summary><p>Everyone already on your list keeps their place, and the form politely turns new visitors away until you upgrade. We email you when it happens. Launch has no signup limit.</p></details>
+        <details><summary>Can I cancel?</summary><p>Yes, any time from Manage billing. You keep your plan until the end of the period you paid for, then move to Free. Your list stays put.</p></details>
         <details><summary>What counts as an email?</summary><p>Any email Lobby sends for you: confirmations, status updates, invites and broadcasts. The notifications Lobby sends to you about new signups don't count.</p></details>
         <details><summary>Why are prices this low?</summary><p>Lobby is a single Go binary with one SQLite file per instance and uses about 20 MB of memory. It costs very little to run, so it costs very little to buy.</p></details>
         <details><summary>Can I leave?</summary><p>Yes. Export your list as CSV or NDJSON any time, on any plan, and run the same open-source Lobby on your own server.</p></details>
@@ -235,10 +235,10 @@
   <div class="final">
     <img src="/logo.svg" alt="">
     <h2>Start free. <span>Stay cheap.</span></h2>
-    <p>Run it yourself in a minute, or get on the list for Cloud.</p>
+    <p>Run it yourself in a minute, or let us host it, free to start.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="https://github.com/rohansx/lobby#quick-start">Self-host for free</a>
-      <a class="btn btn-ghost" data-cloud href="https://wait.rohan.sh/w/lobby-cloud">Join Cloud early access</a>
+      <a class="btn btn-ghost" href="https://app.lobby.rohan.sh/signup">Start free on Cloud</a>
     </div>
   </div>
 </main>
@@ -252,7 +252,8 @@
       <a href="https://github.com/rohansx/lobby">GitHub</a>
       <a href="https://github.com/rohansx/lobby#configuration">Docs</a>
       <a href="https://github.com/rohansx/lobby/issues">Issues</a>
-      <a href="https://github.com/rohansx/lobby/blob/main/LICENSE">License</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
     </nav>
   </div>
 </footer>

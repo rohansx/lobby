@@ -28,6 +28,10 @@ func (s *Server) requireKey(next http.Handler) http.Handler {
 			jsonError(w, http.StatusUnauthorized, "invalid secret key")
 			return
 		}
+		if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
+			jsonError(w, http.StatusPaymentRequired, "the REST API comes with the Launch plan")
+			return
+		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), projectKey, p)))
 	})
 }
@@ -83,7 +87,7 @@ func (s *Server) apiListSignups(w http.ResponseWriter, r *http.Request) {
 	cursor, _ := strconv.ParseInt(q.Get("cursor"), 10, 64)
 	list, err := s.app.ListSignups(r.Context(), p, SignupFilter{Status: q.Get("status"), Query: q.Get("q"), Before: cursor, Limit: limit})
 	if err != nil {
-		jsonError(w, 500, err.Error())
+		limitError(w, err)
 		return
 	}
 	out := make([]signupOut, 0, len(list))
@@ -169,7 +173,7 @@ func (s *Server) apiInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		jsonError(w, 500, err.Error())
+		limitError(w, err)
 		return
 	}
 	out := make([]signupOut, 0, len(list))
@@ -384,7 +388,7 @@ func (s *Server) apiBroadcast(w http.ResponseWriter, r *http.Request) {
 	}
 	n, err := s.app.Broadcast(r.Context(), apiProject(r), body.Subject, body.Body, body.Audience)
 	if err != nil {
-		jsonError(w, 400, err.Error())
+		limitError(w, err)
 		return
 	}
 	writeJSON(w, 202, map[string]any{"ok": true, "recipients": n})

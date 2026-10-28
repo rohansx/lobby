@@ -11,6 +11,6 @@
 <main>
 {{template "content" .}}
 </main>
-<footer>Waitlist powered by Lobby</footer>
+{{if not .Unbranded}}<footer><a href="https://lobby.rohan.sh/?ref=badge" target="_blank" rel="noopener">Waitlist powered by Lobby</a></footer>{{end}}
 </body>
 </html>{{end}}

@@ -40,9 +40,15 @@ func (s *Server) requireSession(next http.Handler) http.Handler {
 	})
 }
 
+func adminID(r *http.Request) int64 { return r.Context().Value(adminKey{}).(int64) }
+
 // adminProject loads the {slug} project for an /api/admin/projects/{slug}/... route.
+// In cloud mode another account's project reads as not found.
 func (s *Server) adminProject(w http.ResponseWriter, r *http.Request) *Project {
 	p, err := s.app.ProjectBySlug(r.Context(), r.PathValue("slug"))
+	if err == nil && s.app.cfg.Cloud && p.OwnerID != adminID(r) {
+		err = ErrNotFound
+	}
 	if err != nil {
 		jsonError(w, http.StatusNotFound, "project not found")
 		return nil
@@ -53,10 +59,15 @@ func (s *Server) adminProject(w http.ResponseWriter, r *http.Request) *Project {
 // Session state, readable without a session so the app knows whether to show
 // setup, login or the dashboard.
 func (s *Server) adminMe(w http.ResponseWriter, r *http.Request) {
-	out := map[string]any{"setup": !s.app.HasAdmin(r.Context()), "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL}
+	cloud := s.app.cfg.Cloud
+	out := map[string]any{"setup": !cloud && !s.app.HasAdmin(r.Context()), "cloud": cloud, "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL}
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		if id, ok := s.app.SessionAdmin(r.Context(), c.Value); ok {
-			out["email"] = s.app.AdminEmail(r.Context(), id)
+			if ac, err := s.app.Account(r.Context(), id); err == nil {
+				out["email"] = ac.Email
+				out["verified"] = ac.Verified || !cloud
+				out["plan"] = s.app.PlanOf(ac)
+			}
 		}
 	}
 	writeJSON(w, 200, out)
@@ -68,6 +79,10 @@ type credentials struct {
 }
 
 func (s *Server) adminSetup(w http.ResponseWriter, r *http.Request) {
+	if s.app.cfg.Cloud {
+		jsonError(w, 404, "not found")
+		return
+	}
 	var c credentials
 	if err := decodeJSON(r, &c); err != nil {
 		jsonError(w, 400, "invalid JSON body")
@@ -119,7 +134,7 @@ type projectSummary struct {
 }
 
 func (s *Server) adminProjects(w http.ResponseWriter, r *http.Request) {
-	projects, err := s.app.Projects(r.Context())
+	projects, err := s.app.Projects(r.Context(), adminID(r))
 	if err != nil {
 		jsonError(w, 500, err.Error())
 		return
@@ -139,7 +154,7 @@ func (s *Server) adminProjects(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, ps)
 	}
-	queued, failed := s.app.QueueStats(r.Context())
+	queued, failed := s.app.QueueStats(r.Context(), adminID(r))
 	writeJSON(w, 200, map[string]any{"data": out, "queued": queued, "failed": failed})
 }
 
@@ -149,7 +164,11 @@ func (s *Server) adminCreateProject(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 400, "invalid JSON body")
 		return
 	}
-	p, sk, err := s.app.CreateProject(r.Context(), body.Name, body.Slug)
+	if err := s.app.checkProjectLimit(r.Context(), adminID(r)); err != nil {
+		limitError(w, err)
+		return
+	}
+	p, sk, err := s.app.CreateProject(r.Context(), adminID(r), body.Name, body.Slug)
 	if err != nil {
 		jsonError(w, 400, err.Error())
 		return
@@ -300,7 +319,7 @@ func (s *Server) adminSignupAction(w http.ResponseWriter, r *http.Request) {
 	case "invite":
 		list, err := s.app.InviteIDs(ctx, p, body.IDs)
 		if err != nil {
-			jsonError(w, 400, err.Error())
+			limitError(w, err)
 			return
 		}
 		n = len(list)
@@ -360,7 +379,7 @@ func (s *Server) adminInviteNext(w http.ResponseWriter, r *http.Request) {
 	}
 	list, err := s.app.InviteNext(r.Context(), p, body.Count)
 	if err != nil {
-		jsonError(w, 400, err.Error())
+		limitError(w, err)
 		return
 	}
 	writeJSON(w, 200, map[string]any{"ok": true, "count": len(list)})
@@ -415,6 +434,10 @@ func (s *Server) adminCreateWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := decodeJSON(r, &body); err != nil {
 		jsonError(w, 400, "invalid JSON body")
+		return
+	}
+	if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
+		limitError(w, &ErrLimit{"Webhooks come with the Launch plan. Upgrade to add one."})
 		return
 	}
 	wh, err := s.app.CreateWebhook(r.Context(), p, strings.TrimSpace(body.URL), body.Kind, body.Events)
@@ -498,8 +521,19 @@ func (s *Server) adminBroadcast(w http.ResponseWriter, r *http.Request) {
 	}
 	n, err := s.app.Broadcast(r.Context(), p, body.Subject, body.Body, body.Audience)
 	if err != nil {
-		jsonError(w, 400, err.Error())
+		limitError(w, err)
 		return
 	}
 	writeJSON(w, 202, map[string]any{"ok": true, "recipients": n})
+}
+
+// limitError answers 402 for a plan limit, so the dashboard can offer an
+// upgrade, and 400 for anything else.
+func limitError(w http.ResponseWriter, err error) {
+	var le *ErrLimit
+	if errors.As(err, &le) {
+		writeJSON(w, http.StatusPaymentRequired, map[string]any{"ok": false, "error": le.Msg, "upgrade": true})
+		return
+	}
+	jsonError(w, 400, err.Error())
 }

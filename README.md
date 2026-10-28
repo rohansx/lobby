@@ -134,6 +134,20 @@ Options: `data-button`, `data-placeholder`, `data-success`, `data-counter`. Them
 | `LOBBY_TRUST_PROXY` | `0` if Lobby is exposed directly rather than behind a reverse proxy |
 | `LOBBY_CHECK_MX` | `0` to skip the MX lookup on signup |
 
+<details>
+<summary>Cloud mode (hosting Lobby for other people)</summary>
+
+`LOBBY_CLOUD=1` turns an instance into a multi-tenant service, which is how [Lobby Cloud](https://lobby.rohan.sh/pricing) runs. Anyone can sign up at `/signup`, confirm their email, and see only their own waitlists. Accounts get the Free, Launch or Pro limits (signups, waitlists, emails a month, webhooks and API, the "powered by Lobby" badge), and billing runs through [Polar](https://polar.sh) as merchant of record. Without `LOBBY_CLOUD`, none of this applies: one admin, every feature, no limits.
+
+| Variable | Purpose |
+| --- | --- |
+| `LOBBY_CLOUD` | `1` for open signup, per-account projects and plan limits |
+| `POLAR_ACCESS_TOKEN` | Polar organization access token (checkouts, customer sessions, subscriptions) |
+| `POLAR_WEBHOOK_SECRET` | Secret of the Polar webhook pointed at `/v1/hooks/polar`, with the `subscription.*` events |
+| `POLAR_PRODUCT_LAUNCH_MONTHLY`, `_LAUNCH_YEARLY`, `_PRO_MONTHLY`, `_PRO_YEARLY` | Polar product IDs for each plan and interval |
+| `POLAR_SANDBOX` | `1` to use Polar's sandbox while testing |
+</details>
+
 Per-project settings live in the dashboard: allowed origins, double opt-in, position mode, referral caps, sender name, reply-to, the new-signup notification address, page copy and consent text.
 
 > **Deliverability matters more than any feature.** Before launch, add the SPF, DKIM and DMARC records your provider gives you for the sending domain. Then sign up from a fresh inbox and check that the confirmation lands.

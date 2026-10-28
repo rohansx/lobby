@@ -1,4 +1,3 @@
-import { InboxIcon } from "lucide-react"
 import { useState } from "react"
 import { useLocation } from "wouter"
 import { Button } from "@/components/ui/button"
@@ -18,10 +17,8 @@ export function AuthPage({ mode, me, onDone }: { mode: "setup" | "login"; me: Me
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2 font-semibold">
-          <div className="flex size-7 items-center justify-center rounded-md bg-[#2a78d6] text-white">
-            <InboxIcon className="size-4" />
-          </div>
+        <div className="mb-6 flex items-center justify-center gap-2.5 text-lg font-medium tracking-[-0.03em]">
+          <img src="/favicon.svg" alt="" className="size-8 rounded-lg dark:ring-1 dark:ring-white/15" />
           Lobby
         </div>
         <Card>

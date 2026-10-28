@@ -1,4 +1,4 @@
-import { ChevronsUpDownIcon, InboxIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, SettingsIcon, UsersIcon, WebhookIcon } from "lucide-react"
+import { ChevronsUpDownIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, SettingsIcon, UsersIcon, WebhookIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useRoute } from "wouter"
 import { NewProjectDialog } from "@/components/new-project-dialog"
@@ -49,11 +49,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild tooltip="All projects">
                 <Link href="/">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#2a78d6] text-white">
-                    <InboxIcon className="size-4" />
-                  </div>
+                  <img src="/favicon.svg" alt="" className="size-8 rounded-lg dark:ring-1 dark:ring-white/15" />
                   <div className="grid flex-1 text-left leading-tight">
-                    <span className="font-semibold">Lobby</span>
+                    <span className="font-medium tracking-[-0.03em]">Lobby</span>
                     <span className="truncate text-xs text-muted-foreground">Waitlists</span>
                   </div>
                 </Link>

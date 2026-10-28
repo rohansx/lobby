@@ -73,7 +73,7 @@ export function Home() {
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-lg font-semibold tabular-nums">{num(value)}</div>
+      <div className="text-xl font-light tabular-nums tracking-[-0.03em]">{num(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   )

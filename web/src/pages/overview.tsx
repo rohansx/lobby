@@ -204,7 +204,7 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint: 
         <CardDescription>{label}</CardDescription>
       </CardHeader>
       <CardContent className="px-4">
-        <div className="text-2xl font-semibold tabular-nums tracking-tight">{value}</div>
+        <div className="text-3xl font-light tabular-nums tracking-[-0.04em]">{value}</div>
         <div className="mt-0.5 truncate text-xs text-muted-foreground">{hint}</div>
       </CardContent>
     </Card>

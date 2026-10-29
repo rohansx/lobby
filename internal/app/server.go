@@ -105,6 +105,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/hooks/resend", s.resendHook)
 	mux.HandleFunc("POST /v1/hooks/polar", s.polarHook)
 	mux.HandleFunc("GET /verify/{token}", s.verifyPage)
+	mux.HandleFunc("GET /auth/{provider}/start", s.oauthStart)
+	mux.HandleFunc("GET /auth/{provider}/callback", s.oauthCallback)
 
 	// Admin API: project secret key as a bearer token.
 	api := http.NewServeMux()

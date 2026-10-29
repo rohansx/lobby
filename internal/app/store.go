@@ -189,6 +189,14 @@ var migrations = []string{
 		sent INTEGER NOT NULL DEFAULT 0,
 		PRIMARY KEY (admin_id, month));
 	CREATE TABLE billing_events (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL);`,
+	`CREATE TABLE oauth_identities (
+		provider TEXT NOT NULL,
+		subject TEXT NOT NULL,
+		admin_id INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+		email TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		PRIMARY KEY (provider, subject));
+	CREATE INDEX oauth_identities_admin ON oauth_identities(admin_id);`,
 }
 
 func (s *Store) migrate() error {

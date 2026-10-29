@@ -4,6 +4,7 @@ export const STATUSES: Status[] = ["pending", "confirmed", "invited", "joined", 
 export interface Me {
   setup: boolean
   cloud: boolean
+  providers: ("google" | "github")[]
   email?: string
   verified?: boolean
   plan?: Plan
@@ -29,6 +30,7 @@ export interface Billing {
   account: {
     email: string
     verified: boolean
+    has_password: boolean
     plan: string
     interval: "" | "month" | "year"
     status: string

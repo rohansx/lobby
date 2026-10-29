@@ -81,10 +81,17 @@ func (a *App) Login(ctx context.Context, email, password string) (string, error)
 	var h string
 	err := a.db.W.QueryRowContext(ctx, `SELECT id, password_hash FROM admins WHERE email = ? COLLATE NOCASE`, strings.TrimSpace(email)).Scan(&id, &h)
 	if err != nil || !checkPassword(h, password) {
+		if err == nil && h == "" {
+			return "", errors.New("This account signs in with Google or GitHub. Use that button, or reset your password to add one.")
+		}
 		return "", errors.New("Wrong email or password.")
 	}
+	return a.newSession(ctx, id)
+}
+
+func (a *App) newSession(ctx context.Context, adminID int64) (string, error) {
 	tok := randHex(32)
-	_, err = a.db.W.ExecContext(ctx, `INSERT INTO sessions (token_hash, admin_id, expires_at) VALUES (?, ?, ?)`, hashKey(tok), id, now()+sessionTTL)
+	_, err := a.db.W.ExecContext(ctx, `INSERT INTO sessions (token_hash, admin_id, expires_at) VALUES (?, ?, ?)`, hashKey(tok), adminID, now()+sessionTTL)
 	return tok, err
 }
 

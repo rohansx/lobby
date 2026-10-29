@@ -22,6 +22,10 @@ type Config struct {
 	// each account sees only its own projects, and plans set the limits.
 	Cloud bool        // LOBBY_CLOUD
 	Polar PolarConfig // POLAR_*, billing for cloud mode
+
+	// Sign in with Google and GitHub; each is on when both of its values are set.
+	GoogleClientID, GoogleClientSecret string // GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+	GitHubClientID, GitHubClientSecret string // GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
 }
 
 type PolarConfig struct {
@@ -37,16 +41,20 @@ func (p PolarConfig) Enabled() bool { return p.Token != "" && len(p.Products) > 
 
 func ConfigFromEnv() Config {
 	c := Config{
-		Addr:       env("LOBBY_ADDR", ":8080"),
-		BaseURL:    strings.TrimRight(env("LOBBY_BASE_URL", "http://localhost:8080"), "/"),
-		DataDir:    env("LOBBY_DATA", "./data"),
-		TrustProxy: env("LOBBY_TRUST_PROXY", "1") != "0",
-		FromEmail:  env("LOBBY_FROM_EMAIL", ""),
-		SMTPURL:    env("SMTP_URL", ""),
-		ResendKey:  env("RESEND_API_KEY", ""),
-		ResendHook: env("RESEND_WEBHOOK_SECRET", ""),
-		CheckMX:    env("LOBBY_CHECK_MX", "1") != "0",
-		Cloud:      env("LOBBY_CLOUD", "") == "1",
+		Addr:               env("LOBBY_ADDR", ":8080"),
+		BaseURL:            strings.TrimRight(env("LOBBY_BASE_URL", "http://localhost:8080"), "/"),
+		DataDir:            env("LOBBY_DATA", "./data"),
+		TrustProxy:         env("LOBBY_TRUST_PROXY", "1") != "0",
+		FromEmail:          env("LOBBY_FROM_EMAIL", ""),
+		SMTPURL:            env("SMTP_URL", ""),
+		ResendKey:          env("RESEND_API_KEY", ""),
+		ResendHook:         env("RESEND_WEBHOOK_SECRET", ""),
+		CheckMX:            env("LOBBY_CHECK_MX", "1") != "0",
+		Cloud:              env("LOBBY_CLOUD", "") == "1",
+		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
+		GitHubClientID:     env("GITHUB_CLIENT_ID", ""),
+		GitHubClientSecret: env("GITHUB_CLIENT_SECRET", ""),
 		Polar: PolarConfig{
 			Token:         env("POLAR_ACCESS_TOKEN", ""),
 			WebhookSecret: env("POLAR_WEBHOOK_SECRET", ""),
@@ -80,6 +88,7 @@ type App struct {
 	log    *slog.Logger
 	spam   *spamGuard
 	wake   chan struct{}
+	oauth  map[string]*OAuthProvider
 }
 
 func New(ctx context.Context, cfg Config) (*App, error) {
@@ -103,6 +112,7 @@ func New(ctx context.Context, cfg Config) (*App, error) {
 	}
 	a.mailer = newMailer(cfg, a.log)
 	a.spam = newSpamGuard(cfg.CheckMX)
+	a.oauth = oauthProviders(cfg)
 	return a, nil
 }
 

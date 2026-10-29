@@ -146,6 +146,10 @@ Options: `data-button`, `data-placeholder`, `data-success`, `data-counter`. Them
 | `POLAR_WEBHOOK_SECRET` | Secret of the Polar webhook pointed at `/v1/hooks/polar`, with the `subscription.*` events |
 | `POLAR_PRODUCT_LAUNCH_MONTHLY`, `_LAUNCH_YEARLY`, `_PRO_MONTHLY`, `_PRO_YEARLY` | Polar product IDs for each plan and interval |
 | `POLAR_SANDBOX` | `1` to use Polar's sandbox while testing |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | "Continue with Google". Redirect URI: `{LOBBY_BASE_URL}/auth/google/callback` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | "Continue with GitHub". Callback URL: `{LOBBY_BASE_URL}/auth/github/callback` |
+
+Google and GitHub sign-in also work on a self-hosted instance, where they only let the existing admin in.
 </details>
 
 Per-project settings live in the dashboard: allowed origins, double opt-in, position mode, referral caps, sender name, reply-to, the new-signup notification address, page copy and consent text.

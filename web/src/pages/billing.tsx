@@ -170,7 +170,7 @@ export default function BillingPage() {
       </div>
       {data && !data.billing_enabled && <p className="mt-4 text-sm text-muted-foreground">Paid plans open soon. Everything on Free works today.</p>}
 
-      <DeleteAccount />
+      <DeleteAccount hasPassword={a?.has_password ?? true} />
     </Page>
   )
 }
@@ -219,7 +219,7 @@ function Meter({ label, used, limit }: { label: string; used: number; limit: num
   )
 }
 
-function DeleteAccount() {
+function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
   const [password, setPassword] = useState("")
   const [busy, setBusy] = useState(false)
   return (
@@ -251,9 +251,13 @@ function DeleteAccount() {
           >
             <AlertDialogHeader>
               <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-              <AlertDialogDescription>Export anything you need first. Enter your password to confirm.</AlertDialogDescription>
+              <AlertDialogDescription>Export anything you need first. {hasPassword ? "Enter your password" : "Type your email address"} to confirm.</AlertDialogDescription>
             </AlertDialogHeader>
-            <Input type="password" autoComplete="current-password" required placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            {hasPassword ? (
+              <Input type="password" autoComplete="current-password" required placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            ) : (
+              <Input type="email" required placeholder="you@example.com" value={password} onChange={(e) => setPassword(e.target.value)} />
+            )}
             <AlertDialogFooter>
               <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
               <Button type="submit" variant="destructive" disabled={busy || !password}>

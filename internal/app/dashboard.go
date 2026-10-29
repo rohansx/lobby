@@ -60,7 +60,13 @@ func (s *Server) adminProject(w http.ResponseWriter, r *http.Request) *Project {
 // setup, login or the dashboard.
 func (s *Server) adminMe(w http.ResponseWriter, r *http.Request) {
 	cloud := s.app.cfg.Cloud
-	out := map[string]any{"setup": !cloud && !s.app.HasAdmin(r.Context()), "cloud": cloud, "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL}
+	providers := []string{}
+	for _, id := range []string{"google", "github"} {
+		if s.app.oauth[id] != nil {
+			providers = append(providers, id)
+		}
+	}
+	out := map[string]any{"setup": !cloud && !s.app.HasAdmin(r.Context()), "cloud": cloud, "providers": providers, "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL}
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		if id, ok := s.app.SessionAdmin(r.Context(), c.Value); ok {
 			if ac, err := s.app.Account(r.Context(), id); err == nil {

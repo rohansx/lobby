@@ -54,15 +54,16 @@ type Account struct {
 	PolarSubscription string `json:"-"`
 	LimitMailedAt     *int64 `json:"-"`
 	CreatedAt         int64  `json:"created_at"`
+	HasPassword       bool   `json:"has_password"`
 }
 
 const accountCols = `id, email, verified_at IS NOT NULL, plan, plan_interval, sub_status, period_end, cancel_at_period_end,
-	polar_customer_id, polar_subscription_id, limit_mailed_at, created_at`
+	polar_customer_id, polar_subscription_id, limit_mailed_at, created_at, password_hash != ''`
 
 func scanAccount(row scanner) (*Account, error) {
 	ac := &Account{}
 	err := row.Scan(&ac.ID, &ac.Email, &ac.Verified, &ac.Plan, &ac.Interval, &ac.SubStatus, &ac.PeriodEnd,
-		&ac.CancelAtPeriodEnd, &ac.PolarCustomerID, &ac.PolarSubscription, &ac.LimitMailedAt, &ac.CreatedAt)
+		&ac.CancelAtPeriodEnd, &ac.PolarCustomerID, &ac.PolarSubscription, &ac.LimitMailedAt, &ac.CreatedAt, &ac.HasPassword)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -337,9 +338,15 @@ func (a *App) ResetPassword(ctx context.Context, tok, password string) (string, 
 }
 
 // DeleteAccount removes the account and, by cascade, its projects and signups.
+// Accounts without a password (Google or GitHub only) confirm with their email.
 func (a *App) DeleteAccount(ctx context.Context, id int64, password string) error {
-	var h string
-	if err := a.db.W.QueryRowContext(ctx, `SELECT password_hash FROM admins WHERE id = ?`, id).Scan(&h); err != nil || !checkPassword(h, password) {
+	var h, addr string
+	if err := a.db.W.QueryRowContext(ctx, `SELECT password_hash, email FROM admins WHERE id = ?`, id).Scan(&h, &addr); err != nil {
+		return err
+	}
+	if h == "" && !strings.EqualFold(strings.TrimSpace(password), addr) {
+		return errors.New("Type your email address to confirm.")
+	} else if h != "" && !checkPassword(h, password) {
 		return errors.New("Wrong password.")
 	}
 	_, err := a.db.W.ExecContext(ctx, `DELETE FROM admins WHERE id = ?`, id)

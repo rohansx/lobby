@@ -26,7 +26,6 @@ const href = (slug) => (slug === "index" ? "/docs" : `/docs/${slug}`)
 const navLinks = [
   ["/docs", "Docs"],
   ["/pricing", "Pricing"],
-  ["/changelog", "Changelog"],
   ["/docs/self-hosting", "Self-host"],
 ]
 

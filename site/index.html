@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lobby: the self-hosted waitlist</title>
-<meta name="description" content="Waitlists for every product you launch. Referrals, double opt-in, invite waves and a dashboard. One Go binary, one SQLite file, MIT licensed.">
+<title>Lobby: waitlists for every product you launch</title>
+<meta name="description" content="Waitlists for every product you launch: referrals, double opt-in, invite waves and a dashboard. Free for your first 500 signups, or self-host the open-source version.">
 <meta name="theme-color" content="#fbfaf7">
-<meta property="og:title" content="Lobby: the self-hosted waitlist">
-<meta property="og:description" content="Referrals, double opt-in, invite waves and a dashboard. One binary, one SQLite file, no monthly bill.">
+<meta property="og:title" content="Lobby: waitlists for every product you launch">
+<meta property="og:description" content="Referrals, double opt-in, invite waves and a dashboard. Free for your first 500 signups. Open source.">
 <meta property="og:image" content="https://trylobby.app/og.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trylobby.app/">
@@ -59,22 +59,19 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="kicker"><i></i>Open source, MIT licensed · <a href="https://github.com/rohansx/lobby">rohansx/lobby</a></div>
-          <h1>Your waitlist.<span>On your server.</span></h1>
+          <div class="kicker"><i></i>Free for your first 500 signups · <a href="https://github.com/rohansx/lobby">Open source</a></div>
+          <h1>Your waitlist.<span>Live in five minutes.</span></h1>
         </div>
         <div class="hero-side">
-          <p class="sub">Lobby gives every product you launch a signup form, double opt-in, a place in line, referral links that move people up and invite waves. One binary and one SQLite file, with no monthly bill.</p>
+          <p class="sub">Lobby gives every product you launch a signup form, double opt-in, a place in line, referral links that move people up, and invite waves for launch day. Paste one line onto your site and you're collecting signups.</p>
           <div class="hero-ctas">
-            <a class="btn btn-primary" href="#self-host">Deploy in a minute
+            <a class="btn btn-primary" href="/signup">Start for free
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
             <a class="btn btn-ghost" href="#demo">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
               Watch the demo</a>
           </div>
-          <div class="cmd">
-            <code><span class="dollar">$ </span>docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby</code>
-            <button class="copy" data-copy="docker run -p 8080:8080 -v lobby:/data ghcr.io/rohansx/lobby" aria-label="Copy command"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
-          </div>
+          <p class="hero-note">No credit card needed. Rather run it yourself? <a href="#self-host">Self-host it free</a>.</p>
         </div>
       </div>
     </div>
@@ -94,11 +91,11 @@
   </div>
 
   <div class="numbers reveal">
-    <div class="num"><b>14 MB</b><span>single binary</span></div>
-    <div class="num"><b>~20 MB</b><span>memory at idle</span></div>
+    <div class="num"><b>5 min</b><span>to a live waitlist</span></div>
+    <div class="num"><b>500</b><span>signups free, no card</span></div>
+    <div class="num"><b>$4</b><span>a month for unlimited</span></div>
     <div class="num"><b>&lt;2 KB</b><span>embed widget, gzipped</span></div>
-    <div class="num"><b>1 file</b><span>SQLite holds everything</span></div>
-    <div class="num"><b>$0</b><span>per month, per list</span></div>
+    <div class="num"><b>MIT</b><span>open source, self-host free</span></div>
   </div>
 
   <section id="features">
@@ -106,7 +103,7 @@
       <div class="head split reveal">
         <div>
           <div class="eyebrow">Features</div>
-          <h2>Everything a launch needs. <span>Nothing you pay for monthly.</span></h2>
+          <h2>Everything a launch needs. <span>Even on the free plan.</span></h2>
         </div>
         <p>The parts hosted waitlist tools charge extra for are built in: referrals, invite waves, webhooks, broadcasts, and one dashboard for all your products.</p>
       </div>
@@ -115,7 +112,7 @@
         <div class="card span-4 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg></div>
           <h3>One dashboard for every product</h3>
-          <p>Signups per day, confirm rate, top sources and top referrers. Run the waitlists for all your side projects from one install.</p>
+          <p>Signups per day, confirm rate, top sources and top referrers. Run the waitlists for all your side projects from one account.</p>
           <div class="shot pad"><img src="/dashboard.png" alt="Lobby dashboard overview" loading="lazy" width="2880" height="1800"></div>
         </div>
         <div class="card span-2 reveal">
@@ -133,7 +130,7 @@
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg></div>
           <h3>Invite in waves</h3>
-          <p>Click <b>Invite next 50</b>. The front of the line gets a magic link and a code bound to their address. Your app redeems it with one API call.</p>
+          <p>Click <b>Invite the next wave</b>. The front of the line gets a magic link and a code bound to their address. Your app redeems it with one API call.</p>
         </div>
         <div class="card span-2 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
@@ -143,7 +140,7 @@
         <div class="card span-3 reveal">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
           <h3>Emails that land, and look right</h3>
-          <p>Confirmation, status, invite and launch emails through Resend or any SMTP server, with one-click unsubscribe and bounce suppression.</p>
+          <p>Confirmation, status, invite and launch emails that render in every client, with one-click unsubscribe and bounce suppression.</p>
           <div class="shot"><img src="/email.png" alt="Confirmation email" loading="lazy" width="2000" height="1280"></div>
         </div>
         <div class="card span-3 reveal">
@@ -221,7 +218,7 @@
             <div class="code-bar"><span id="codeName">index.html</span><button class="copy" id="codeCopy" aria-label="Copy snippet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
 <pre data-pane="widget"><span class="t">&lt;div</span> <span class="a">id</span>=<span class="s">"waitlist"</span><span class="t">&gt;&lt;/div&gt;</span>
 <span class="t">&lt;script</span> <span class="a">defer</span>
-  <span class="a">src</span>=<span class="s">"https://wait.example.com/v1/wl.js"</span>
+  <span class="a">src</span>=<span class="s">"https://trylobby.app/v1/wl.js"</span>
   <span class="a">data-project</span>=<span class="s">"pk_…"</span>
   <span class="a">data-target</span>=<span class="s">"#waitlist"</span>
   <span class="a">data-counter</span><span class="t">&gt;&lt;/script&gt;</span>
@@ -234,7 +231,7 @@
   }
 <span class="t">&lt;/style&gt;</span></pre>
 <pre data-pane="form" hidden><span class="t">&lt;form</span> <span class="a">method</span>=<span class="s">"post"</span>
-  <span class="a">action</span>=<span class="s">"https://wait.example.com/v1/w/pk_…/signup"</span><span class="t">&gt;</span>
+  <span class="a">action</span>=<span class="s">"https://trylobby.app/v1/w/pk_…/signup"</span><span class="t">&gt;</span>
   <span class="t">&lt;input</span> <span class="a">type</span>=<span class="s">"email"</span> <span class="a">name</span>=<span class="s">"email"</span> <span class="a">required</span><span class="t">&gt;</span>
 
   <span class="c">&lt;!-- honeypot: people never see it --&gt;</span>
@@ -245,16 +242,16 @@
   <span class="t">&lt;button&gt;</span>Join the waitlist<span class="t">&lt;/button&gt;</span>
 <span class="t">&lt;/form&gt;</span></pre>
 <pre data-pane="hosted" hidden><span class="c"># Every project gets a hosted page</span>
-https://wait.example.com/w/your-project
+https://trylobby.app/w/your-project
 
 <span class="c"># Referral links work the same way</span>
-https://wait.example.com/w/your-project?ref=k3x9
+https://trylobby.app/w/your-project?ref=k3x9
 
 <span class="c"># Or drive it from code</span>
-curl https://wait.example.com/v1/signups \
+curl https://trylobby.app/v1/signups \
   -H <span class="s">"Authorization: Bearer sk_…"</span>
 
-curl -X POST https://wait.example.com/v1/invites \
+curl -X POST https://trylobby.app/v1/invites \
   -H <span class="s">"Authorization: Bearer sk_…"</span> \
   -d <span class="s">'{"count": 50}'</span></pre>
           </div>
@@ -267,21 +264,20 @@ curl -X POST https://wait.example.com/v1/invites \
     <div class="wrap">
       <div class="head split reveal">
         <div>
-          <div class="eyebrow">Why self-host</div>
+          <div class="eyebrow">Why Lobby</div>
           <h2>Your launch list is <span>your most valuable list.</span></h2>
         </div>
-        <p>It's the people who asked to hear from you before you existed. Keep it on your own server, under your own domain.</p>
+        <p>It's the people who asked to hear from you before you existed. Lobby never holds it hostage: export it any time, or take the open-source code and run it on your own server.</p>
       </div>
       <div class="compare reveal">
         <table>
           <thead><tr><th></th><th>Lobby</th><th>Typical hosted waitlist</th></tr></thead>
           <tbody>
-            <tr><td>Price</td><td>Free and MIT licensed. Runs on a $5 VPS next to your other apps</td><td>A monthly plan, often priced per list or per signup</td></tr>
-            <tr><td>Where your list lives</td><td>One SQLite file on your server, with continuous S3 backup via Litestream</td><td>Their database</td></tr>
-            <tr><td>Multiple products</td><td>Unlimited projects in one install</td><td>Often one list per plan</td></tr>
-            <tr><td>Referrals and invites</td><td>Included, with fraud checks</td><td>Often on higher tiers</td></tr>
-            <tr><td>Email sender</td><td>Your domain, through Resend or any SMTP server</td><td>Varies, often their domain</td></tr>
-            <tr><td>Leaving</td><td>CSV or NDJSON export, or copy the file</td><td>Export, if your plan includes it</td></tr>
+            <tr><td>Price</td><td>Free for 500 signups, then $4 a month for unlimited. Or self-host for free</td><td>A monthly plan, often priced per list or per signup</td></tr>
+            <tr><td>Multiple products</td><td>Three waitlists on Launch, unlimited on Pro, all in one dashboard</td><td>Often one list per plan</td></tr>
+            <tr><td>Referrals and invites</td><td>On every plan, with fraud checks</td><td>Often on higher tiers</td></tr>
+            <tr><td>Webhooks and API</td><td>From $4 a month, with a CLI and <code>/llms.txt</code> for agents</td><td>Usually the top tier</td></tr>
+            <tr><td>Leaving</td><td>CSV or NDJSON export on every plan. The code is MIT, so you can always run it yourself</td><td>Export, if your plan includes it</td></tr>
           </tbody>
         </table>
       </div>
@@ -293,9 +289,9 @@ curl -X POST https://wait.example.com/v1/invites \
       <div class="head split reveal">
         <div>
           <div class="eyebrow">Self-host</div>
-          <h2>Running in <span>under a minute.</span></h2>
+          <h2>Prefer your own server? <span>It's one container.</span></h2>
         </div>
-        <p>Start the container, open it in a browser, create your admin account and your first project. Then paste a snippet onto your site.</p>
+        <p>The same Lobby that runs Cloud, MIT licensed, with no limits: one binary and one SQLite file in about 20 MB of memory. Start the container, create your admin account, paste a snippet onto your site. <a class="inline-link" href="/docs/self-hosting">Self-hosting guide</a>.</p>
       </div>
       <div class="deploy">
         <div class="card reveal">
@@ -350,10 +346,10 @@ lobby export --format csv</pre>
   <div class="final reveal">
     <img src="/logo.svg" alt="">
     <h2>Open the doors <span>on your terms.</span></h2>
-    <p>One command, your own server, and a list that stays yours.</p>
+    <p>Start free in five minutes, or run it on your own server. Either way, the list is yours.</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="/docs/quickstart">Read the quick start</a>
-      <a class="btn btn-ghost" href="https://github.com/rohansx/lobby">Star on GitHub</a>
+      <a class="btn btn-primary" href="/signup">Start for free</a>
+      <a class="btn btn-ghost" href="/docs/self-hosting">Self-host it</a>
     </div>
   </div>
 </main>

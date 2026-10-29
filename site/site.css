@@ -69,6 +69,9 @@ code, pre { font-family: var(--mono); }
 .hero h1 span { color: var(--faint); display: block; }
 .hero-side .sub { font-size: 18px; line-height: 1.6; color: var(--body); }
 .hero-ctas { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+.hero-note { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.hero-note a { color: var(--ink); border-bottom: 1px solid var(--line); }
+.hero-note a:hover { border-color: var(--ink); }
 .cmd { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 7px 7px 7px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; font: 13px var(--mono); color: var(--body); max-width: 100%; }
 .cmd code { overflow-x: auto; white-space: nowrap; scrollbar-width: none; flex: 1; }
 .cmd code::-webkit-scrollbar { display: none; }

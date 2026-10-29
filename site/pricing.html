@@ -160,7 +160,7 @@
         <h2>Launch</h2>
         <div class="price"><b data-month="$5" data-year="$4">$5</b><span data-month="per month" data-year="per month, billed $48 yearly">per month</span></div>
         <p class="note">Everything a launch needs. What others charge $19 to $199 a month for.</p>
-        <a class="btn btn-primary" href="/signup?plan=launch">Start with Launch</a>
+        <a class="btn btn-primary" data-plan="launch" href="/checkout?plan=launch&amp;interval=month">Start with Launch</a>
         <ul>
           <li><span><b>Unlimited</b> signups</span></li>
           <li><span><b>3</b> waitlists</span></li>
@@ -176,7 +176,7 @@
         <h2>Pro</h2>
         <div class="price"><b data-month="$12" data-year="$10">$12</b><span data-month="per month" data-year="per month, billed $120 yearly">per month</span></div>
         <p class="note">For studios and serial launchers running many products at once.</p>
-        <a class="btn btn-ghost" href="/signup?plan=pro">Start with Pro</a>
+        <a class="btn btn-ghost" data-plan="pro" href="/checkout?plan=pro&amp;interval=month">Start with Pro</a>
         <ul>
           <li><span><b>Unlimited</b> signups and waitlists</span></li>
           <li><span><b>25,000</b> emails a month</span></li>
@@ -269,6 +269,8 @@
   btns.forEach(b => b.addEventListener('click', () => {
     btns.forEach(x => x.setAttribute('aria-pressed', x === b));
     document.querySelectorAll('[data-month]').forEach(el => el.textContent = el.dataset[b.dataset.period]);
+    // The plan buttons carry the chosen period through signup to checkout.
+    document.querySelectorAll('[data-plan]').forEach(a => a.href = `/checkout?plan=${a.dataset.plan}&interval=${b.dataset.period}`);
   }));
 })();
 </script>

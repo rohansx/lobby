@@ -124,10 +124,8 @@ func (s *Server) adminCheckout(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 404, "not found")
 		return
 	}
-	if !ac.Verified {
-		jsonError(w, 400, "Confirm your email address first.")
-		return
-	}
+	// Paying doesn't wait on email confirmation: the checkout collects the
+	// buyer's details itself, and creating waitlists still needs it.
 	u, err := s.app.Checkout(r.Context(), ac, body.Plan, body.Interval)
 	if err != nil {
 		s.app.log.Error("checkout", "err", err)

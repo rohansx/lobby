@@ -162,7 +162,7 @@ export default function BillingPage() {
                 </ul>
               </CardContent>
               <CardFooter className="mt-auto">
-                <PlanButton plan={p} current={current} paid={!!paid} enabled={!!data?.billing_enabled} busy={busy} verified={!!a?.verified} onCheckout={() => go(p.id, "/billing/checkout", { plan: p.id, interval: yearly ? "year" : "month" })} onPortal={() => go("portal", "/billing/portal")} />
+                <PlanButton plan={p} current={current} paid={!!paid} enabled={!!data?.billing_enabled} busy={busy} onCheckout={() => go(p.id, "/billing/checkout", { plan: p.id, interval: yearly ? "year" : "month" })} onPortal={() => go("portal", "/billing/portal")} />
               </CardFooter>
             </Card>
           )
@@ -175,8 +175,8 @@ export default function BillingPage() {
   )
 }
 
-function PlanButton(props: { plan: Plan; current: boolean; paid: boolean; enabled: boolean; busy: string; verified: boolean; onCheckout: () => void; onPortal: () => void }) {
-  const { plan, current, paid, enabled, busy, verified } = props
+function PlanButton(props: { plan: Plan; current: boolean; paid: boolean; enabled: boolean; busy: string; onCheckout: () => void; onPortal: () => void }) {
+  const { plan, current, paid, enabled, busy } = props
   if (current) return <Button variant="outline" className="w-full" disabled>Your plan</Button>
   if (plan.id === "free") {
     return paid ? (
@@ -193,7 +193,7 @@ function PlanButton(props: { plan: Plan; current: boolean; paid: boolean; enable
     )
   }
   return (
-    <Button className="w-full" disabled={!enabled || !verified || !!busy} onClick={props.onCheckout} title={!verified ? "Confirm your email first" : undefined}>
+    <Button className="w-full" disabled={!enabled || !!busy} onClick={props.onCheckout}>
       {busy === plan.id && <LoaderIcon className="animate-spin" />}
       Upgrade to {plan.name}
     </Button>

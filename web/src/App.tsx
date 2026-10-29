@@ -15,6 +15,7 @@ const Webhooks = lazy(() => import("@/pages/webhooks"))
 const Broadcast = lazy(() => import("@/pages/broadcast"))
 const Settings = lazy(() => import("@/pages/settings"))
 const BillingPage = lazy(() => import("@/pages/billing"))
+const Checkout = lazy(() => import("@/pages/checkout"))
 
 // Signed-out pages: cloud instances have open signup and password reset.
 const publicModes: AuthMode[] = ["login", "signup", "forgot", "reset"]
@@ -56,7 +57,8 @@ export default function App() {
     body = mode ? (
       <AuthPage key={mode} mode={mode} onDone={refreshMe} me={me} />
     ) : (
-      <Redirect to={`/login?next=${encodeURIComponent(location + window.location.search)}`} replace />
+      // Someone heading to checkout is most likely new, so they get signup.
+      <Redirect to={`/${location === "/checkout" && me.cloud ? "signup" : "login"}?next=${encodeURIComponent(location + window.location.search)}`} replace />
     )
   } else {
     body = (
@@ -72,9 +74,10 @@ export default function App() {
             </Route>
             {["/signup", "/forgot", "/reset"].map((p) => (
               <Route key={p} path={p}>
-                <Redirect to="/dashboard" replace />
+                <Redirect to={safeNext()} replace />
               </Route>
             ))}
+            {me.cloud && <Route path="/checkout" component={Checkout} />}
             {me.cloud && <Route path="/billing" component={BillingPage} />}
             <Route path="/setup">
               <Redirect to="/dashboard" replace />

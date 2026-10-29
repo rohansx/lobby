@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react"
-import { Link, useLocation } from "wouter"
+import { Link } from "wouter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api, type Me } from "@/lib/api"
+import { checkoutIntent, intentLine } from "@/pages/checkout"
 
 export type AuthMode = "setup" | "login" | "signup" | "forgot" | "reset"
 
@@ -23,7 +24,6 @@ export function AuthPage({ mode, me, onDone }: { mode: AuthMode; me: Me; onDone:
   const [error, setError] = useState(() => new URLSearchParams(window.location.search).get("error") ?? "")
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [, navigate] = useLocation()
   const c = copy[mode]
   const newPassword = mode === "setup" || mode === "signup" || mode === "reset"
 
@@ -40,19 +40,26 @@ export function AuthPage({ mode, me, onDone }: { mode: AuthMode; me: Me; onDone:
       default:
         await api(`/${mode}`, { body: { email, password } })
     }
+    // Once signed in, the app's routes send the person on to ?next=,
+    // which is how a pricing-page click ends up at checkout.
     await onDone()
-    // Signups from a paid plan on the pricing page land on billing.
-    const plan = new URLSearchParams(window.location.search).get("plan")
-    if (mode === "signup" && plan) navigate("/billing")
-    else if (mode !== "login") navigate("/dashboard")
   }
+
+  const next = new URLSearchParams(window.location.search).get("next") ?? ""
+  const intent = next.startsWith("/checkout") ? checkoutIntent(next.slice(next.indexOf("?"))) : null
 
   return (
     <AuthFrame>
+      {intent && (mode === "signup" || mode === "login") && (
+        <div className="mb-4 rounded-lg border bg-background px-4 py-3 text-sm">
+          <div className="font-medium">{intentLine(intent)}</div>
+          <div className="text-muted-foreground">{mode === "signup" ? "Create your account" : "Sign in"}, then you'll go straight to checkout.</div>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>{c.title}</CardTitle>
-          <CardDescription>{c.description}</CardDescription>
+          <CardDescription>{intent && mode === "signup" ? "It takes a few seconds. Payment is the next step." : c.description}</CardDescription>
         </CardHeader>
         <CardContent>
           {(mode === "login" || mode === "signup") && me.providers?.length > 0 && <OAuthButtons providers={me.providers} />}
@@ -156,8 +163,7 @@ const providerLabels = { google: "Google", github: "GitHub" }
 // OAuthButtons start a full-page redirect to the provider; the server sends
 // the person back signed in, to ?next= or the dashboard.
 function OAuthButtons({ providers }: { providers: Me["providers"] }) {
-  const q = new URLSearchParams(window.location.search)
-  const next = q.get("plan") ? "/billing" : (q.get("next") ?? "/dashboard")
+  const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard"
   return (
     <div className="mb-5 grid gap-2.5">
       {providers.map((p) => (
@@ -196,9 +202,12 @@ function GitHubIcon() {
   )
 }
 
+// SwitchLink moves between sign-in and sign-up, keeping ?next= so a pricing
+// click still ends at checkout.
 function SwitchLink({ href, children }: { href: string; children: ReactNode }) {
+  const next = new URLSearchParams(window.location.search).get("next")
   return (
-    <Link href={href} className="font-medium text-foreground underline-offset-4 hover:underline">
+    <Link href={next ? `${href}?next=${encodeURIComponent(next)}` : href} className="font-medium text-foreground underline-offset-4 hover:underline">
       {children}
     </Link>
   )

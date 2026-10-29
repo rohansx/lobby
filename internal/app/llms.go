@@ -20,6 +20,8 @@ Base URL: {{BASE}}
 
 ## Admin API (Authorization: Bearer sk_..., the project secret key)
 
+On Lobby Cloud (trylobby.app) the admin API and webhooks need a paid plan; on the Free plan they answer 402. A limit reached on any plan (waitlists, signups, emails this month) also answers 402 with {"ok":false,"error":"...","upgrade":true}. Self-hosted instances have no limits.
+
 - GET /v1/project, GET /v1/stats
 - GET /v1/signups?status=&q=&cursor=&limit=  (status: pending, confirmed, invited, joined, removed)
 - GET /v1/signups/{id}, DELETE /v1/signups/{id}[?hard=1]

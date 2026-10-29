@@ -6,6 +6,8 @@
 
 Lobby gives each of your products a signup form, double opt-in, a place in line, referral links that move people up, invite waves and a dashboard to run it all. Your list stays on your server.
 
+Rather not run a server? [Lobby Cloud](https://trylobby.app) is the same software, hosted: free for 500 signups, $5 a month after that ([pricing](https://trylobby.app/pricing)).
+
 <p align="center">
   <img src="docs/demo.gif" alt="A visitor joins the Orbit waitlist from its landing page, confirms by email, sees their place in line, and shows up in the Lobby dashboard" width="900">
 </p>
@@ -183,11 +185,12 @@ The dashboard is a React app in `web/` (Vite, Tailwind, shadcn/ui) that talks to
 ## Roadmap
 
 - MCP endpoint and `openapi.json`
-- CSV import from other waitlist tools
+- CSV import from GetWaitlist, LaunchList and Tally
 - Export in listmonk, Kit and Mailchimp formats
+- A transactional email API, so your app sends welcome and invite mail through the same list
 - Optional Turnstile or ALTCHA challenge
-- Multiple admins
-- Custom domains for hosted pages
+- Multiple admins per instance
+- Custom domains for hosted pages, and sending from your own domain per project
 
 Issues and pull requests are welcome.
 

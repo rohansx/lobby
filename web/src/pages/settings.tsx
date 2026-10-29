@@ -152,7 +152,7 @@ export default function Settings() {
                 await api(projectPath(slug, `?confirm=${encodeURIComponent(confirmSlug)}`), { method: "DELETE" })
                 await refreshProjects()
                 toast.success("Project deleted")
-                navigate("/")
+                navigate("/dashboard")
               } catch (err) {
                 toastError(err)
               }

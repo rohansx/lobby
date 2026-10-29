@@ -43,7 +43,7 @@ export function AuthPage({ mode, me, onDone }: { mode: AuthMode; me: Me; onDone:
     // Signups from a paid plan on the pricing page land on billing.
     const plan = new URLSearchParams(window.location.search).get("plan")
     if (mode === "signup" && plan) navigate("/billing")
-    else if (mode !== "login") navigate("/")
+    else if (mode !== "login") navigate("/dashboard")
   }
 
   return (
@@ -110,11 +110,11 @@ export function AuthPage({ mode, me, onDone }: { mode: AuthMode; me: Me; onDone:
               {mode === "signup" && (
                 <p className="text-center text-xs text-muted-foreground">
                   By signing up you agree to the{" "}
-                  <a className="underline underline-offset-2" href="https://lobby.rohan.sh/terms" target="_blank" rel="noreferrer">
+                  <a className="underline underline-offset-2" href="https://trylobby.app/terms" target="_blank" rel="noreferrer">
                     terms
                   </a>{" "}
                   and{" "}
-                  <a className="underline underline-offset-2" href="https://lobby.rohan.sh/privacy" target="_blank" rel="noreferrer">
+                  <a className="underline underline-offset-2" href="https://trylobby.app/privacy" target="_blank" rel="noreferrer">
                     privacy policy
                   </a>
                   .

@@ -6,7 +6,7 @@ export function LoadError({ error }: { error: Error }) {
     <div className="mx-auto max-w-md px-4 py-16 text-center">
       <p className="font-medium">{error.message === "project not found" ? "There's no project here." : error.message}</p>
       <Button asChild variant="outline" className="mt-4">
-        <Link href="/">All projects</Link>
+        <Link href="/dashboard">All projects</Link>
       </Button>
     </div>
   )

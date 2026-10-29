@@ -63,18 +63,21 @@ export default function App() {
       <AppShell>
         <Suspense fallback={null}>
           <Switch>
-            <Route path="/" component={Home} />
+            <Route path="/">
+              <Redirect to="/dashboard" replace />
+            </Route>
+            <Route path="/dashboard" component={Home} />
             <Route path="/login">
               <Redirect to={safeNext()} replace />
             </Route>
             {["/signup", "/forgot", "/reset"].map((p) => (
               <Route key={p} path={p}>
-                <Redirect to="/" replace />
+                <Redirect to="/dashboard" replace />
               </Route>
             ))}
             {me.cloud && <Route path="/billing" component={BillingPage} />}
             <Route path="/setup">
-              <Redirect to="/" replace />
+              <Redirect to="/dashboard" replace />
             </Route>
             <Route path="/p/:slug" component={Overview} />
             <Route path="/p/:slug/signups" component={Signups} />
@@ -102,6 +105,6 @@ export default function App() {
 
 // Only same-site paths are followed after sign-in.
 function safeNext() {
-  const next = new URLSearchParams(window.location.search).get("next") ?? "/"
-  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/"
+  const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard"
+  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") && next !== "/" ? next : "/dashboard"
 }

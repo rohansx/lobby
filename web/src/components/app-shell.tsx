@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild tooltip="All projects">
-                <Link href="/">
+                <Link href="/dashboard">
                   <img src="/favicon.svg" alt="" className="size-8 rounded-lg dark:ring-1 dark:ring-white/15" />
                   <div className="grid flex-1 text-left leading-tight">
                     <span className="font-medium tracking-[-0.03em]">Lobby</span>

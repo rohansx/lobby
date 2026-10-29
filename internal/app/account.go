@@ -67,7 +67,7 @@ func (s *Server) verifyPage(w http.ResponseWriter, r *http.Request) {
 		s.render(w, 400, "message", map[string]any{"Title": "Link expired", "Message": err.Error() + " Sign in and send a new one from the dashboard.", "Back": "/"})
 		return
 	}
-	http.Redirect(w, r, "/?verified=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/dashboard?verified=1", http.StatusSeeOther)
 }
 
 func (s *Server) adminForgot(w http.ResponseWriter, r *http.Request) {

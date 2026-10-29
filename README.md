@@ -137,7 +137,7 @@ Options: `data-button`, `data-placeholder`, `data-success`, `data-counter`. Them
 <details>
 <summary>Cloud mode (hosting Lobby for other people)</summary>
 
-`LOBBY_CLOUD=1` turns an instance into a multi-tenant service, which is how [Lobby Cloud](https://lobby.rohan.sh/pricing) runs. Anyone can sign up at `/signup`, confirm their email, and see only their own waitlists. Accounts get the Free, Launch or Pro limits (signups, waitlists, emails a month, webhooks and API, the "powered by Lobby" badge), and billing runs through [Polar](https://polar.sh) as merchant of record. Without `LOBBY_CLOUD`, none of this applies: one admin, every feature, no limits.
+`LOBBY_CLOUD=1` turns an instance into a multi-tenant service, which is how [Lobby Cloud](https://trylobby.app/pricing) runs. Anyone can sign up at `/signup`, confirm their email, and see only their own waitlists. Accounts get the Free, Launch or Pro limits (signups, waitlists, emails a month, webhooks and API, the "powered by Lobby" badge), and billing runs through [Polar](https://polar.sh) as merchant of record. Without `LOBBY_CLOUD`, none of this applies: one admin, every feature, no limits.
 
 | Variable | Purpose |
 | --- | --- |

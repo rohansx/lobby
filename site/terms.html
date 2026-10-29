@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
 <style>
-.legal { max-width: 720px; margin: 0 auto; padding: 72px 0 96px; }
+.legal { max-width: 720px; margin: 0 auto; padding-top: 72px; padding-bottom: 96px; }
 .legal h1 { font-size: clamp(36px, 4.6vw, 52px); line-height: 1.05; letter-spacing: -0.045em; }
 .legal .updated { margin-top: 12px; color: var(--muted); font-size: 14px; }
 .legal h2 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; margin-top: 40px; }
@@ -31,28 +31,38 @@
 <body>
 <div class="page">
 
+<!-- header -->
 <header class="nav" id="nav">
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
-    <nav class="nav-links">
-      <a href="/#features">Features</a>
-      <a href="/#how">How it works</a>
-      <a href="/#embed">Embed</a>
-      <a href="/#self-host">Self-host</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
-      <a href="/#faq">FAQ</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
     </nav>
     <div class="nav-right">
       <a class="gh" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        <span>GitHub</span>
+        <span>GitHub</span><b data-stars hidden></b>
       </a>
       <a class="signin" href="/login">Sign in</a>
       <a class="btn btn-primary" href="/signup">Get started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <details class="menu">
+        <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
+        <nav aria-label="Main">
+          <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
+          <a href="/login">Sign in</a>
+        </nav>
+      </details>
     </div>
   </div>
 </header>
+<!-- /header -->
 
 <main>
 <article class="wrap legal">
@@ -84,21 +94,25 @@
 </article>
 </main>
 
+<!-- footer -->
 <footer>
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
       <a href="https://github.com/rohansx/lobby">GitHub</a>
-      <a href="https://github.com/rohansx/lobby#configuration">Docs</a>
-      <a href="https://github.com/rohansx/lobby/issues">Issues</a>
+      <a href="mailto:support@trylobby.app">Support</a>
       <a href="/terms">Terms</a>
       <a href="/privacy">Privacy</a>
     </nav>
   </div>
 </footer>
+<!-- /footer -->
 </div>
 
+<script src="/site.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,35 @@
+<!-- {"title": "Lobby Cloud", "description": "Lobby Cloud plans, limits, what happens when you reach one, billing through Polar, and deleting your account.", "lede": "The same Lobby, run for you at trylobby.app. Free to start, and the paid plans unlock everything the self-hosted version has."} -->
+
+<h2>Plans</h2>
+<div class="table"><table>
+  <thead><tr><th></th><th>Free</th><th>Launch</th><th>Pro</th></tr></thead>
+  <tbody>
+    <tr><td>Price</td><td>$0</td><td>$5 a month, or $4 billed yearly</td><td>$12 a month, or $10 billed yearly</td></tr>
+    <tr><td>Signups</td><td>500 in total</td><td>Unlimited</td><td>Unlimited</td></tr>
+    <tr><td>Waitlists</td><td>1</td><td>3</td><td>Unlimited</td></tr>
+    <tr><td>Emails a month</td><td>1,000</td><td>5,000</td><td>25,000</td></tr>
+    <tr><td>Webhooks, REST API and CLI</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>"Powered by Lobby" badge</td><td>Shown</td><td>Removed</td><td>Removed</td></tr>
+  </tbody>
+</table></div>
+<p>Everything else is on every plan: the widget, form and hosted page, double opt-in, referrals, invites, broadcasts, exports and the dashboard. Compare in more detail on the <a href="/pricing">pricing page</a>.</p>
+
+<h2>Reaching a limit</h2>
+<ul>
+  <li><strong>Signups (Free)</strong>: once your waitlists hold 500 people, new visitors see "This waitlist isn't taking new signups right now." Nobody already on the list is affected, and we email you (at most once a week) so you can upgrade.</li>
+  <li><strong>Emails</strong>: confirmation emails always go out so no signup gets stuck. An invite wave or broadcast that would go over what's left this month is refused before anything is sent. The count resets on the first of each month (UTC).</li>
+  <li><strong>Waitlists</strong>: creating one more than your plan allows is refused, with a link to upgrade.</li>
+</ul>
+<p>The <a href="/billing">Billing</a> page shows how much of each limit you've used. API calls that hit a limit answer <code>402</code> with <code>"upgrade": true</code>.</p>
+
+<h2>Billing</h2>
+<p>Payments are handled by <a href="https://polar.sh">Polar</a>, which acts as the merchant of record: it charges your card and takes care of sales tax and VAT invoices. Upgrade from the pricing page or from <strong>Billing</strong> in the dashboard; your plan changes as soon as the payment goes through.</p>
+<p><strong>Manage billing</strong> on the Billing page opens Polar's customer portal, where you can switch between monthly and yearly, update your card, download invoices or cancel.</p>
+<p>If you cancel, you keep your plan until the end of the period you paid for, then move to Free. Nothing is deleted. If you're over the Free limits at that point, existing signups stay, but new ones and extra waitlists are paused until you upgrade again or trim the list.</p>
+
+<h2>Your data</h2>
+<ul>
+  <li>Export any waitlist as CSV or NDJSON from the dashboard at any time, on every plan.</li>
+  <li><strong>Delete account</strong> at the bottom of the Billing page removes your account, every waitlist and every signup. Cancel a paid subscription in Manage billing first, so you aren't charged again.</li>
+</ul>
+<p>See the <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a> for the details, or email <a href="mailto:support@trylobby.app">support@trylobby.app</a>.</p>

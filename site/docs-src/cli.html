@@ -1,0 +1,39 @@
+<!-- {"title": "CLI", "description": "The Lobby binary doubles as a command-line client: stats, signups, invites, exports and webhooks from your terminal.", "lede": "The same binary that runs the server is also a command-line client for any Lobby instance, including Lobby Cloud."} -->
+
+<h2>Install</h2>
+<p>Build it with Go 1.26 or later:</p>
+<pre><code>go install github.com/rohansx/lobby/cmd/lobby@latest</code></pre>
+<p>Or run it from the Docker image, where it's also linked as <code>wl</code>:</p>
+<pre><code>docker run --rm -e LOBBY_URL -e LOBBY_KEY ghcr.io/rohansx/lobby wl stats</code></pre>
+
+<h2>Configure</h2>
+<p>Point it at an instance and a project with two environment variables:</p>
+<pre><code><span class="k">export</span> LOBBY_URL=https://trylobby.app
+<span class="k">export</span> LOBBY_KEY=sk_…        <span class="c"># the project's secret key</span></code></pre>
+<p>On Lobby Cloud this needs the Launch or Pro plan, like the rest of the API.</p>
+
+<h2>Commands</h2>
+<div class="table"><table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>lobby stats</code></td><td>Counts by status, confirm rate, top sources.</td></tr>
+    <tr><td><code>lobby signups [--status S] [--q Q] [--limit N] [--json]</code></td><td>List signups as a table, or JSON.</td></tr>
+    <tr><td><code>lobby invite --next N [--dry-run]</code></td><td>Invite the next N people in line. <code>--dry-run</code> shows who without sending.</td></tr>
+    <tr><td><code>lobby invite --ids 12,13</code></td><td>Invite specific people.</td></tr>
+    <tr><td><code>lobby joined ID</code></td><td>Mark someone as joined.</td></tr>
+    <tr><td><code>lobby remove [--hard] ID</code></td><td>Remove someone; <code>--hard</code> deletes them and blocks the address.</td></tr>
+    <tr><td><code>lobby export [--format csv|ndjson] [--status all]</code></td><td>Write the list to standard output.</td></tr>
+    <tr><td><code>lobby webhooks</code></td><td>List the project's webhooks.</td></tr>
+    <tr><td><code>lobby serve</code></td><td>Run the server (see <a href="/docs/self-hosting">Self-hosting</a>).</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Examples</h2>
+<pre><code><span class="c"># who would the next wave be?</span>
+lobby invite --next 100 --dry-run
+
+<span class="c"># confirmed addresses at one company</span>
+lobby signups --status confirmed --q @acme.com --json | jq -r <span class="s">'.data[].email'</span>
+
+<span class="c"># nightly backup of the list</span>
+lobby export --format ndjson --status all &gt; lobby-$(date +%F).ndjson</code></pre>

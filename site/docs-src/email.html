@@ -1,0 +1,32 @@
+<!-- {"title": "Email", "description": "The emails Lobby sends, how to customize the sender, unsubscribes and bounce handling, and deliverability setup for self-hosted instances.", "lede": "Every email Lobby sends, and how to make sure they arrive."} -->
+
+<h2>What Lobby sends</h2>
+<div class="table"><table>
+  <thead><tr><th>Email</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td>Confirm your email for Orbit</td><td>Someone signs up and double opt-in is on.</td></tr>
+    <tr><td>Your place on the Orbit waitlist</td><td>Someone already on the list signs up again (at most every 10 minutes).</td></tr>
+    <tr><td>You're in: your Orbit invite</td><td>You invite them.</td></tr>
+    <tr><td>Your broadcast</td><td>You send one.</td></tr>
+    <tr><td>New signup on Orbit</td><td>To you, if <strong>Notify me of new signups</strong> is set: the address, the page they came from, and who referred them.</td></tr>
+  </tbody>
+</table></div>
+<p>All of them have a plain-text part and a simple HTML layout that renders in Gmail, Apple Mail and Outlook.</p>
+
+<h2>Sender name and reply-to</h2>
+<p>In <strong>Settings</strong>, <strong>From name</strong> sets the name people see (the project name by default) and <strong>Reply-to</strong> sends replies to your inbox. Replies to a waitlist email are often your first user feedback, so it's worth setting.</p>
+<p>On Lobby Cloud, mail is sent from <code>mail.trylobby.app</code>. Sending from your own domain on Cloud is on the roadmap.</p>
+
+<h2>Unsubscribes and bounces</h2>
+<p>Every email to a signup has an unsubscribe link, and broadcasts also carry <code>List-Unsubscribe</code> headers for one-click unsubscribe. Unsubscribed people stay on the list but get no more broadcasts.</p>
+<p>Self-hosting with Resend? Point a Resend webhook for bounces and complaints at <code>/v1/hooks/resend</code> and set <code>RESEND_WEBHOOK_SECRET</code>. Addresses that bounce or complain are then suppressed automatically.</p>
+
+<h2>Deliverability when self-hosting</h2>
+<p>A waitlist is only worth something if its emails land in the inbox. Before launch:</p>
+<ol>
+  <li><strong>Use a sending subdomain</strong>, such as <code>mail.example.com</code>, so waitlist mail doesn't affect your main domain's reputation.</li>
+  <li><strong>Add the SPF and DKIM records</strong> your provider gives you for that subdomain, and wait until it shows them as verified.</li>
+  <li><strong>Add a DMARC record</strong>. A monitoring policy is enough to start: <code>_dmarc.example.com TXT "v=DMARC1; p=none"</code>.</li>
+  <li><strong>Test it</strong>: sign up from a fresh Gmail or Outlook address and check the confirmation arrives in the inbox, not spam.</li>
+</ol>
+<div class="callout warn"><p>Without an email provider configured, a self-hosted Lobby writes emails to its log instead of sending them. That's fine for trying it out, but nobody will be able to confirm.</p></div>

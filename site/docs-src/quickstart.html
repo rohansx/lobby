@@ -1,0 +1,33 @@
+<!-- {"title": "Quick start", "description": "Create a Lobby waitlist and put it on your site in about five minutes.", "lede": "From nothing to a working waitlist on your landing page. This uses Lobby Cloud; to run it yourself, start with Self-hosting and come back for step 2."} -->
+
+<h2>1. Create an account and a project</h2>
+<ol class="steps">
+  <li><a href="/signup">Sign up</a> with Google, GitHub or an email and password. Email sign-ups get a confirmation link first.</li>
+  <li>Click <strong>+</strong> next to Projects in the sidebar and give the waitlist a name, for example <em>Orbit</em>. The slug (<code>orbit</code>) becomes the address of its hosted page.</li>
+  <li>On the project's <strong>Overview</strong>, the <strong>Add it to a site</strong> card has every snippet with your keys filled in. The secret key for the API is shown once, right after you create the project. Lost it? <strong>Rotate secret key</strong> on the Keys card gives you a new one.</li>
+</ol>
+
+<h2>2. Put the form on your site</h2>
+<p>Paste this where you want the form to appear, with your project's public key:</p>
+<pre data-title="index.html"><code>&lt;div id="waitlist"&gt;&lt;/div&gt;
+&lt;script defer src="https://trylobby.app/v1/wl.js"
+  data-project="pk_…" data-target="#waitlist" data-counter&gt;&lt;/script&gt;</code></pre>
+<p>That's a complete signup form with a live "1,204 people waiting" counter. No site yet? Share the hosted page instead: <code>https://trylobby.app/w/orbit</code>.</p>
+<div class="callout"><p>Lock the form to your domain: in <strong>Settings → Allowed origins</strong>, add <code>https://orbit.app</code>. Until you add one, any site can post to your list.</p></div>
+
+<h2>3. Try it</h2>
+<ol class="steps">
+  <li>Sign up on your page with a real inbox you can check.</li>
+  <li>Click the confirmation link in the email. It opens your status page: your place in line and a referral link.</li>
+  <li>Back in the dashboard, you're on the <strong>Signups</strong> tab as <code>confirmed</code>, with the page you came from.</li>
+</ol>
+
+<h2>4. When you're ready to launch</h2>
+<p>On the <strong>Overview</strong>, use <strong>Invite the next wave</strong>: pick how many people to let in, and Lobby emails each of them an invite link. Set an <strong>Invite URL</strong> in Settings so the link lands on your product's signup page. <a href="/docs/invites">Invites and launch day</a> covers the details.</p>
+
+<h2>Next steps</h2>
+<ul>
+  <li><a href="/docs/embed">Style the widget</a> to match your page, or use a plain HTML form.</li>
+  <li><a href="/docs/waitlists">Tune referrals</a>: how far each one moves someone up.</li>
+  <li><a href="/docs/webhooks">Add a webhook</a> to post each signup to Slack or your own backend.</li>
+</ul>

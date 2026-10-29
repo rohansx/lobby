@@ -1,0 +1,61 @@
+<!-- {"title": "Self-hosting", "description": "Run Lobby on your own server with Docker: one container, one SQLite file. Configuration, email, backups with Litestream, and upgrades.", "lede": "Lobby is one Go binary with the dashboard built in, storing everything in one SQLite file. It runs in about 20 MB of memory, so the smallest VPS you can find is plenty."} -->
+
+<h2>Run it with Docker</h2>
+<pre><code>docker run -d --name lobby -p 8080:8080 -v lobby-data:/data \
+  -e LOBBY_BASE_URL=https://wait.example.com \
+  -e RESEND_API_KEY=re_… -e LOBBY_FROM_EMAIL=waitlist@mail.example.com \
+  ghcr.io/rohansx/lobby:latest</code></pre>
+<p>Open the address in a browser. The first visit asks you to create the admin account; after that, sign-up is closed. Put it behind your reverse proxy (Caddy, Traefik, nginx) for HTTPS.</p>
+<p>The image is built for <code>amd64</code> and <code>arm64</code>, and answers <code>GET /healthz</code> for health checks.</p>
+
+<h3>Docker Compose</h3>
+<pre><code>git clone https://github.com/rohansx/lobby &amp;&amp; cd lobby
+LOBBY_BASE_URL=https://wait.example.com RESEND_API_KEY=re_… \
+LOBBY_FROM_EMAIL=waitlist@mail.example.com docker compose up -d</code></pre>
+
+<h3>Dokploy, Coolify and other PaaS</h3>
+<p>Deploy the image, mount a volume at <code>/data</code>, and set <code>LOBBY_BASE_URL</code> to the public address. The repository's <code>blueprints/lobby/</code> folder has a <code>docker-compose.yml</code> and <code>template.toml</code> for a Dokploy template.</p>
+
+<h3>From source</h3>
+<p>Needs Go 1.26 and Node 24.</p>
+<pre><code>(cd web &amp;&amp; npm ci &amp;&amp; npm run build)   <span class="c"># builds the dashboard into the binary</span>
+go build -o lobby ./cmd/lobby
+LOBBY_BASE_URL=https://wait.example.com ./lobby serve</code></pre>
+
+<h2>Configuration</h2>
+<p>Everything is set with environment variables. Per-project settings live in the dashboard.</p>
+<div class="table"><table>
+  <thead><tr><th>Variable</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>LOBBY_BASE_URL</code></td><td>Public URL of the instance. Links in emails and snippets use it, so get this one right.</td></tr>
+    <tr><td><code>LOBBY_FROM_EMAIL</code></td><td>Sender address, ideally on a sending subdomain (<code>waitlist@mail.example.com</code>).</td></tr>
+    <tr><td><code>RESEND_API_KEY</code></td><td>Send email with <a href="https://resend.com">Resend</a>.</td></tr>
+    <tr><td><code>SMTP_URL</code></td><td>Or any SMTP server: <code>smtp://user:pass@host:587</code> or <code>smtps://user:pass@host:465</code>.</td></tr>
+    <tr><td><code>RESEND_WEBHOOK_SECRET</code></td><td>Verifies Resend's bounce and complaint webhook at <code>/v1/hooks/resend</code>.</td></tr>
+    <tr><td><code>LITESTREAM_REPLICA_URL</code></td><td>Continuous backup target, for example <code>s3://bucket/lobby</code>. See below.</td></tr>
+    <tr><td><code>LOBBY_DATA</code></td><td>Data directory. <code>/data</code> in the image, <code>./data</code> otherwise.</td></tr>
+    <tr><td><code>LOBBY_ADDR</code></td><td>Listen address, default <code>:8080</code>.</td></tr>
+    <tr><td><code>LOBBY_TRUST_PROXY</code></td><td>Set to <code>0</code> if Lobby faces the internet directly rather than behind a proxy, so it ignores <code>X-Forwarded-For</code>.</td></tr>
+    <tr><td><code>LOBBY_CHECK_MX</code></td><td>Set to <code>0</code> to skip the MX lookup on signup.</td></tr>
+    <tr><td><code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code></td><td>"Continue with Google" for the admin. Redirect URI: <code>{LOBBY_BASE_URL}/auth/google/callback</code>.</td></tr>
+    <tr><td><code>GITHUB_CLIENT_ID</code>, <code>GITHUB_CLIENT_SECRET</code></td><td>"Continue with GitHub" for the admin. Callback URL: <code>{LOBBY_BASE_URL}/auth/github/callback</code>.</td></tr>
+  </tbody>
+</table></div>
+<p>Without <code>RESEND_API_KEY</code> or <code>SMTP_URL</code>, emails are written to the log instead of sent. Set up your sending domain before launch: see <a href="/docs/email#deliverability-when-self-hosting">deliverability</a>.</p>
+
+<h2>Backups</h2>
+<p>The image includes <a href="https://litestream.io">Litestream</a>. Set these and every change to the database is copied to S3-compatible storage within seconds:</p>
+<pre><code>LITESTREAM_REPLICA_URL=s3://my-bucket/lobby
+LITESTREAM_ACCESS_KEY_ID=…
+LITESTREAM_SECRET_ACCESS_KEY=…</code></pre>
+<p>When the container starts with an empty volume and a backup exists, Lobby restores it first. So moving to a new server is: start the container there with the same variables.</p>
+<p>Works with AWS S3, Cloudflare R2, Backblaze B2, Tigris and MinIO. For storage other than AWS, add the endpoint to the URL, for example <code>s3://my-bucket/lobby?endpoint=https://ACCOUNT_ID.r2.cloudflarestorage.com</code>.</p>
+<p>Not using Litestream? Copy <code>/data/lobby.db</code> with <code>sqlite3 /data/lobby.db ".backup backup.db"</code>, not a plain file copy, so the copy is consistent.</p>
+
+<h2>Upgrading</h2>
+<pre><code>docker pull ghcr.io/rohansx/lobby:latest
+docker rm -f lobby &amp;&amp; docker run -d … ghcr.io/rohansx/lobby:latest   <span class="c"># same flags as before</span></code></pre>
+<p>Database migrations run on start. Take a backup first if you're not using Litestream.</p>
+
+<h2>Running a hosted service</h2>
+<p><code>LOBBY_CLOUD=1</code> turns an instance into a multi-tenant service, which is how Lobby Cloud runs: anyone can sign up, each account sees only its own waitlists, and plan limits and billing through <a href="https://polar.sh">Polar</a> apply. The full list of variables is in the <a href="https://github.com/rohansx/lobby#configuration">README</a>. You don't need any of it to run Lobby for yourself.</p>

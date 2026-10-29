@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog · Lobby</title>
+<meta name="description" content="What changed in Lobby and Lobby Cloud, newest first.">
+<meta name="theme-color" content="#fbfaf7">
+<meta property="og:title" content="Changelog · Lobby">
+<meta property="og:description" content="What changed in Lobby and Lobby Cloud, newest first.">
+<meta property="og:image" content="https://trylobby.app/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://trylobby.app/changelog">
+<link rel="canonical" href="https://trylobby.app/changelog">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+.log { max-width: 760px; margin: 0 auto; padding-top: 72px; padding-bottom: 96px; }
+.log h1 { font-size: clamp(36px, 4.6vw, 52px); line-height: 1.05; letter-spacing: -0.045em; }
+.log .sub { margin-top: 12px; color: var(--muted); font-size: 16px; }
+.log .sub a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.entry { display: grid; grid-template-columns: 150px 1fr; gap: 32px; padding: 40px 0; border-bottom: 1px solid var(--line); }
+.entry:first-of-type { margin-top: 40px; border-top: 1px solid var(--line); }
+.entry time { font-size: 14px; color: var(--muted); padding-top: 4px; }
+.entry h2 { font-size: 22px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.3; }
+.entry ul { margin: 14px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 15.5px; }
+.entry li::marker { color: var(--faint); }
+.entry a { color: var(--ink); text-decoration: underline; text-decoration-color: #cfc8bb; text-underline-offset: 3px; }
+.tag { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); vertical-align: 3px; }
+@media (max-width: 640px) { .entry { grid-template-columns: 1fr; gap: 8px; padding: 28px 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- header -->
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog" aria-current="page">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
+    </nav>
+    <div class="nav-right">
+      <a class="gh" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>GitHub</span><b data-stars hidden></b>
+      </a>
+      <a class="signin" href="/login">Sign in</a>
+      <a class="btn btn-primary" href="/signup">Get started
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <details class="menu">
+        <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
+        <nav aria-label="Main">
+          <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog" aria-current="page">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
+          <a href="/login">Sign in</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- /header -->
+
+<main>
+<div class="wrap log">
+<h1>Changelog</h1>
+<p class="sub">What changed in Lobby, newest first. Every change is also on <a href="https://github.com/rohansx/lobby/commits/main">GitHub</a>.</p>
+
+<article class="entry">
+  <time datetime="2026-10-29">29 October 2026</time>
+  <div>
+    <h2>Docs, and sign in with Google or GitHub</h2>
+    <ul>
+      <li>New <a href="/docs">documentation</a>: quick start, embedding, the line and referrals, invites, email, the REST API, webhooks, the CLI and self-hosting.</li>
+      <li>Sign in or sign up with Google or GitHub. They also work on self-hosted instances, for the admin.</li>
+      <li>Lobby Cloud moved to <a href="https://trylobby.app">trylobby.app</a>, with the dashboard, API and hosted pages on one domain.</li>
+      <li>Choosing a plan on the pricing page now takes you through sign-up straight to checkout.</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <time datetime="2026-10-28">28 October 2026</time>
+  <div>
+    <h2>Lobby Cloud <span class="tag">New</span></h2>
+    <ul>
+      <li>Hosted Lobby: free for 500 signups, Launch from $4 a month and Pro from $10 a month. See <a href="/pricing">pricing</a>.</li>
+      <li>Accounts with email confirmation and password reset, usage meters, and billing through Polar.</li>
+      <li>A new logo, landing page and pricing page, and the dashboard restyled to match.</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <time datetime="2026-10-27">27 October 2026</time>
+  <div>
+    <h2>Docker image and landing page</h2>
+    <ul>
+      <li>Multi-architecture image published to <code>ghcr.io/rohansx/lobby</code> from CI.</li>
+      <li>README with a demo and screenshots, and the first landing page.</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <time datetime="2026-10-26">26 October 2026</time>
+  <div>
+    <h2>First release</h2>
+    <ul>
+      <li>A self-hosted waitlist for many projects: widget, plain HTML form and hosted page.</li>
+      <li>Double opt-in, places in line, referral points, invite waves, broadcasts and signed webhooks.</li>
+      <li>A dashboard, a REST API, a CLI and <code>/llms.txt</code> for coding agents.</li>
+      <li>Emails that render in every client, and an email to you for every new signup.</li>
+    </ul>
+  </div>
+</article>
+</div>
+</main>
+
+<!-- footer -->
+<footer>
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
+    <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
+    <nav>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
+      <a href="https://github.com/rohansx/lobby">GitHub</a>
+      <a href="mailto:support@trylobby.app">Support</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </div>
+</footer>
+<!-- /footer -->
+</div>
+<script src="/site.js" defer></script>
+</body>
+</html>

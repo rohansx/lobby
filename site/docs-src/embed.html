@@ -1,0 +1,95 @@
+<!-- {"title": "Add it to your site", "description": "Three ways to collect signups with Lobby: the script widget, a plain HTML form, or the hosted page. Plus calling the signup endpoint from your own code.", "lede": "Each project gives you three ways in. All of them post to the same endpoint, get the same spam checks and land in the same list."} -->
+
+<h2>Script widget</h2>
+<p>A form inside a shadow DOM, so your page's CSS can't break it and it can't break your page. It's under 2 KB gzipped.</p>
+<pre data-title="index.html"><code>&lt;div id="waitlist"&gt;&lt;/div&gt;
+&lt;script defer src="https://trylobby.app/v1/wl.js"
+  data-project="pk_…" data-target="#waitlist" data-counter&gt;&lt;/script&gt;</code></pre>
+<p>Without <code>data-target</code>, the form appears right after the script tag. The widget reads <code>?ref=</code> and UTM tags from the page's URL and sends them along, so referrals and campaigns are tracked with no extra work.</p>
+
+<h3>Options</h3>
+<div class="table"><table>
+  <thead><tr><th>Attribute</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>data-project</code></td><td>required</td><td>The project's public key.</td></tr>
+    <tr><td><code>data-target</code></td><td>after the script</td><td>CSS selector of the element to render into.</td></tr>
+    <tr><td><code>data-button</code></td><td>Join the waitlist</td><td>Button label.</td></tr>
+    <tr><td><code>data-placeholder</code></td><td>you@example.com</td><td>Email field placeholder.</td></tr>
+    <tr><td><code>data-success</code></td><td>Check your inbox…</td><td>Message shown after signup when double opt-in is on.</td></tr>
+    <tr><td><code>data-counter</code></td><td>off</td><td>Shows "1,204 people are already waiting" once the list passes the project's counter floor.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Styling</h3>
+<p>Set CSS variables on the container to match your page:</p>
+<pre data-title="styles.css"><code>#waitlist {
+  --wl-accent: #2f6fd6;      <span class="c">/* button background */</span>
+  --wl-accent-ink: #fff;     <span class="c">/* button text */</span>
+  --wl-bg: #fff;             <span class="c">/* input background */</span>
+  --wl-ink: #1f1c17;         <span class="c">/* input text */</span>
+  --wl-border: #e9e5dd;
+  --wl-radius: 999px;
+  --wl-pad: 12px 18px;
+  --wl-muted: #7a746a;       <span class="c">/* messages */</span>
+  --wl-error: #b42318;
+}</code></pre>
+<p>For anything the variables don't cover, style the parts directly: <code>#waitlist::part(form)</code>, <code>::part(input)</code>, <code>::part(button)</code> and <code>::part(message)</code>.</p>
+
+<h3>Listening for signups</h3>
+<p>The widget fires a <code>lobby:signup</code> event that bubbles up from the container. Hook your analytics into it:</p>
+<pre data-title="analytics.js"><code>document.addEventListener(<span class="s">"lobby:signup"</span>, (e) =&gt; {
+  plausible(<span class="s">"Waitlist signup"</span>)
+  console.log(e.detail) <span class="c">// { ok, confirm_required, message, position?, referral_link? }</span>
+})</code></pre>
+
+<h2>Plain HTML form</h2>
+<p>No JavaScript at all, which suits static sites and site builders. After submitting, the person sees your project's thanks page, or the page set in <strong>Settings → Redirect after signup</strong>.</p>
+<pre data-title="index.html"><code>&lt;form method="post" action="https://trylobby.app/v1/w/pk_…/signup"&gt;
+  &lt;input type="email" name="email" required&gt;
+  <span class="c">&lt;!-- a honeypot: people never see it, bots fill it in --&gt;</span>
+  &lt;input type="text" name="website" tabindex="-1" autocomplete="off"
+    style="position:absolute;left:-9999px"&gt;
+  &lt;button&gt;Join the waitlist&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+<p>Add a hidden <code>_redirect</code> field to send people to a specific page instead. It must be on your site URL, an allowed origin, or the page the form was on.</p>
+
+<h2>Hosted page</h2>
+<p>Every project has a page at <code>https://trylobby.app/w/your-slug</code> with the headline, description and consent text from its settings. Use it when you don't have a site yet, or link to it from social posts. It works without JavaScript.</p>
+
+<h2>From your own code</h2>
+<p>Building a custom form in React, Svelte or a mobile app? Post to the signup endpoint and ask for JSON:</p>
+<pre data-title="signup.ts"><code><span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">"https://trylobby.app/v1/w/pk_…/signup"</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: { <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>, Accept: <span class="s">"application/json"</span> },
+  body: JSON.stringify({
+    email,
+    ref: new URLSearchParams(location.search).get(<span class="s">"ref"</span>) ?? <span class="s">""</span>,
+    source_url: location.href,
+  }),
+})
+<span class="k">const</span> data = <span class="k">await</span> res.json()</code></pre>
+<p>Accepted fields: <code>email</code> (required), <code>ref</code>, <code>source_url</code>, <code>referrer</code>, <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, <code>utm_term</code> and <code>utm_content</code>. JSON, URL-encoded and multipart bodies all work.</p>
+<p>With double opt-in on (the default), the answer is always the same, whether the address is new, already on the list, or flagged as spam. That way the endpoint never tells a stranger who's on your list:</p>
+<pre><code>{ <span class="s">"ok"</span>: true, <span class="s">"confirm_required"</span>: true, <span class="s">"message"</span>: <span class="s">"Check your inbox. We've sent you a link to your spot."</span> }</code></pre>
+<p>With double opt-in off, a new signup gets its place straight away:</p>
+<pre><code>{
+  <span class="s">"ok"</span>: true, <span class="s">"confirm_required"</span>: false, <span class="s">"message"</span>: <span class="s">"You're on the list."</span>,
+  <span class="s">"position"</span>: 1205, <span class="s">"behind"</span>: 0,
+  <span class="s">"status_url"</span>: <span class="s">"https://trylobby.app/s/…"</span>,
+  <span class="s">"referral_link"</span>: <span class="s">"https://orbit.app/?ref=k3x9q2"</span>
+}</code></pre>
+<p>Errors come back as <code>{"ok": false, "error": "…"}</code> with a 4xx status, and the message is written to show to the person as is. Too many attempts from one address returns 429.</p>
+
+<h2>Allowed origins</h2>
+<p>In <strong>Settings → Allowed origins</strong>, list the sites that may post to this waitlist, one per line, such as <code>https://orbit.app</code>. Browsers on any other site are refused. With the list empty, any site can post, which is handy while testing but worth closing before launch.</p>
+
+<h2>Spam protection</h2>
+<p>Every way in gets the same checks, with no CAPTCHA:</p>
+<ul>
+  <li>a <strong>honeypot</strong> field that people never see,</li>
+  <li>a <strong>timing check</strong>: forms submitted faster than a person could type are dropped,</li>
+  <li><strong>rate limits</strong> per IP address and project,</li>
+  <li>a list of <strong>disposable email domains</strong>,</li>
+  <li>an <strong>MX lookup</strong> to confirm the domain can receive mail.</li>
+</ul>
+<p>Spam gets the same "check your inbox" answer as a real signup, so bots can't tell they were caught.</p>

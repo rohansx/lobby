@@ -23,16 +23,15 @@
 <body>
 <div class="page">
 
+<!-- header -->
 <header class="nav" id="nav">
   <div class="wrap">
-    <a class="logo" href="#"><img src="/logo.svg" alt="">Lobby</a>
-    <nav class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#how">How it works</a>
-      <a href="#embed">Embed</a>
-      <a href="#self-host">Self-host</a>
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
     </nav>
     <div class="nav-right">
       <a class="gh" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
@@ -42,9 +41,20 @@
       <a class="signin" href="/login">Sign in</a>
       <a class="btn btn-primary" href="/signup">Get started
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <details class="menu">
+        <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
+        <nav aria-label="Main">
+          <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/docs/self-hosting">Self-host</a>
+          <a href="/login">Sign in</a>
+        </nav>
+      </details>
     </div>
   </div>
 </header>
+<!-- /header -->
 
 <main>
   <div class="hero">
@@ -326,15 +336,15 @@ lobby export --format csv</pre>
       <div class="head reveal">
         <div class="eyebrow">FAQ</div>
         <h2>Questions, <span>answered.</span></h2>
-        <p>Something else? <a class="inline-link" href="https://github.com/rohansx/lobby/issues">Open an issue</a>.</p>
+        <p>Something else? Read the <a class="inline-link" href="/docs">docs</a> or <a class="inline-link" href="https://github.com/rohansx/lobby/issues">open an issue</a>.</p>
       </div>
       <div class="faq reveal">
-        <details><summary>Is it really free?</summary><p>Yes. Lobby is MIT licensed with no paid tier, no signup limits and no phone-home. You pay for the server it runs on and for your email provider, and Resend's free tier is enough for a small launch.</p></details>
+        <details><summary>Is it really free?</summary><p>Self-hosted, yes. Lobby is MIT licensed with no signup limits and no phone-home. You pay for the server it runs on and for your email provider, and Resend's free tier is enough for a small launch. Rather not run a server? <a class="inline-link" href="/pricing">Lobby Cloud</a> is free up to 500 signups.</p></details>
         <details><summary>What do I need to run it?</summary><p>Anything that runs a Docker container: a small VPS, Dokploy, Coolify, Fly.io or Railway. It idles at about 20 MB of memory. Mount a volume at <code>/data</code> so your list survives restarts.</p></details>
         <details><summary>Can I run waitlists for several products?</summary><p>Yes. Each project has its own form, keys, allowed origins, emails, referral rules and settings, and they all share one dashboard.</p></details>
         <details><summary>How do I stop people gaming referrals?</summary><p>A referral only counts after the friend confirms their email, credits are capped per IP address and per hour, and addresses are normalized so Gmail dots and +tags can't create duplicates. Disposable domains are rejected.</p></details>
         <details><summary>What about backups?</summary><p>Set <code>LITESTREAM_REPLICA_URL</code> to any S3-compatible bucket and the database is replicated continuously. On an empty volume Lobby restores from the replica automatically.</p></details>
-        <details><summary>How do I let people in when I launch?</summary><p>Click <b>Invite next N</b> in the dashboard or run <code>lobby invite --next 50</code>. Each person gets a magic link and a code. Your product calls <code>POST /v1/invites/redeem</code>, or you send a launch broadcast to everyone at once.</p></details>
+        <details><summary>How do I let people in when I launch?</summary><p>Click <b>Invite the next wave</b> in the dashboard or run <code>lobby invite --next 50</code>. Each person gets a magic link and a code. Your product calls <code>POST /v1/invites/redeem</code>, or you send a launch broadcast to everyone at once.</p></details>
       </div>
     </div>
   </section>
@@ -344,34 +354,33 @@ lobby export --format csv</pre>
     <h2>Open the doors <span>on your terms.</span></h2>
     <p>One command, your own server, and a list that stays yours.</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="https://github.com/rohansx/lobby#quick-start">Read the quick start</a>
+      <a class="btn btn-primary" href="/docs/quickstart">Read the quick start</a>
       <a class="btn btn-ghost" href="https://github.com/rohansx/lobby">Star on GitHub</a>
     </div>
   </div>
 </main>
 
+<!-- footer -->
 <footer>
   <div class="wrap">
-    <a class="logo" href="#"><img src="/logo.svg" alt="">Lobby</a>
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
       <a href="https://github.com/rohansx/lobby">GitHub</a>
-      <a href="https://github.com/rohansx/lobby#configuration">Docs</a>
-      <a href="https://github.com/rohansx/lobby/issues">Issues</a>
+      <a href="mailto:support@trylobby.app">Support</a>
       <a href="/terms">Terms</a>
       <a href="/privacy">Privacy</a>
     </nav>
   </div>
 </footer>
+<!-- /footer -->
 </div>
 
 <script>
 (() => {
-  const nav = document.getElementById('nav');
-  const onScroll = () => nav.classList.toggle('scrolled', scrollY > 8);
-  addEventListener('scroll', onScroll, { passive: true }); onScroll();
-
   // Browsers that can't play VP9 WebM get the GIF instead.
   const v = document.getElementById('video');
   if (!v.canPlayType('video/webm; codecs="vp9"')) {
@@ -415,14 +424,8 @@ lobby export --format csv</pre>
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
   }
-
-  fetch('https://api.github.com/repos/rohansx/lobby').then(r => r.ok ? r.json() : null).then(d => {
-    if (!d || d.stargazers_count < 10) return;
-    const el = document.querySelector('[data-stars]');
-    el.textContent = d.stargazers_count >= 1000 ? (d.stargazers_count / 1000).toFixed(1) + 'k' : d.stargazers_count;
-    el.hidden = false;
-  }).catch(() => {});
 })();
 </script>
+<script src="/site.js" defer></script>
 </body>
 </html>

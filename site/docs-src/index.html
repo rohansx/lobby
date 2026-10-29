@@ -1,0 +1,45 @@
+<!-- {"title": "Lobby docs", "description": "Everything you need to run a waitlist with Lobby: embed it, run the line, invite people, and use the API, webhooks and CLI.", "lede": "Lobby runs the waitlist for every product you're launching: a signup form, double opt-in, a place in line, referral links that move people up, invite waves and a dashboard. Use it hosted on trylobby.app, or run the same open-source binary on your own server."} -->
+
+<div class="cards">
+  <a class="card-link" href="/docs/quickstart"><b>Quick start</b><span>A live waitlist on your site in about five minutes.</span></a>
+  <a class="card-link" href="/docs/embed"><b>Add it to your site</b><span>Script widget, plain HTML form, or a hosted page.</span></a>
+  <a class="card-link" href="/docs/api"><b>REST API</b><span>Read signups, send invites and export your list.</span></a>
+  <a class="card-link" href="/docs/self-hosting"><b>Self-hosting</b><span>One Docker container and one SQLite file.</span></a>
+</div>
+
+<h2>How it fits together</h2>
+<p>Everything in Lobby belongs to a <strong>project</strong>, one per product you're launching. A project has:</p>
+<ul>
+  <li>a <strong>public key</strong> (<code>pk_…</code>) that goes in your page. It can only add people to the list, so it's safe to publish.</li>
+  <li>a <strong>secret key</strong> (<code>sk_…</code>) for the API and CLI. Keep it on your server.</li>
+  <li>a <strong>slug</strong>, which gives it a hosted page at <code>/w/your-slug</code>.</li>
+  <li>its own settings: double opt-in, how the line is ordered, referral caps, sender name, page copy and consent text.</li>
+</ul>
+<p>A person moves through five states:</p>
+<div class="table"><table>
+  <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>pending</code></td><td>Signed up, hasn't clicked the confirmation link yet. Not in line.</td></tr>
+    <tr><td><code>confirmed</code></td><td>In line, with a place and a referral link.</td></tr>
+    <tr><td><code>invited</code></td><td>You let them in. They have an invite link and a code.</td></tr>
+    <tr><td><code>joined</code></td><td>They used the invite, or you marked them as joined.</td></tr>
+    <tr><td><code>removed</code></td><td>Taken off the list, by you or by unsubscribing.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Cloud or self-hosted</h2>
+<p>Both run the same code. Pick by whether you want to run a server.</p>
+<div class="table"><table>
+  <thead><tr><th></th><th>Lobby Cloud</th><th>Self-hosted</th></tr></thead>
+  <tbody>
+    <tr><td>Where</td><td>trylobby.app</td><td>Your server, any Docker host</td></tr>
+    <tr><td>Price</td><td>Free up to 500 signups, then from $4 a month</td><td>Free, MIT licensed</td></tr>
+    <tr><td>Email</td><td>Sent for you</td><td>Bring Resend or any SMTP server</td></tr>
+    <tr><td>Limits</td><td>Per plan (see <a href="/docs/cloud">Lobby Cloud</a>)</td><td>None</td></tr>
+    <tr><td>Backups</td><td>Handled for you</td><td>Built-in Litestream support</td></tr>
+  </tbody>
+</table></div>
+<p>The examples in these docs use <code>https://trylobby.app</code>. If you self-host, swap in your own address, for example <code>https://wait.example.com</code>.</p>
+
+<h2>For coding agents</h2>
+<p>Every Lobby instance serves a plain-text summary of its API at <a href="https://trylobby.app/llms.txt"><code>/llms.txt</code></a>. Point Claude, Cursor or any other agent at it and it can add the widget, read signups and send invites for you.</p>

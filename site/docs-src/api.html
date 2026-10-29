@@ -1,0 +1,108 @@
+<!-- {"title": "REST API", "description": "Lobby's REST API: authentication, errors, and every endpoint for signups, invites, exports, webhooks and broadcasts.", "lede": "Read your list, invite people and export from your own code. Each project has its own key, and every request acts on that project."} -->
+
+<h2>Authentication</h2>
+<p>Send the project's secret key as a bearer token. You get it once when you create the project; <strong>Rotate secret key</strong> on the project's Overview makes a new one and stops the old one working.</p>
+<pre><code>curl https://trylobby.app/v1/stats -H <span class="s">"Authorization: Bearer sk_…"</span></code></pre>
+<div class="callout warn"><p>The secret key can read every address on the list. Keep it on your server, never in a browser or mobile app. Public pages use the public <code>pk_…</code> key instead, which can only add signups.</p></div>
+<p>On Lobby Cloud, the API comes with the Launch and Pro plans. On the Free plan every API call answers 402.</p>
+
+<h2>Requests and errors</h2>
+<p>Send JSON with <code>Content-Type: application/json</code>; responses are JSON. Errors have a status code and a readable message:</p>
+<pre><code>{ <span class="s">"ok"</span>: false, <span class="s">"error"</span>: <span class="s">"invalid secret key"</span> }</code></pre>
+<div class="table"><table>
+  <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>400</code></td><td>The request body or a parameter is wrong.</td></tr>
+    <tr><td><code>401</code></td><td>Missing or invalid secret key.</td></tr>
+    <tr><td><code>402</code></td><td>Lobby Cloud only: your plan doesn't include this, or you've hit a limit. The body includes <code>"upgrade": true</code>.</td></tr>
+    <tr><td><code>404</code></td><td>No such signup, webhook or invite in this project.</td></tr>
+    <tr><td><code>422</code></td><td>Signup rejected, for example an invalid email address.</td></tr>
+    <tr><td><code>429</code></td><td>Too many requests. Wait a few minutes.</td></tr>
+  </tbody>
+</table></div>
+<p>Timestamps are Unix seconds.</p>
+
+<h2>Project and stats</h2>
+<p class="ep"><b>GET</b>/v1/project</p>
+<p>The project's settings: name, slug, public key, ordering, referral settings and page copy.</p>
+<p class="ep"><b>GET</b>/v1/stats</p>
+<pre><code>{
+  <span class="s">"total"</span>: 1204,
+  <span class="s">"by_status"</span>: { <span class="s">"pending"</span>: 96, <span class="s">"confirmed"</span>: 1041, <span class="s">"invited"</span>: 50, <span class="s">"joined"</span>: 17 },
+  <span class="s">"confirm_rate"</span>: 0.92,
+  <span class="s">"referred"</span>: 312,
+  <span class="s">"daily"</span>: [{ <span class="s">"day"</span>: <span class="s">"2026-10-28"</span>, <span class="s">"count"</span>: 88 }],
+  <span class="s">"top_sources"</span>: [{ <span class="s">"name"</span>: <span class="s">"twitter"</span>, <span class="s">"count"</span>: 402 }],
+  <span class="s">"top_referrers"</span>: [ … ]
+}</code></pre>
+
+<h2>Signups</h2>
+<p class="ep"><b>GET</b>/v1/signups</p>
+<p>Newest first. Parameters:</p>
+<div class="table"><table>
+  <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>status</code></td><td><code>pending</code>, <code>confirmed</code>, <code>invited</code>, <code>joined</code> or <code>removed</code>.</td></tr>
+    <tr><td><code>q</code></td><td>Search the email address, UTM source and referrer.</td></tr>
+    <tr><td><code>limit</code></td><td>1 to 500, default 50.</td></tr>
+    <tr><td><code>cursor</code></td><td>The <code>next_cursor</code> from the previous page.</td></tr>
+  </tbody>
+</table></div>
+<pre><code>{
+  <span class="s">"data"</span>: [{
+    <span class="s">"id"</span>: 1204, <span class="s">"email"</span>: <span class="s">"jane@example.com"</span>, <span class="s">"status"</span>: <span class="s">"confirmed"</span>,
+    <span class="s">"points"</span>: 20, <span class="s">"referral_code"</span>: <span class="s">"k3x9q2"</span>, <span class="s">"referred_by"</span>: null,
+    <span class="s">"source_url"</span>: <span class="s">"https://orbit.app/"</span>, <span class="s">"utm_source"</span>: <span class="s">"twitter"</span>,
+    <span class="s">"created_at"</span>: 1793232000, <span class="s">"confirmed_at"</span>: 1793232120,
+    <span class="s">"status_url"</span>: <span class="s">"https://trylobby.app/s/…"</span>,
+    <span class="s">"referral_link"</span>: <span class="s">"https://orbit.app/?ref=k3x9q2"</span>
+  }],
+  <span class="s">"next_cursor"</span>: 1154
+}</code></pre>
+<p><code>next_cursor</code> is <code>null</code> on the last page.</p>
+
+<p class="ep"><b>GET</b>/v1/signups/{id}</p>
+<p>One signup, including its current <code>position</code> if they're confirmed.</p>
+
+<p class="ep"><b class="post">POST</b>/v1/signups/{id}/joined</p>
+<p>Marks someone as having signed up for your product. Fires <code>signup.joined</code>.</p>
+
+<p class="ep"><b class="delete">DELETE</b>/v1/signups/{id}</p>
+<p>Marks them <code>removed</code>. With <code>?hard=1</code>, deletes them and keeps only a hash of the address so it can't be added again.</p>
+
+<h2>Invites</h2>
+<p class="ep"><b class="post">POST</b>/v1/invites</p>
+<p>Send <code>{"count": 50}</code> to invite the next 50 people in line, or <code>{"ids": [12, 31]}</code> for specific people. Each gets an invite email.</p>
+<pre><code>{ <span class="s">"invited"</span>: 50, <span class="s">"data"</span>: [ …signups… ] }</code></pre>
+<p class="ep"><b class="post">POST</b>/v1/invites/redeem</p>
+<p>Send <code>{"token": "…"}</code> (the <code>?wl=</code> value from the invite link) or <code>{"email": "…", "code": "K7PD-3XQM"}</code>. Returns the signup, now <code>joined</code>; 404 if the invite is unknown or already used. See <a href="/docs/invites">Invites and launch day</a>.</p>
+
+<h2>Exports</h2>
+<p class="ep"><b>GET</b>/v1/export.csv</p>
+<p class="ep"><b>GET</b>/v1/export.ndjson</p>
+<p>The whole list. By default only confirmed, invited and joined people, so unconfirmed addresses don't end up in your newsletter tool. Add <code>?status=all</code> for everyone, or <code>?status=pending</code> for one status.</p>
+<pre><code>curl -o list.csv https://trylobby.app/v1/export.csv -H <span class="s">"Authorization: Bearer sk_…"</span></code></pre>
+
+<h2>Webhooks and deliveries</h2>
+<p class="ep"><b>GET</b>/v1/webhooks</p>
+<p class="ep"><b class="post">POST</b>/v1/webhooks</p>
+<pre><code>{ <span class="s">"url"</span>: <span class="s">"https://orbit.app/hooks/lobby"</span>, <span class="s">"kind"</span>: <span class="s">"standard"</span>, <span class="s">"events"</span>: [<span class="s">"signup.confirmed"</span>] }</code></pre>
+<p><code>kind</code> is <code>standard</code> or <code>slack</code>. Leave out <code>events</code> to get all of them. The response includes the signing <code>secret</code>, shown only this once.</p>
+<p class="ep"><b class="delete">DELETE</b>/v1/webhooks/{id}</p>
+<p class="ep"><b class="post">POST</b>/v1/webhooks/{id}/test</p>
+<p>Sends a <code>webhook.test</code> event.</p>
+<p class="ep"><b>GET</b>/v1/deliveries</p>
+<p class="ep"><b class="post">POST</b>/v1/deliveries/{id}/redeliver</p>
+<p>Recent deliveries with their status, attempts and last response, and a way to send one again. See <a href="/docs/webhooks">Webhooks</a>.</p>
+
+<h2>Broadcasts</h2>
+<p class="ep"><b class="post">POST</b>/v1/broadcasts</p>
+<pre><code>{ <span class="s">"subject"</span>: <span class="s">"Orbit is live"</span>, <span class="s">"body"</span>: <span class="s">"Thanks for waiting…"</span>, <span class="s">"audience"</span>: <span class="s">"confirmed"</span> }</code></pre>
+<p><code>audience</code> is <code>confirmed</code>, <code>invited</code> or <code>all</code>. Unsubscribed people are skipped. The body is plain text.</p>
+
+<h2>Public endpoints</h2>
+<p>These take the public key and need no authentication. They're what the widget uses.</p>
+<p class="ep"><b class="post">POST</b>/v1/w/{pk}/signup</p>
+<p>Adds someone to the list. See <a href="/docs/embed#from-your-own-code">From your own code</a>.</p>
+<p class="ep"><b>GET</b>/v1/w/{pk}/count</p>
+<p><code>{"count": 1204}</code>, or <code>{"count": null}</code> below the project's counter floor.</p>

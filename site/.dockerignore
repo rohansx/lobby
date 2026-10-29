@@ -1,2 +1,4 @@
 Dockerfile
 .dockerignore
+build.mjs
+docs-src

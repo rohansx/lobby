@@ -1,0 +1,64 @@
+<!-- {"title": "Webhooks", "description": "Lobby webhook events, payloads, signature verification with Standard Webhooks, retries, and the Slack preset.", "lede": "Get a signed HTTP request for every change on your list: to update your CRM, post in Slack, or start an onboarding sequence."} -->
+
+<h2>Adding a webhook</h2>
+<p>In the project's <strong>Webhooks</strong> page, add the URL, choose the events, and copy the signing secret (<code>whsec_…</code>). It's shown once. You can also create webhooks <a href="/docs/api#webhooks-and-deliveries">through the API</a>.</p>
+<p>Choose <strong>Slack</strong> as the kind and paste a Slack incoming-webhook URL to get a readable message in a channel instead of JSON.</p>
+<p>On Lobby Cloud, webhooks come with the Launch and Pro plans.</p>
+
+<h2>Events</h2>
+<div class="table"><table>
+  <thead><tr><th>Event</th><th>When</th><th><code>data</code></th></tr></thead>
+  <tbody>
+    <tr><td><code>signup.created</code></td><td>Someone signs up.</td><td>The signup</td></tr>
+    <tr><td><code>signup.confirmed</code></td><td>They confirm their email.</td><td>The signup</td></tr>
+    <tr><td><code>signup.referred</code></td><td>A referral is credited.</td><td><code>{ referrer, referred }</code></td></tr>
+    <tr><td><code>signup.invited</code></td><td>You invite them.</td><td><code>{ signup, invite_code }</code></td></tr>
+    <tr><td><code>signup.joined</code></td><td>They redeem an invite, or you mark them joined.</td><td>The signup</td></tr>
+    <tr><td><code>signup.removed</code></td><td>You remove them, or delete them.</td><td>The signup, or <code>{ id, deleted: true }</code> after a hard delete</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Payload</h2>
+<pre data-title="POST https://orbit.app/hooks/lobby"><code>webhook-id: msg_4f0c2a91b7e3d58a6c1f
+webhook-timestamp: 1793232120
+webhook-signature: v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4=
+content-type: application/json
+
+{
+  <span class="s">"type"</span>: <span class="s">"signup.confirmed"</span>,
+  <span class="s">"timestamp"</span>: <span class="s">"2026-10-29T10:02:00Z"</span>,
+  <span class="s">"data"</span>: { <span class="s">"id"</span>: 1204, <span class="s">"email"</span>: <span class="s">"jane@example.com"</span>, <span class="s">"status"</span>: <span class="s">"confirmed"</span>, … }
+}</code></pre>
+<p>The <code>webhook-id</code> is the same across retries of one event, so use it to ignore duplicates.</p>
+
+<h2>Verifying the signature</h2>
+<p>Lobby signs every request following <a href="https://www.standardwebhooks.com/">Standard Webhooks</a>, so any of their libraries can check it:</p>
+<pre data-title="hooks.ts"><code><span class="k">import</span> { Webhook } <span class="k">from</span> <span class="s">"standardwebhooks"</span>
+
+<span class="k">const</span> wh = <span class="k">new</span> Webhook(process.env.LOBBY_WEBHOOK_SECRET.replace(<span class="s">"whsec_"</span>, <span class="s">""</span>))
+
+app.post(<span class="s">"/hooks/lobby"</span>, express.raw({ type: <span class="s">"application/json"</span> }), (req, res) =&gt; {
+  <span class="k">const</span> event = wh.verify(req.body, req.headers) <span class="c">// throws if the signature is wrong</span>
+  <span class="c">// handle event.type …</span>
+  res.sendStatus(204)
+})</code></pre>
+<p>Or by hand: the signature is HMAC-SHA256 over <code>{webhook-id}.{webhook-timestamp}.{raw body}</code>, keyed with the base64-decoded part of the secret after <code>whsec_</code>, base64-encoded and prefixed with <code>v1,</code>.</p>
+<pre data-title="verify.go"><code><span class="k">func</span> verify(secret, id, ts, sig <span class="k">string</span>, body []<span class="k">byte</span>) <span class="k">bool</span> {
+	key, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(secret, <span class="s">"whsec_"</span>))
+	mac := hmac.New(sha256.New, key)
+	fmt.Fprintf(mac, <span class="s">"%s.%s."</span>, id, ts)
+	mac.Write(body)
+	want := <span class="s">"v1,"</span> + base64.StdEncoding.EncodeToString(mac.Sum(<span class="k">nil</span>))
+	<span class="k">for</span> _, s := <span class="k">range</span> strings.Fields(sig) {
+		<span class="k">if</span> hmac.Equal([]<span class="k">byte</span>(s), []<span class="k">byte</span>(want)) {
+			<span class="k">return true</span>
+		}
+	}
+	<span class="k">return false</span>
+}</code></pre>
+<p>Also reject requests whose <code>webhook-timestamp</code> is more than five minutes from your clock, so an old request can't be replayed.</p>
+
+<h2>Retries</h2>
+<p>Any 2xx answer counts as delivered. Anything else, or no answer within 15 seconds, is retried after 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours and 10 hours: eight attempts over about a day. After that the delivery is marked failed.</p>
+<p>Answer <code>410 Gone</code> to turn the webhook off for good.</p>
+<p>The <strong>Webhooks</strong> page lists recent deliveries with their response codes and errors, and <strong>Redeliver</strong> sends any of them again.</p>

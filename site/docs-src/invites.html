@@ -1,0 +1,42 @@
+<!-- {"title": "Invites and launch day", "description": "Let people in from your Lobby waitlist in waves, redeem their invites in your app, and email everyone at launch.", "lede": "Letting people in, a wave at a time, and connecting the invite to your product's signup."} -->
+
+<h2>Sending invites</h2>
+<p>On the project's <strong>Overview</strong>, <strong>Invite the next wave</strong> lets in the next N people in line. On <strong>Signups</strong> you can select specific people and invite them instead. From code:</p>
+<pre><code>curl -X POST https://trylobby.app/v1/invites \
+  -H <span class="s">"Authorization: Bearer sk_…"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"count": 50}'</span>        <span class="c"># or {"ids": [12, 31, 40]}</span></code></pre>
+<p>Each invited person moves to <code>invited</code> and gets a "You're in" email with two ways to claim their spot:</p>
+<ul>
+  <li>a <strong>magic link</strong> to your <strong>Invite URL</strong> with <code>?wl=&lt;token&gt;</code> added, for example <code>https://orbit.app/signup?wl=…</code>,</li>
+  <li>an <strong>invite code</strong> like <code>K7PD-3XQM</code>, bound to their email address, for people who sign up some other way.</li>
+</ul>
+<p>Without an Invite URL, the link opens their status page.</p>
+
+<h2>Redeeming in your app</h2>
+<p>When someone arrives with <code>?wl=</code>, or types a code at signup, check it with Lobby from your server:</p>
+<pre data-title="server.ts"><code><span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">"https://trylobby.app/v1/invites/redeem"</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: { Authorization: <span class="s">`Bearer ${process.env.LOBBY_KEY}`</span>, <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> },
+  body: JSON.stringify({ token: searchParams.get(<span class="s">"wl"</span>) }),
+  <span class="c">// or: JSON.stringify({ email, code })</span>
+})
+<span class="k">if</span> (res.status === 404) <span class="k">throw new</span> Error(<span class="s">"That invite isn't valid or was already used."</span>)
+<span class="k">const</span> person = <span class="k">await</span> res.json() <span class="c">// the signup, now with status "joined"</span></code></pre>
+<p>A valid invite is marked used and the person becomes <code>joined</code>. Each invite works once. An unknown, revoked or used invite answers 404.</p>
+<p>Not using invite links? Call <code>POST /v1/signups/{id}/joined</code> when someone from the list signs up for your product, so your numbers stay right.</p>
+
+<h2>Launch day broadcast</h2>
+<p><strong>Broadcast</strong> emails everyone in an audience at once: <code>confirmed</code>, <code>invited</code>, or <code>all</code> (confirmed, invited and joined). People who unsubscribed are always skipped, and every broadcast carries one-click unsubscribe headers that Gmail and Apple Mail show as an Unsubscribe button.</p>
+<pre><code>curl -X POST https://trylobby.app/v1/broadcasts \
+  -H <span class="s">"Authorization: Bearer sk_…"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"subject": "Orbit is live", "body": "Thanks for waiting…", "audience": "all"}'</span></code></pre>
+<p>Broadcasts are queued and sent in the background. On Lobby Cloud they count toward your plan's monthly emails, and one that would go over is refused before anything is sent.</p>
+
+<h2>A launch checklist</h2>
+<ol>
+  <li>Set the <strong>Invite URL</strong> and test redeeming an invite on a staging copy of your app.</li>
+  <li>Self-hosting? Check SPF, DKIM and DMARC for your sending domain (see <a href="/docs/email">Email</a>).</li>
+  <li>Invite a small first wave, say 50, and watch for bounces and replies.</li>
+  <li>Increase the waves as your product holds up.</li>
+  <li>When you open to everyone, send a broadcast to <code>all</code>.</li>
+</ol>

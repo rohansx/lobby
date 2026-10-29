@@ -13,6 +13,7 @@ Rather not run a server? [Lobby Cloud](https://trylobby.app) is the same softwar
 </p>
 
 <p align="center">
+  <a href="https://trylobby.app/docs">Docs</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#add-it-to-your-site">Add it to your site</a> ·
   <a href="#how-it-works">How it works</a> ·

@@ -1,0 +1,47 @@
+<!-- {"title": "How the line works", "description": "Double opt-in, places in line, referral points and their caps, the public counter and status pages in Lobby.", "lede": "What happens between someone typing their email and you letting them in."} -->
+
+<h2>Double opt-in</h2>
+<p>With double opt-in on (the default), a new signup is <code>pending</code> until the person clicks the link in the confirmation email. Only then do they get a place in line. This keeps typos, fake addresses and other people's addresses off your list, and it's what keeps your launch email out of spam folders.</p>
+<p>Turning it off in <strong>Settings</strong> puts people in line the moment they sign up. Do that only if you verify addresses some other way.</p>
+<p>Signing up again with the same address doesn't create a duplicate. It re-sends the confirmation or status email, at most once every ten minutes.</p>
+
+<h2>Duplicate addresses</h2>
+<p>Addresses are compared in a normalized form, so <code>Jane.Doe+launch@gmail.com</code> and <code>janedoe@gmail.com</code> count as the same person. That also stops people from inventing addresses to refer themselves.</p>
+
+<h2>Place in line</h2>
+<p>Choose the ordering in <strong>Settings → Ordering</strong>:</p>
+<ul>
+  <li><strong>Points</strong> (the default): each credited referral moves the referrer up a set number of places, 10 unless you change <strong>Places per referral</strong>.</li>
+  <li><strong>First come, first served</strong>: the order people confirmed in, with no jumping ahead.</li>
+</ul>
+<p>Only confirmed people have a place. Someone moving up never changes anyone else's base position; the line is recomputed when it's read.</p>
+
+<h2>Referrals</h2>
+<p>Every confirmed person gets a referral link: your <strong>Site URL</strong> (or the hosted page if you haven't set one) with <code>?ref=code</code> added. The widget and form pick up <code>?ref=</code> from the page they're on.</p>
+<p>A referral is credited only when the friend <strong>confirms</strong> their email, not when they sign up. Two caps stop one person from gaming it:</p>
+<div class="table"><table>
+  <thead><tr><th>Setting</th><th>Default</th><th>What it limits</th></tr></thead>
+  <tbody>
+    <tr><td>Referrals credited per IP</td><td>3</td><td>Credited referrals coming from the same IP address.</td></tr>
+    <tr><td>Referrals credited per hour</td><td>20</td><td>Credited referrals for one referrer in an hour.</td></tr>
+  </tbody>
+</table></div>
+<p>Referrals beyond a cap still join the list; they just don't move the referrer up.</p>
+
+<h2>The status page</h2>
+<p>The confirmation link opens the person's status page at <code>/s/…</code>. They click once to confirm (a button rather than the link itself, so email scanners that open links can't confirm on someone's behalf). The page then shows their place, how many people are behind them, how many friends they've referred, and their referral link with copy, X, LinkedIn and email share buttons. The link in later emails opens the same page, so they can check back any time without an account.</p>
+<p>Turn off <strong>Show place in line</strong> if you'd rather not reveal numbers; the page then shows the referral link only.</p>
+
+<h2>The public counter</h2>
+<p><code>GET /v1/w/{pk}/count</code> and the widget's <code>data-counter</code> show how many people are on the list. Below the <strong>Public counter starts at</strong> number (50 by default) they return nothing, so a brand-new list never says "3 people are waiting."</p>
+
+<h2>Removing people</h2>
+<p>Removing someone from the dashboard or with <code>DELETE /v1/signups/{id}</code> marks them <code>removed</code> and keeps the record. Add <code>?hard=1</code> to delete them entirely; Lobby keeps only a one-way hash of the address so the same address can't be signed up again by a bot.</p>
+
+<h2>Privacy</h2>
+<ul>
+  <li>IP addresses are stored only as keyed hashes, and cleared after 30 days.</li>
+  <li>Public pages and the widget set no cookies.</li>
+  <li>The consent text is versioned; each signup stores the version they agreed to.</li>
+  <li>You can export everything as CSV or NDJSON at any time.</li>
+</ul>

@@ -20,8 +20,9 @@ type Config struct {
 
 	// Cloud mode turns one instance into a hosted service: anyone can sign up,
 	// each account sees only its own projects, and plans set the limits.
-	Cloud bool        // LOBBY_CLOUD
-	Polar PolarConfig // POLAR_*, billing for cloud mode
+	Cloud     bool        // LOBBY_CLOUD
+	Polar     PolarConfig // POLAR_*, billing for cloud mode
+	Operators []string    // LOBBY_OPERATORS, comma-separated emails that can open the operator page
 
 	// Sign in with Google and GitHub; each is on when both of its values are set.
 	GoogleClientID, GoogleClientSecret string // GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
@@ -51,6 +52,7 @@ func ConfigFromEnv() Config {
 		ResendHook:         env("RESEND_WEBHOOK_SECRET", ""),
 		CheckMX:            env("LOBBY_CHECK_MX", "1") != "0",
 		Cloud:              env("LOBBY_CLOUD", "") == "1",
+		Operators:          strings.FieldsFunc(env("LOBBY_OPERATORS", ""), func(r rune) bool { return r == ',' || r == ' ' }),
 		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
 		GitHubClientID:     env("GITHUB_CLIENT_ID", ""),

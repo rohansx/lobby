@@ -16,6 +16,7 @@ const Broadcast = lazy(() => import("@/pages/broadcast"))
 const Settings = lazy(() => import("@/pages/settings"))
 const BillingPage = lazy(() => import("@/pages/billing"))
 const Checkout = lazy(() => import("@/pages/checkout"))
+const Ops = lazy(() => import("@/pages/ops"))
 
 // Signed-out pages: cloud instances have open signup and password reset.
 const publicModes: AuthMode[] = ["login", "signup", "forgot", "reset"]
@@ -79,6 +80,7 @@ export default function App() {
             ))}
             {me.cloud && <Route path="/checkout" component={Checkout} />}
             {me.cloud && <Route path="/billing" component={BillingPage} />}
+            {me.operator && <Route path="/ops" component={Ops} />}
             <Route path="/setup">
               <Redirect to="/dashboard" replace />
             </Route>

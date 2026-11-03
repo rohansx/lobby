@@ -148,6 +148,8 @@ func (s *Server) Handler() http.Handler {
 	authed.HandleFunc("POST /api/admin/billing/checkout", s.cloudOnly(s.adminCheckout))
 	authed.HandleFunc("POST /api/admin/billing/portal", s.cloudOnly(s.adminPortal))
 	authed.HandleFunc("DELETE /api/admin/account", s.cloudOnly(s.adminDeleteAccount))
+	authed.HandleFunc("GET /api/admin/ops", s.cloudOnly(s.operatorOnly(s.adminOps)))
+	authed.HandleFunc("POST /api/admin/ops/accounts/{id}/{action}", s.cloudOnly(s.operatorOnly(s.adminOpsAction)))
 	authed.HandleFunc("GET /api/admin/projects", s.adminProjects)
 	authed.HandleFunc("POST /api/admin/projects", s.adminCreateProject)
 	authed.HandleFunc("GET /api/admin/projects/{slug}", s.adminGetProject)

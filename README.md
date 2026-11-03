@@ -149,6 +149,7 @@ Options: `data-button`, `data-placeholder`, `data-success`, `data-counter`. Them
 | `POLAR_WEBHOOK_SECRET` | Secret of the Polar webhook pointed at `/v1/hooks/polar`, with the `subscription.*` events |
 | `POLAR_PRODUCT_LAUNCH_MONTHLY`, `_LAUNCH_YEARLY`, `_PRO_MONTHLY`, `_PRO_YEARLY` | Polar product IDs for each plan and interval |
 | `POLAR_SANDBOX` | `1` to use Polar's sandbox while testing |
+| `LOBBY_OPERATORS` | Comma-separated emails of the people running the instance. Once verified, these accounts get an Operator page in the dashboard with instance totals, every account, and suspend/unsuspend |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | "Continue with Google". Redirect URI: `{LOBBY_BASE_URL}/auth/google/callback` |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | "Continue with GitHub". Callback URL: `{LOBBY_BASE_URL}/auth/github/callback` |
 

@@ -74,6 +74,9 @@ func (s *Server) adminMe(w http.ResponseWriter, r *http.Request) {
 				out["verified"] = ac.Verified || !cloud
 				out["plan"] = s.app.PlanOf(ac)
 				out["suspended"] = cloud && ac.Suspended
+				if s.app.isOperator(ac) {
+					out["operator"] = true
+				}
 			}
 		}
 	}

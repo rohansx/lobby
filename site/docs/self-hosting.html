@@ -172,7 +172,7 @@ docker rm -f lobby &amp;&amp; docker run -d … ghcr.io/rohansx/lobby:latest   <
 <p>Database migrations run on start. Take a backup first if you're not using Litestream.</p>
 
 <h2 id="running-a-hosted-service"><a class="anchor" href="#running-a-hosted-service" aria-hidden="true">#</a>Running a hosted service</h2>
-<p><code>LOBBY_CLOUD=1</code> turns an instance into a multi-tenant service, which is how Lobby Cloud runs: anyone can sign up, each account sees only its own waitlists, and plan limits and billing through <a href="https://polar.sh">Polar</a> apply. The full list of variables is in the <a href="https://github.com/rohansx/lobby#configuration">README</a>. You don't need any of it to run Lobby for yourself.</p>
+<p><code>LOBBY_CLOUD=1</code> turns an instance into a multi-tenant service, which is how Lobby Cloud runs: anyone can sign up, each account sees only its own waitlists, and plan limits and billing through <a href="https://polar.sh">Polar</a> apply. List your own email in <code>LOBBY_OPERATORS</code> (comma-separated) to get an Operator page with instance totals and account suspension. The full list of variables is in the <a href="https://github.com/rohansx/lobby#configuration">README</a>. You don't need any of it to run Lobby for yourself.</p>
     <div class="doc-foot">
       <nav class="pager" aria-label="Previous and next">
         <a href="/docs/cli"><span>Previous</span>CLI</a>

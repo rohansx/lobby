@@ -9,6 +9,7 @@ export interface Me {
   verified?: boolean
   suspended?: boolean
   doi_locked?: boolean // cloud: double opt-in is always on
+  operator?: boolean // cloud: email is in LOBBY_OPERATORS
   plan?: Plan
   mailer: string
   from: string
@@ -43,6 +44,37 @@ export interface Billing {
   usage: { signups: number; projects: number; emails: number }
   plans: Plan[]
   billing_enabled: boolean
+}
+
+export interface OpsAccount {
+  id: number
+  email: string
+  verified: boolean
+  plan: string
+  interval: "" | "month" | "year"
+  status: string
+  created_at: number
+  projects: number
+  signups: number
+  emails_month: number
+  suspended: boolean
+}
+
+export interface OpsData {
+  totals: {
+    accounts: number
+    verified: number
+    paying: Record<string, number>
+    mrr: number
+    signups: number
+    signups_7d: number
+    emails_month: number
+    queued_jobs: number
+    failed_jobs: number
+    accounts_shown: number
+    truncated: boolean
+  }
+  accounts: OpsAccount[]
 }
 
 export interface Project {

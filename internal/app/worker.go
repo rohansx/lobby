@@ -118,6 +118,9 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 	} else if err != nil {
 		return err
 	}
+	if a.ownerSuspended(ctx, p.OwnerID) {
+		return fmt.Errorf("%w: account suspended, email not sent", ErrPermanent)
+	}
 	s, err := getSignup(ctx, a.db.W, p.ID, j.SignupID)
 	if errors.Is(err, ErrNotFound) {
 		return nil // signup deleted since
@@ -197,11 +200,17 @@ func (a *App) Broadcast(ctx context.Context, p *Project, subject, body, audience
 	if err := a.checkBulkEmail(ctx, p, n); err != nil {
 		return 0, err
 	}
+	if err := a.checkBroadcast(ctx, p); err != nil {
+		return 0, err
+	}
 	tx, err := a.db.W.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
+	if err := a.checkBroadcastCap(ctx, tx, p); err != nil {
+		return 0, err
+	}
 	res, err := tx.ExecContext(ctx, `INSERT INTO broadcasts (project_id, subject, body, audience, created_at) VALUES (?, ?, ?, ?, ?)`,
 		p.ID, subject, body, audience, now())
 	if err != nil {

@@ -197,6 +197,7 @@ var migrations = []string{
 		created_at INTEGER NOT NULL,
 		PRIMARY KEY (provider, subject));
 	CREATE INDEX oauth_identities_admin ON oauth_identities(admin_id);`,
+	`ALTER TABLE admins ADD COLUMN suspended_at INTEGER;`,
 }
 
 func (s *Store) migrate() error {

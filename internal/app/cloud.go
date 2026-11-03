@@ -55,15 +55,16 @@ type Account struct {
 	LimitMailedAt     *int64 `json:"-"`
 	CreatedAt         int64  `json:"created_at"`
 	HasPassword       bool   `json:"has_password"`
+	Suspended         bool   `json:"suspended"`
 }
 
 const accountCols = `id, email, verified_at IS NOT NULL, plan, plan_interval, sub_status, period_end, cancel_at_period_end,
-	polar_customer_id, polar_subscription_id, limit_mailed_at, created_at, password_hash != ''`
+	polar_customer_id, polar_subscription_id, limit_mailed_at, created_at, password_hash != '', suspended_at IS NOT NULL`
 
 func scanAccount(row scanner) (*Account, error) {
 	ac := &Account{}
 	err := row.Scan(&ac.ID, &ac.Email, &ac.Verified, &ac.Plan, &ac.Interval, &ac.SubStatus, &ac.PeriodEnd,
-		&ac.CancelAtPeriodEnd, &ac.PolarCustomerID, &ac.PolarSubscription, &ac.LimitMailedAt, &ac.CreatedAt, &ac.HasPassword)
+		&ac.CancelAtPeriodEnd, &ac.PolarCustomerID, &ac.PolarSubscription, &ac.LimitMailedAt, &ac.CreatedAt, &ac.HasPassword, &ac.Suspended)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -174,8 +175,69 @@ func (a *App) emailAllowance(ctx context.Context, ownerID int64) int64 {
 	return left
 }
 
-// checkBulkEmail refuses a broadcast or invite batch that would go over the monthly cap.
+// errSuspended is shown to a suspended account that tries to send email.
+var errSuspended = errors.New("This account is suspended. Contact support.")
+
+// SuspendAccount stops an account's email and signups (cloud only); the owner can still sign in.
+func (a *App) SuspendAccount(ctx context.Context, id int64) error {
+	_, err := a.db.W.ExecContext(ctx, `UPDATE admins SET suspended_at = COALESCE(suspended_at, ?) WHERE id = ?`, now(), id)
+	return err
+}
+
+func (a *App) UnsuspendAccount(ctx context.Context, id int64) error {
+	_, err := a.db.W.ExecContext(ctx, `UPDATE admins SET suspended_at = NULL WHERE id = ?`, id)
+	return err
+}
+
+// ownerSuspended reports whether a project's owner is suspended. Always false self-hosted.
+func (a *App) ownerSuspended(ctx context.Context, ownerID int64) bool {
+	if !a.cfg.Cloud || ownerID == 0 {
+		return false
+	}
+	var s bool
+	a.db.W.QueryRowContext(ctx, `SELECT suspended_at IS NOT NULL FROM admins WHERE id = ?`, ownerID).Scan(&s)
+	return s
+}
+
+// maxBroadcastsPerDay caps broadcasts per cloud account over a rolling 24 hours.
+const maxBroadcastsPerDay = 2
+
+// checkBroadcast holds back broadcasts from new or unverified cloud accounts.
+func (a *App) checkBroadcast(ctx context.Context, p *Project) error {
+	_, ac := a.planForOwner(ctx, p.OwnerID)
+	if ac == nil {
+		return nil
+	}
+	if !ac.Verified {
+		return &ErrLimit{"Confirm your email address before sending a broadcast."}
+	}
+	if now()-ac.CreatedAt < 86400 {
+		return &ErrLimit{"New accounts can send a broadcast after their first 24 hours."}
+	}
+	return nil
+}
+
+// checkBroadcastCap counts the owner's broadcasts in the last 24 hours. It runs
+// inside the write transaction that inserts the broadcast, so parallel requests
+// can't all pass the count before any of them inserts.
+func (a *App) checkBroadcastCap(ctx context.Context, q querier, p *Project) error {
+	if !a.cfg.Cloud {
+		return nil
+	}
+	var n int
+	q.QueryRowContext(ctx, `SELECT COUNT(*) FROM broadcasts WHERE created_at > ? AND project_id IN (SELECT id FROM projects WHERE owner_id = ?)`,
+		now()-86400, p.OwnerID).Scan(&n)
+	if n >= maxBroadcastsPerDay {
+		return &ErrLimit{fmt.Sprintf("You can send %d broadcasts a day. Try again tomorrow.", maxBroadcastsPerDay)}
+	}
+	return nil
+}
+
+// checkBulkEmail refuses a broadcast or invite batch from a suspended account or one that would go over the monthly cap.
 func (a *App) checkBulkEmail(ctx context.Context, p *Project, n int64) error {
+	if a.ownerSuspended(ctx, p.OwnerID) {
+		return errSuspended
+	}
 	left := a.emailAllowance(ctx, p.OwnerID)
 	if left < 0 || n <= left {
 		return nil

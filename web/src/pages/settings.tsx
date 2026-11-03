@@ -19,7 +19,7 @@ import { useProject } from "@/lib/use-project"
 
 export default function Settings() {
   const { slug, data, error, reload } = useProject()
-  const { refreshProjects } = useSession()
+  const { me, refreshProjects } = useSession()
   const [, navigate] = useLocation()
   const [form, setForm] = useState<Project | null>(null)
   const [saving, setSaving] = useState(false)
@@ -87,7 +87,13 @@ export default function Settings() {
         </Section>
 
         <Section title="Line" description="How the queue behaves.">
-          <Toggle label="Double opt-in" hint="People confirm by email before they get a place. Strongly recommended." checked={form.doi_enabled} onChange={(v) => set("doi_enabled", v)} />
+          <Toggle
+            label="Double opt-in"
+            hint={me.doi_locked ? "Always on in Lobby Cloud: people confirm by email before they get a place." : "People confirm by email before they get a place. Strongly recommended."}
+            checked={form.doi_enabled || !!me.doi_locked}
+            disabled={me.doi_locked}
+            onChange={(v) => set("doi_enabled", v)}
+          />
           <Toggle label="Show place in line" hint="On the status page and in emails." checked={form.show_position} onChange={(v) => set("show_position", v)} />
           <Field label="Ordering" id="position_mode">
             <Select value={form.position_mode} onValueChange={(v) => set("position_mode", v as Project["position_mode"])}>
@@ -188,14 +194,14 @@ function Field({ label, id, hint, children }: { label: string; id: string; hint?
   )
 }
 
-function Toggle({ label, hint, checked, onChange }: { label: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, hint, checked, disabled, onChange }: { label: string; hint: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-start justify-between gap-4">
       <span>
         <span className="text-sm font-medium">{label}</span>
         <span className="block text-xs text-muted-foreground">{hint}</span>
       </span>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </label>
   )
 }

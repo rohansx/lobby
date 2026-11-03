@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -150,10 +153,12 @@ func TestCloudSignupLimit(t *testing.T) {
 	if res := signup(t, a, p, "last@example.com", "", "1.1.1.1"); res.Created || res.Signup == nil {
 		t.Fatal("existing signup should be found")
 	}
-	time.Sleep(50 * time.Millisecond) // the limit email goes out in the background
-	found := false
-	for _, m := range a.mailer.(*captureMailer).sent {
-		found = found || (m.To == "owner@example.com" && strings.Contains(m.Subject, "full"))
+	found := false // the limit email goes out in the background
+	for i := 0; i < 100 && !found; i++ {
+		time.Sleep(10 * time.Millisecond)
+		for _, m := range a.mailer.(*captureMailer).snapshot() {
+			found = found || (m.To == "owner@example.com" && strings.Contains(m.Subject, "full"))
+		}
 	}
 	if !found {
 		t.Fatal("owner should hear the waitlist is full")
@@ -171,14 +176,17 @@ func TestCloudEmailCap(t *testing.T) {
 	ctx := context.Background()
 	id, _ := a.SignUp(ctx, "owner@example.com", "correct horse battery")
 	p, _, _ := a.CreateProject(ctx, id, "Orbit", "orbit")
-	a.db.W.Exec(`UPDATE projects SET doi_enabled = 0 WHERE id = ?`, p.ID)
-	p, _ = a.ProjectByID(ctx, p.ID)
+	a.db.W.Exec(`UPDATE admins SET verified_at = 1, created_at = 1 WHERE id = ?`, id) // old enough to broadcast
+	var ids []int64
 	for i := range 3 {
-		signup(t, a, p, fmt.Sprintf("p%d@example.com", i), "", "1.1.1."+strconv.Itoa(i))
+		ids = append(ids, signup(t, a, p, fmt.Sprintf("p%d@example.com", i), "", "1.1.1."+strconv.Itoa(i)).Signup.ID)
 	}
 	a.runJobs(ctx)
-	if u := a.UsageOf(ctx, id); u.Emails != 3 { // the status emails; owner notes are free
+	if u := a.UsageOf(ctx, id); u.Emails != 3 { // the confirm emails; owner notes are free
 		t.Fatalf("emails counted: %d", u.Emails)
+	}
+	for _, sid := range ids {
+		a.Confirm(ctx, p, sid)
 	}
 	a.db.W.Exec(`UPDATE email_usage SET sent = 999 WHERE admin_id = ?`, id)
 	if _, err := a.Broadcast(ctx, p, "Hi", "Launching", "confirmed"); err == nil {
@@ -254,4 +262,145 @@ func TestPolarWebhook(t *testing.T) {
 // legacySign signs with the secret's raw bytes as the key, as Polar did before September 2026.
 func legacySign(secret, id, ts string, body []byte) string {
 	return SignWebhook("whsec_"+base64.StdEncoding.EncodeToString([]byte(secret)), id, ts, body)
+}
+
+func TestCloudDOIAlwaysOn(t *testing.T) {
+	a := newCloudApp(t)
+	ctx := context.Background()
+	id, _ := a.SignUp(ctx, "owner@example.com", "correct horse battery")
+	p, _, _ := a.CreateProject(ctx, id, "Orbit", "orbit")
+	p.DOIEnabled = false
+	if err := a.UpdateProject(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	var doi bool
+	a.db.W.QueryRow(`SELECT doi_enabled FROM projects WHERE id = ?`, p.ID).Scan(&doi)
+	if !doi {
+		t.Fatal("cloud must not store double opt-in off")
+	}
+	// A row that was switched off before the fix still behaves as on.
+	a.db.W.Exec(`UPDATE projects SET doi_enabled = 0 WHERE id = ?`, p.ID)
+	p, _ = a.ProjectByID(ctx, p.ID)
+	if !p.DOIEnabled {
+		t.Fatal("loaded cloud project must report double opt-in on")
+	}
+	if s := signup(t, a, p, "x@example.com", "", "1.1.1.1").Signup; s.Status != StatusPending {
+		t.Fatalf("cloud signup must wait for confirmation, got %s", s.Status)
+	}
+}
+
+func TestSelfHostedCanDisableDOI(t *testing.T) {
+	a := newTestApp(t)
+	p := newTestProject(t, a, false)
+	if p.DOIEnabled {
+		t.Fatal("self-hosted should keep double opt-in off")
+	}
+	if s := signup(t, a, p, "x@example.com", "", "1.1.1.1").Signup; s.Status != StatusConfirmed {
+		t.Fatalf("self-hosted without DOI confirms at once, got %s", s.Status)
+	}
+}
+
+func TestCloudSuspendedAccount(t *testing.T) {
+	a := newCloudApp(t)
+	ctx := context.Background()
+	id, _ := a.SignUp(ctx, "owner@example.com", "correct horse battery")
+	a.db.W.Exec(`UPDATE admins SET verified_at = 1, created_at = 1 WHERE id = ?`, id)
+	p, _, _ := a.CreateProject(ctx, id, "Orbit", "orbit")
+	s := signup(t, a, p, "queued@example.com", "", "1.1.1.1").Signup // its confirm email is queued
+	a.Confirm(ctx, p, s.ID)
+
+	if err := a.SuspendAccount(ctx, id); err != nil {
+		t.Fatal(err)
+	}
+	if ac, _ := a.Account(ctx, id); !ac.Suspended {
+		t.Fatal("account should read as suspended")
+	}
+	if _, err := a.SubmitSignup(ctx, p, SignupInput{Email: "new@example.com", DwellMs: -1}); err != ErrWaitlistFull {
+		t.Fatalf("suspended signup should be refused, got %v", err)
+	}
+	if _, err := a.Broadcast(ctx, p, "Hi", "Launching", "confirmed"); err == nil {
+		t.Fatal("suspended broadcast should be refused")
+	}
+	if _, err := a.InviteIDs(ctx, p, []int64{s.ID}); err == nil {
+		t.Fatal("suspended invite should be refused")
+	}
+	a.runJobs(ctx)
+	for _, m := range a.mailer.(*captureMailer).sent {
+		if m.To == "queued@example.com" {
+			t.Fatal("queued email must not send for a suspended account")
+		}
+	}
+	var queued, failed int
+	a.db.W.QueryRow(`SELECT COUNT(*) FROM jobs WHERE status = 'queued'`).Scan(&queued)
+	a.db.W.QueryRow(`SELECT COUNT(*) FROM jobs WHERE status = 'failed' AND last_error LIKE '%suspended%'`).Scan(&failed)
+	if queued != 0 || failed == 0 {
+		t.Fatalf("jobs should fail as suspended, queued=%d failed=%d", queued, failed)
+	}
+
+	// The owner can still sign in and sees the state.
+	srv, _ := NewServer(a)
+	c := &client{t: t, h: srv.Handler()}
+	if code, _ := c.do("POST", "/api/admin/login", `{"email":"owner@example.com","password":"correct horse battery"}`); code != 200 {
+		t.Fatalf("suspended login: %d", code)
+	}
+	if _, me := c.do("GET", "/api/admin/me", ""); me["suspended"] != true || me["doi_locked"] != true {
+		t.Fatalf("me should show suspended: %v", me)
+	}
+
+	a.UnsuspendAccount(ctx, id)
+	if _, err := a.SubmitSignup(ctx, p, SignupInput{Email: "new@example.com", DwellMs: -1}); err != nil {
+		t.Fatalf("unsuspended signup: %v", err)
+	}
+}
+
+func TestCloudBroadcastGuards(t *testing.T) {
+	a := newCloudApp(t)
+	ctx := context.Background()
+	id, _ := a.SignUp(ctx, "owner@example.com", "correct horse battery")
+	a.db.W.Exec(`UPDATE admins SET verified_at = 1 WHERE id = ?`, id)
+	p, _, _ := a.CreateProject(ctx, id, "Orbit", "orbit")
+	var le *ErrLimit
+	if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); !errors.As(err, &le) {
+		t.Fatalf("a brand-new account must not broadcast, got %v", err)
+	}
+	a.db.W.Exec(`UPDATE admins SET verified_at = NULL, created_at = 1 WHERE id = ?`, id)
+	if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); !errors.As(err, &le) {
+		t.Fatalf("an unverified account must not broadcast, got %v", err)
+	}
+	a.db.W.Exec(`UPDATE admins SET verified_at = 1 WHERE id = ?`, id)
+	for i := range maxBroadcastsPerDay {
+		if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); err != nil {
+			t.Fatalf("broadcast %d within the daily cap: %v", i+1, err)
+		}
+	}
+	if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); !errors.As(err, &le) {
+		t.Fatalf("broadcast over the daily cap should be ErrLimit, got %v", err)
+	}
+	a.db.W.Exec(`UPDATE broadcasts SET created_at = created_at - 86401`)
+	if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); err != nil {
+		t.Fatalf("the cap rolls over after 24h: %v", err)
+	}
+}
+
+func TestCloudBroadcastCapUnderConcurrency(t *testing.T) {
+	a := newCloudApp(t)
+	ctx := context.Background()
+	id, _ := a.SignUp(ctx, "owner@example.com", "correct horse battery")
+	a.db.W.Exec(`UPDATE admins SET verified_at = 1, created_at = 1 WHERE id = ?`, id)
+	p, _, _ := a.CreateProject(ctx, id, "Orbit", "orbit")
+	var wg sync.WaitGroup
+	var ok atomic.Int32
+	for range 20 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := a.Broadcast(ctx, p, "Hi", "Body", "confirmed"); err == nil {
+				ok.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if n := ok.Load(); n != maxBroadcastsPerDay {
+		t.Fatalf("parallel broadcasts sent %d, want the daily cap %d", n, maxBroadcastsPerDay)
+	}
 }

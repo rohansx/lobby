@@ -7,6 +7,8 @@ export interface Me {
   providers: ("google" | "github")[]
   email?: string
   verified?: boolean
+  suspended?: boolean
+  doi_locked?: boolean // cloud: double opt-in is always on
   plan?: Plan
   mailer: string
   from: string

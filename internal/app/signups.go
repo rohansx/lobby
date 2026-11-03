@@ -143,6 +143,9 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 		return &SignupResult{Fake: true}, nil
 	}
 	plan, owner := a.planForOwner(ctx, p.OwnerID)
+	if owner != nil && owner.Suspended {
+		return nil, ErrWaitlistFull
+	}
 
 	tx, err := a.db.W.BeginTx(ctx, nil)
 	if err != nil {

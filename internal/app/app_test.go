@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -335,12 +336,25 @@ func TestAdminAPI(t *testing.T) {
 	}
 }
 
-type captureMailer struct{ sent []*Message }
+// captureMailer records sent mail. Tests that only send synchronously read
+// sent directly; background sends must be read through snapshot.
+type captureMailer struct {
+	mu   sync.Mutex
+	sent []*Message
+}
 
 func (c *captureMailer) Name() string { return "capture" }
 func (c *captureMailer) Send(_ context.Context, m *Message) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.sent = append(c.sent, m)
 	return nil
+}
+
+func (c *captureMailer) snapshot() []*Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]*Message(nil), c.sent...)
 }
 
 func TestOwnerNotification(t *testing.T) {

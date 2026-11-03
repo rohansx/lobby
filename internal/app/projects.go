@@ -60,6 +60,16 @@ func scanProject(row scanner) (*Project, error) {
 	return p, err
 }
 
+// project scans a row and, in cloud mode, forces double opt-in on: a tenant must
+// not be able to put addresses on a list (and mail them) without their consent.
+func (a *App) project(row scanner) (*Project, error) {
+	p, err := scanProject(row)
+	if err == nil && a.cfg.Cloud {
+		p.DOIEnabled = true
+	}
+	return p, err
+}
+
 func hashKey(k string) string {
 	h := sha256.Sum256([]byte(k))
 	return hex.EncodeToString(h[:])
@@ -105,19 +115,19 @@ func (a *App) RotateSecret(ctx context.Context, id int64) (string, error) {
 }
 
 func (a *App) ProjectByID(ctx context.Context, id int64) (*Project, error) {
-	return scanProject(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE id = ?`, id))
+	return a.project(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE id = ?`, id))
 }
 
 func (a *App) ProjectByPublicKey(ctx context.Context, pk string) (*Project, error) {
-	return scanProject(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE public_key = ?`, pk))
+	return a.project(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE public_key = ?`, pk))
 }
 
 func (a *App) ProjectBySlug(ctx context.Context, slug string) (*Project, error) {
-	return scanProject(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE slug = ?`, slug))
+	return a.project(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE slug = ?`, slug))
 }
 
 func (a *App) ProjectBySecret(ctx context.Context, sk string) (*Project, error) {
-	return scanProject(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE secret_key_hash = ?`, hashKey(sk)))
+	return a.project(a.db.W.QueryRowContext(ctx, `SELECT `+projectCols+` FROM projects WHERE secret_key_hash = ?`, hashKey(sk)))
 }
 
 // Projects lists the projects an account can see: its own in cloud mode, all of them otherwise.
@@ -129,7 +139,7 @@ func (a *App) Projects(ctx context.Context, ownerID int64) ([]*Project, error) {
 	defer rows.Close()
 	var out []*Project
 	for rows.Next() {
-		p, err := scanProject(rows)
+		p, err := a.project(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -162,6 +172,7 @@ func (a *App) UpdateProject(ctx context.Context, p *Project) error {
 		origins = append(origins, u.Scheme+"://"+u.Host)
 	}
 	p.AllowedOrigins = strings.Join(origins, "\n")
+	p.DOIEnabled = p.DOIEnabled || a.cfg.Cloud
 	_, err := a.db.W.ExecContext(ctx, `UPDATE projects SET name=?, allowed_origins=?, doi_enabled=?, position_mode=?,
 		points_per_referral=?, referral_ip_cap=?, referral_hourly_cap=?, show_position=?, counter_floor=?, from_name=?,
 		reply_to=?, notify_email=?, headline=?, description=?, site_url=?, redirect_url=?, invite_url=?,

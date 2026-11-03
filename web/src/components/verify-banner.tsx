@@ -17,6 +17,13 @@ export function VerifyBanner() {
     }
   }, [])
 
+  if (me.suspended) {
+    return (
+      <div className="border-b bg-destructive/10 px-4 py-2.5 text-sm md:px-8">
+        This account is suspended. Signups and emails are paused. Contact support to restore it.
+      </div>
+    )
+  }
   if (!me.cloud || me.verified) return null
   return (
     <div className="border-b bg-amber-500/10 px-4 py-2.5 text-sm md:px-8">

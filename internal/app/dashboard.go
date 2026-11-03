@@ -66,13 +66,14 @@ func (s *Server) adminMe(w http.ResponseWriter, r *http.Request) {
 			providers = append(providers, id)
 		}
 	}
-	out := map[string]any{"setup": !cloud && !s.app.HasAdmin(r.Context()), "cloud": cloud, "providers": providers, "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL}
+	out := map[string]any{"setup": !cloud && !s.app.HasAdmin(r.Context()), "cloud": cloud, "providers": providers, "mailer": s.app.mailer.Name(), "from": s.app.cfg.FromEmail, "base_url": s.app.cfg.BaseURL, "doi_locked": cloud}
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		if id, ok := s.app.SessionAdmin(r.Context(), c.Value); ok {
 			if ac, err := s.app.Account(r.Context(), id); err == nil {
 				out["email"] = ac.Email
 				out["verified"] = ac.Verified || !cloud
 				out["plan"] = s.app.PlanOf(ac)
+				out["suspended"] = cloud && ac.Suspended
 			}
 		}
 	}

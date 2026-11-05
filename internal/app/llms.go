@@ -13,7 +13,7 @@ Base URL: {{BASE}}
 
 ## Public endpoints (no auth, project public key pk_... in the path)
 
-- POST /v1/w/{pk}/signup: fields email (required), ref, source_url, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content. Accepts JSON, urlencoded or multipart. Send Accept: application/json for a JSON reply; otherwise it answers with a 303 redirect. With double opt-in on (the default), the reply is always {"ok":true,"confirm_required":true} and the person gets an email.
+- POST /v1/w/{pk}/signup: fields email (required), ref, source_url, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, answer (Lobby Cloud: reply to the waitlist's qualification question, up to 300 characters). Accepts JSON, urlencoded or multipart. Send Accept: application/json for a JSON reply; otherwise it answers with a 303 redirect. With double opt-in on (the default), the reply is always {"ok":true,"confirm_required":true} and the person gets an email.
 - GET /v1/w/{pk}/count: public count, or null below the project's floor.
 - GET /v1/wl.js: embed script. <script defer src="{{BASE}}/v1/wl.js" data-project="pk_..." data-target="#waitlist"></script>. Optional data-button, data-placeholder, data-success, data-counter. Theme with --wl-accent, --wl-accent-ink, --wl-bg, --wl-ink, --wl-border, --wl-radius, --wl-muted, --wl-error.
 - GET /w/{slug}: hosted waitlist page. GET /s/{token}: a person's status page.

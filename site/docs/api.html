@@ -29,6 +29,7 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
+      <a href="/launch">Launch Pack</a>
       <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -44,7 +45,8 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/docs" aria-current="page">Docs</a>
+          <a href="/launch">Launch Pack</a>
+      <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
           <a href="/login">Sign in</a>
@@ -118,7 +120,7 @@
 <p>Send the project's secret key as a bearer token. You get it once when you create the project; <strong>Rotate secret key</strong> on the project's Overview makes a new one and stops the old one working.</p>
 <pre><code>curl https://trylobby.app/v1/stats -H <span class="s">"Authorization: Bearer sk_…"</span></code></pre>
 <div class="callout warn"><p>The secret key can read every address on the list. Keep it on your server, never in a browser or mobile app. Public pages use the public <code>pk_…</code> key instead, which can only add signups.</p></div>
-<p>On Lobby Cloud, the API comes with the Launch and Pro plans. On the Free plan every API call answers 402.</p>
+<p>On Lobby Cloud, the API comes with a Launch Pack (and the older Launch and Pro plans). On the Free plan every API call answers 402.</p>
 
 <h2 id="requests-and-errors"><a class="anchor" href="#requests-and-errors" aria-hidden="true">#</a>Requests and errors</h2>
 <p>Send JSON with <code>Content-Type: application/json</code>; responses are JSON. Errors have a status code and a readable message:</p>
@@ -249,6 +251,7 @@
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

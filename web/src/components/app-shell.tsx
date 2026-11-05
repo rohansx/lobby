@@ -1,4 +1,4 @@
-import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
+import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, RocketIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useRoute } from "wouter"
 import { NewProjectDialog } from "@/components/new-project-dialog"
@@ -83,13 +83,30 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
+          {me.cloud && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Launch Pack</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.startsWith("/campaigns")} tooltip="Launch">
+                      <Link href="/campaigns">
+                        <RocketIcon />
+                        <span>Launch</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
           {me.operator && (
             <SidebarGroup>
               <SidebarGroupLabel>Instance</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={location === "/ops"} tooltip="Operator">
+                    <SidebarMenuButton asChild isActive={location.startsWith("/ops")} tooltip="Operator">
                       <Link href="/ops">
                         <ShieldIcon />
                         <span>Operator</span>
@@ -181,10 +198,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur">
           <SidebarTrigger />
-          <div className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name ?? (slug ? "" : location === "/billing" ? "Billing" : location === "/ops" ? "Operator" : "Projects")}</div>
+          <div className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name ?? (slug ? "" : location === "/billing" ? "Billing" : location.startsWith("/campaigns") ? "Launch" : location.startsWith("/ops") ? "Operator" : "Projects")}</div>
           {me.cloud && me.plan?.id === "free" && (
-            <Link href="/billing" className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
-              Upgrade
+            <Link href="/campaigns" className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
+              Launch Pack
             </Link>
           )}
           <ThemeToggle />

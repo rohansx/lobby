@@ -6,7 +6,7 @@
 
 Lobby gives each of your products a signup form, double opt-in, a place in line, referral links that move people up, invite waves and a dashboard to run it all. Your list stays on your server.
 
-Rather not run a server? [Lobby Cloud](https://trylobby.app) is the same software, hosted: free for 500 signups, $5 a month after that ([pricing](https://trylobby.app/pricing)).
+Rather not run a server? [Lobby Cloud](https://trylobby.app) is the same software, hosted and free for 500 signups. It also sells the [Launch Pack](https://trylobby.app/launch), a one-time $99 launch campaign measured by your waitlist ([pricing](https://trylobby.app/pricing)).
 
 <p align="center">
   <img src="docs/demo.gif" alt="A visitor joins the Orbit waitlist from its landing page, confirms by email, sees their place in line, and shows up in the Lobby dashboard" width="900">
@@ -140,16 +140,17 @@ Options: `data-button`, `data-placeholder`, `data-success`, `data-counter`. Them
 <details>
 <summary>Cloud mode (hosting Lobby for other people)</summary>
 
-`LOBBY_CLOUD=1` turns an instance into a multi-tenant service, which is how [Lobby Cloud](https://trylobby.app/pricing) runs. Anyone can sign up at `/signup`, confirm their email, and see only their own waitlists. Accounts get the Free, Launch or Pro limits (signups, waitlists, emails a month, webhooks and API, the "powered by Lobby" badge), and billing runs through [Polar](https://polar.sh) as merchant of record. Without `LOBBY_CLOUD`, none of this applies: one admin, every feature, no limits.
+`LOBBY_CLOUD=1` turns an instance into a multi-tenant service, which is how [Lobby Cloud](https://trylobby.app/pricing) runs. Anyone can sign up at `/signup`, confirm their email, and see only their own waitlists. Accounts get the Free limits (signups, waitlists, emails a month, webhooks and API, the "powered by Lobby" badge) until they buy a Launch Pack: a one-time Polar product that opens a campaign workspace (product profile, assets, readiness review, approved destination plan, tasks and a results report) and lifts the account to the `pack` limits for good. Operators run the campaigns from the Operator page. Billing runs through [Polar](https://polar.sh) as merchant of record. Monthly subscriptions are no longer sold; accounts that already have one keep it. Without `LOBBY_CLOUD`, none of this applies: one admin, every feature, no limits.
 
 | Variable | Purpose |
 | --- | --- |
 | `LOBBY_CLOUD` | `1` for open signup, per-account projects and plan limits |
-| `POLAR_ACCESS_TOKEN` | Polar organization access token (checkouts, customer sessions, subscriptions) |
-| `POLAR_WEBHOOK_SECRET` | Secret of the Polar webhook pointed at `/v1/hooks/polar`, with the `subscription.*` events |
-| `POLAR_PRODUCT_LAUNCH_MONTHLY`, `_LAUNCH_YEARLY`, `_PRO_MONTHLY`, `_PRO_YEARLY` | Polar product IDs for each plan and interval |
+| `POLAR_ACCESS_TOKEN` | Polar organization access token (checkouts, orders, customer sessions, subscriptions) |
+| `POLAR_WEBHOOK_SECRET` | Secret of the Polar webhook pointed at `/v1/hooks/polar`, with the `order.paid` and `order.refunded` events (and `subscription.*` while you have legacy subscribers) |
+| `POLAR_PRODUCT_LAUNCH_PACK` | Polar product ID of the one-time Launch Pack. Checkout is off until it and the token are set |
+| `POLAR_PRODUCT_LAUNCH_MONTHLY`, `_LAUNCH_YEARLY`, `_PRO_MONTHLY`, `_PRO_YEARLY` | Legacy, only for existing subscribers: the old subscription products, so their renewals and cancellations still map to a plan. Nothing new is sold with them |
 | `POLAR_SANDBOX` | `1` to use Polar's sandbox while testing |
-| `LOBBY_OPERATORS` | Comma-separated emails of the people running the instance. Once verified, these accounts get an Operator page in the dashboard with instance totals, every account, and suspend/unsuspend |
+| `LOBBY_OPERATORS` | Comma-separated emails of the people running the instance. Once verified, these accounts get an Operator page in the dashboard with instance totals, every account, suspend/unsuspend, the destination catalogue and the Launch Pack campaign queue. They're also emailed about new packs, intakes, approvals and refunds |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | "Continue with Google". Redirect URI: `{LOBBY_BASE_URL}/auth/google/callback` |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | "Continue with GitHub". Callback URL: `{LOBBY_BASE_URL}/auth/github/callback` |
 

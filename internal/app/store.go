@@ -198,6 +198,88 @@ var migrations = []string{
 		PRIMARY KEY (provider, subject));
 	CREATE INDEX oauth_identities_admin ON oauth_identities(admin_id);`,
 	`ALTER TABLE admins ADD COLUMN suspended_at INTEGER;`,
+	// Launch Pack (cloud): profile, assets, the operator's destination catalogue,
+	// campaigns and their tasks, plus what measurement needs on pages and signups.
+	`ALTER TABLE projects ADD COLUMN qualification_question TEXT NOT NULL DEFAULT '';
+	ALTER TABLE signups ADD COLUMN answer TEXT NOT NULL DEFAULT '';
+	ALTER TABLE signups ADD COLUMN relevant INTEGER;
+	CREATE TABLE visits (
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		day TEXT NOT NULL,
+		source TEXT NOT NULL,
+		count INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (project_id, day, source));
+	CREATE TABLE profile_versions (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		data TEXT NOT NULL,
+		created_by INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+		created_at INTEGER NOT NULL,
+		approved_at INTEGER);
+	CREATE INDEX profile_versions_project ON profile_versions(project_id, id);
+	CREATE TABLE assets (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		kind TEXT NOT NULL,
+		filename TEXT NOT NULL,
+		mime TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		data BLOB NOT NULL,
+		created_at INTEGER NOT NULL);
+	CREATE INDEX assets_project ON assets(project_id);
+	CREATE TABLE destinations (
+		id INTEGER PRIMARY KEY,
+		slug TEXT UNIQUE NOT NULL,
+		name TEXT NOT NULL,
+		url TEXT NOT NULL,
+		audience TEXT NOT NULL DEFAULT '',
+		stages TEXT NOT NULL DEFAULT '',
+		fee_cents INTEGER NOT NULL DEFAULT 0,
+		fee_note TEXT NOT NULL DEFAULT '',
+		fields TEXT NOT NULL DEFAULT '',
+		rules TEXT NOT NULL DEFAULT '',
+		mode TEXT NOT NULL DEFAULT 'staff',
+		active INTEGER NOT NULL DEFAULT 1,
+		last_verified_at INTEGER,
+		notes TEXT NOT NULL DEFAULT '',
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL);
+	CREATE TABLE campaigns (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+		owner_id INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+		status TEXT NOT NULL DEFAULT 'intake',
+		price_cents INTEGER NOT NULL DEFAULT 0,
+		polar_order_id TEXT UNIQUE,
+		paid_at INTEGER,
+		readiness TEXT NOT NULL DEFAULT '[]',
+		profile_version_id INTEGER REFERENCES profile_versions(id) ON DELETE SET NULL,
+		approved_at INTEGER,
+		changes_note TEXT NOT NULL DEFAULT '',
+		report_note TEXT NOT NULL DEFAULT '',
+		report_published_at INTEGER,
+		operator_minutes INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL);
+	CREATE INDEX campaigns_owner ON campaigns(owner_id);
+	CREATE TABLE campaign_tasks (
+		id INTEGER PRIMARY KEY,
+		campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+		destination_id INTEGER NOT NULL REFERENCES destinations(id),
+		owner TEXT NOT NULL DEFAULT 'staff',
+		state TEXT NOT NULL DEFAULT 'planned',
+		reason TEXT NOT NULL DEFAULT '',
+		fee_cents INTEGER NOT NULL DEFAULT 0,
+		instructions TEXT NOT NULL DEFAULT '',
+		submitted_at INTEGER,
+		live_at INTEGER,
+		listing_url TEXT NOT NULL DEFAULT '',
+		evidence TEXT NOT NULL DEFAULT '',
+		exception_note TEXT NOT NULL DEFAULT '',
+		minutes INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL,
+		UNIQUE (campaign_id, destination_id));`,
 }
 
 func (s *Store) migrate() error {

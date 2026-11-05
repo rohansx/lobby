@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pricing · Lobby</title>
-<meta name="description" content="Self-host Lobby free forever, or let us run it from $4 a month. Unlimited signups, no branding, webhooks and API on every paid plan.">
+<meta name="description" content="One price: the Launch Pack, $99 once for one product. A free hosted waitlist to start, or self-host Lobby free forever.">
 <meta name="theme-color" content="#fbfaf7">
 <meta property="og:title" content="Lobby pricing">
-<meta property="og:description" content="Free to self-host. Cloud from $5 a month, with the features others charge $19 to $199 for.">
+<meta property="og:description" content="The Launch Pack, $99 once: a readiness review, up to 20 approved destinations, submissions tracked and a results report. Free waitlist and free self-hosting.">
 <meta property="og:image" content="https://trylobby.app/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:url" content="https://trylobby.app/pricing">
@@ -24,13 +24,7 @@
 .p-hero h1 span { color: var(--faint); }
 .p-hero .sub { max-width: 560px; margin: 22px auto 0; font-size: 18px; }
 
-.billing { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); margin-top: 34px; }
-.billing button { border: 0; background: none; font: 500 14px var(--sans); color: var(--muted); padding: 7px 16px; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
-.billing button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
-.billing em { font-style: normal; font-size: 12px; color: #16a34a; }
-.billing button[aria-pressed=true] em { color: #86efac; }
-
-.plans { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-top: 48px; align-items: stretch; }
+.plans { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 14px; margin-top: 48px; align-items: stretch; }
 .plan { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 26px; display: flex; flex-direction: column; min-width: 0; }
 .plan.self { background: var(--sunk); }
 .plan.best { border-color: var(--ink); box-shadow: 0 24px 60px -30px rgba(31,28,23,.35); }
@@ -51,32 +45,19 @@
 .cloud-note { text-align: center; margin-top: 22px; font-size: 14px; color: var(--muted); }
 .cloud-note i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 3px #fef3c7; margin-right: 8px; vertical-align: 2px; }
 
-.vs { margin-top: 56px; border-top: 1px solid var(--line); }
-.vs table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
-.vs th, .vs td { padding: 18px 20px 18px 0; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.vs thead th { font-size: 13.5px; font-weight: 400; color: var(--muted); }
-.vs td:first-child { color: var(--ink); width: 26%; }
-.vs td.amt { font-variant-numeric: tabular-nums; color: var(--ink); font-size: 22px; font-weight: 300; letter-spacing: -0.03em; width: 16%; }
-.vs td.what { color: var(--muted); font-size: 14.5px; }
-.vs tr.us td { background: var(--accent-soft); }
-.vs tr.us td:first-child { padding-left: 16px; border-radius: 12px 0 0 12px; font-weight: 500; }
-.vs tr.us td:last-child { border-radius: 0 12px 12px 0; }
-.vs tr.us td { border-bottom-color: transparent; }
-.vs .bar { height: 8px; border-radius: 4px; background: #d9d3c8; min-width: 4px; }
-.vs tr.us .bar { background: var(--accent); }
-.vs td.barcell { width: 34%; }
+.scope { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-top: 48px; }
+.scope h3 { font-size: 20px; font-weight: 500; letter-spacing: -0.025em; }
+.scope p { font-size: 15.5px; margin-top: 10px; }
 .fine { margin-top: 16px; font-size: 13px; color: var(--faint); }
 
 @media (max-width: 1000px) {
-  .plans { grid-template-columns: 1fr 1fr; }
+  .plans { grid-template-columns: 1fr; max-width: 520px; margin-left: auto; margin-right: auto; }
+  .scope { grid-template-columns: 1fr; gap: 36px; }
 }
 @media (max-width: 640px) {
   .p-hero { padding-top: 48px; }
   .plans { grid-template-columns: 1fr; gap: 20px; }
   .plan .note { min-height: 0; }
-  .vs td.barcell, .vs th.barcell { display: none; }
-  .vs th, .vs td { padding: 14px 10px 14px 0; font-size: 14px; }
-  .vs td.amt { font-size: 18px; }
 }
 </style>
 </head>
@@ -88,6 +69,7 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing" aria-current="page">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -103,7 +85,8 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/docs">Docs</a>
+          <a href="/launch">Launch Pack</a>
+      <a href="/docs">Docs</a>
       <a href="/pricing" aria-current="page">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
           <a href="/login">Sign in</a>
@@ -118,38 +101,18 @@
   <div class="p-hero">
     <div class="wrap">
       <div class="eyebrow">Pricing</div>
-      <h1 style="margin-top:18px">Free to run yourself. <span>$5 if we run it.</span></h1>
-      <p class="sub">Every feature is in the free, self-hosted version. Cloud is for when you'd rather not run a server, and it costs less than any hosted waitlist we could find.</p>
-      <div class="billing" role="group" aria-label="Billing period">
-        <button type="button" aria-pressed="true" data-period="month">Monthly</button>
-        <button type="button" aria-pressed="false" data-period="year">Yearly <em>save 20%</em></button>
-      </div>
+      <h1 style="margin-top:18px">One price. <span>Paid once.</span></h1>
+      <p class="sub">Lobby Cloud sells one thing: a Launch Pack for one product. The waitlist is free to start, and the whole of Lobby stays free to run yourself.</p>
     </div>
   </div>
 
   <div class="wrap">
     <div class="plans">
-      <div class="plan self">
-        <div class="kind">Self-hosted</div>
-        <h2>Open source</h2>
-        <div class="price"><b>$0</b><span>forever</span></div>
-        <p class="note">Run it on your own server. MIT licensed, no limits, no phone-home.</p>
-        <a class="btn btn-ghost" href="/docs/self-hosting">Deploy it yourself</a>
-        <ul>
-          <li><span><b>Unlimited</b> signups and waitlists</span></li>
-          <li>Every feature, including referrals and invites</li>
-          <li>Your domain, your email sender</li>
-          <li>Webhooks, API, CLI and broadcasts</li>
-          <li>Litestream backups to any S3 bucket</li>
-          <li>Community support on GitHub</li>
-        </ul>
-      </div>
-
       <div class="plan">
         <div class="kind">Cloud</div>
-        <h2>Free</h2>
-        <div class="price"><b>$0</b><span>per month</span></div>
-        <p class="note">For trying an idea. Five times the free signups most hosted tools give you.</p>
+        <h2>Free waitlist</h2>
+        <div class="price"><b>$0</b><span>no card</span></div>
+        <p class="note">A hosted waitlist for trying an idea.</p>
         <a class="btn btn-ghost" href="/signup">Start free</a>
         <ul>
           <li><span><b>500</b> signups</span></li>
@@ -163,62 +126,77 @@
       </div>
 
       <div class="plan best">
-        <span class="badge">Most popular</span>
-        <div class="kind">Cloud</div>
-        <h2>Launch</h2>
-        <div class="price"><b data-month="$5" data-year="$4">$5</b><span data-month="per month" data-year="per month, billed $48 yearly">per month</span></div>
-        <p class="note">Everything a launch needs. What others charge $19 to $199 a month for.</p>
-        <a class="btn btn-primary" data-plan="launch" href="/checkout?plan=launch&amp;interval=month">Start with Launch</a>
+        <span class="badge">Pilot price</span>
+        <div class="kind">Cloud · one-time</div>
+        <h2>Launch Pack</h2>
+        <div class="price"><b>$99</b><span>once, per product</span></div>
+        <p class="note">A launch campaign run by a person, measured by your waitlist. No subscription, nothing renews.</p>
+        <a class="btn btn-primary" href="/checkout">Buy the Launch Pack</a>
         <ul>
-          <li><span><b>Unlimited</b> signups</span></li>
-          <li><span><b>3</b> waitlists</span></li>
-          <li><span><b>5,000</b> emails a month</span></li>
-          <li>No Lobby branding</li>
-          <li>Webhooks, Slack and full API</li>
-          <li>Invite waves and launch broadcasts</li>
+          <li>Readiness review with a list of blockers</li>
+          <li>One product profile and asset kit</li>
+          <li><span>Shortlist of <b>up to 20</b> destinations, approved by you</span></li>
+          <li>Submissions done for you, or guided</li>
+          <li>30 days of follow-up and a results report</li>
+          <li><span><b>Unlimited</b> signups, 3 waitlists, 5,000 emails a month</span></li>
+          <li>Webhooks, API and no Lobby badge</li>
         </ul>
       </div>
 
-      <div class="plan">
-        <div class="kind">Cloud</div>
-        <h2>Pro</h2>
-        <div class="price"><b data-month="$12" data-year="$10">$12</b><span data-month="per month" data-year="per month, billed $120 yearly">per month</span></div>
-        <p class="note">For studios and serial launchers running many products at once.</p>
-        <a class="btn btn-ghost" data-plan="pro" href="/checkout?plan=pro&amp;interval=month">Start with Pro</a>
+      <div class="plan self">
+        <div class="kind">Self-hosted</div>
+        <h2>Open source</h2>
+        <div class="price"><b>$0</b><span>forever</span></div>
+        <p class="note">Run the waitlist on your own server. MIT licensed, no limits, no phone-home.</p>
+        <a class="btn btn-ghost" href="/docs/self-hosting">Deploy it yourself</a>
         <ul>
           <li><span><b>Unlimited</b> signups and waitlists</span></li>
-          <li><span><b>25,000</b> emails a month</span></li>
-          <li>Everything in Launch</li>
-          <li>Priority email support</li>
+          <li>Every waitlist feature, including referrals and invites</li>
+          <li>Your domain, your email sender</li>
+          <li>Webhooks, API, CLI and broadcasts</li>
+          <li>Community support on GitHub</li>
+          <li class="off">Launch campaigns are Cloud only</li>
         </ul>
       </div>
     </div>
-    <p class="cloud-note"><i></i>Every Cloud account starts on Free. Upgrade from the dashboard when you need more; payments go through Polar, and you can cancel any time.</p>
+    <p class="cloud-note"><i></i>Payments go through Polar, our merchant of record. Prices are in USD, tax included where it applies. Already on a monthly Launch or Pro plan? It keeps renewing as before.</p>
   </div>
 
-  <section id="compare">
+  <section id="scope">
     <div class="wrap">
       <div class="head split">
         <div>
-          <div class="eyebrow">Compare</div>
-          <h2>The same features, <span>for a lot less.</span></h2>
+          <div class="eyebrow">What $99 covers</div>
+          <h2>The work, <span>stated plainly.</span></h2>
         </div>
-        <p>The cheapest plan from each tool that removes their branding and includes webhooks or an API.</p>
+        <p>We promise to complete the work you approve and to show you evidence for it. We can't promise what a platform decides. <a class="inline-link" href="/launch">More on the Launch Pack</a>.</p>
       </div>
-      <div class="vs">
-        <table>
-          <thead><tr><th>Tool</th><th>Per month</th><th class="barcell"></th><th>What you get at that price</th></tr></thead>
-          <tbody>
-            <tr class="us"><td>Lobby Cloud Launch</td><td class="amt">$5</td><td class="barcell"><div class="bar" style="width:2.5%"></div></td><td class="what">Unlimited signups, 3 waitlists</td></tr>
-            <tr><td>LaunchList Launch</td><td class="amt">$19</td><td class="barcell"><div class="bar" style="width:9.5%"></div></td><td class="what">Smallest contact tier; price rises with contacts</td></tr>
-            <tr><td>Waitlister Growth</td><td class="amt">$49</td><td class="barcell"><div class="bar" style="width:24.6%"></div></td><td class="what">Unlimited signups and waitlists</td></tr>
-            <tr><td>KickoffLabs Premium</td><td class="amt">$69</td><td class="barcell"><div class="bar" style="width:34.7%"></div></td><td class="what">2,500 leads a month</td></tr>
-            <tr><td>Prefinery Essentials</td><td class="amt">$199</td><td class="barcell"><div class="bar" style="width:100%"></div></td><td class="what">10,000 users, 3 campaigns</td></tr>
-            <tr><td>Lobby, self-hosted</td><td class="amt">$0</td><td class="barcell"><div class="bar" style="width:0;min-width:0"></div></td><td class="what">Everything, unlimited</td></tr>
-          </tbody>
-        </table>
+      <div class="scope">
+        <div>
+          <h3>Scope</h3>
+          <p>One product. A readiness review of your landing page, demo, signup flow, assets and tracking. One product profile and asset kit that every submission uses. A shortlist of up to 20 destinations that suit your product and its stage. Twenty is a maximum, not a quota, and a pre-launch product gets a smaller list. Then the submissions, follow-up and a report.</p>
+        </div>
+        <div>
+          <h3>Delivery</h3>
+          <p>Submission work is done within 10 business days of your plan approval. Follow-up tracking runs for 30 days after that. Publication timing depends on each platform, so a review that is still pending at the end is reported as pending.</p>
+        </div>
+        <div>
+          <h3>Platform fees</h3>
+          <p>Some destinations charge for a listing. Those fees aren't part of the $99. Each one is shown in the plan before you approve it, you pay it to the platform, and you can leave any paid destination out.</p>
+        </div>
+        <div>
+          <h3>Unavailable destinations</h3>
+          <p>If a destination closes, changes its rules or turns the product away, the task records what happened and we suggest a suitable replacement where there is one. We don't add destinations just to reach a number.</p>
+        </div>
+        <div>
+          <h3>Not promised</h3>
+          <p>Acceptance, rankings, upvotes, backlinks, traffic, customers or revenue. Communities such as Product Hunt, Hacker News and Reddit need you to post from your own account. We prepare you and remind you, but we don't post for you there, and we never ask for your passwords.</p>
+        </div>
+        <div>
+          <h3>Your waitlist</h3>
+          <p>Buying a pack lifts your waitlist limits for good: unlimited signups, 3 waitlists, 5,000 emails a month, webhooks and the API. They stay after the campaign ends.</p>
+        </div>
       </div>
-      <p class="fine">Monthly list prices from each vendor's public pricing page, October 2026. Their plans change, so check their sites for current prices.</p>
     </div>
   </section>
 
@@ -227,14 +205,14 @@
       <div class="head">
         <div class="eyebrow">FAQ</div>
         <h2>Pricing, <span>plainly.</span></h2>
-        <p>Something else? <a class="inline-link" href="https://github.com/rohansx/lobby/issues">Open an issue</a>.</p>
+        <p>Something else? Email <a class="inline-link" href="mailto:support@trylobby.app">support@trylobby.app</a>.</p>
       </div>
       <div class="faq">
-        <details><summary>Why is self-hosting free?</summary><p>Lobby is open source under the MIT license. Every feature ships in the binary, with no paid tier and no limits. Cloud exists for people who'd rather not run a server, not to hold features back.</p></details>
-        <details><summary>What happens at 500 signups on Free?</summary><p>Everyone already on your list keeps their place, and the form politely turns new visitors away until you upgrade. We email you when it happens. Launch has no signup limit.</p></details>
-        <details><summary>Can I cancel?</summary><p>Yes, any time from Manage billing. You keep your plan until the end of the period you paid for, then move to Free. Your list stays put.</p></details>
-        <details><summary>What counts as an email?</summary><p>Any email Lobby sends for you: confirmations, status updates, invites and broadcasts. The notifications Lobby sends to you about new signups don't count.</p></details>
-        <details><summary>Why are prices this low?</summary><p>Lobby is a single Go binary with one SQLite file per instance and uses about 20 MB of memory. It costs very little to run, so it costs very little to buy.</p></details>
+        <details><summary>Why one-time and not a subscription?</summary><p>A launch happens once. You pay for one campaign with a clear end, and keep the waitlist limits afterwards. If you launch another product, buy another pack.</p></details>
+        <details><summary>Why is it $99?</summary><p>It's a pilot price while we deliver the first campaigns by hand. It may change for new purchases. What you've bought doesn't.</p></details>
+        <details><summary>What happens at 500 signups on the free waitlist?</summary><p>Everyone already on your list keeps their place, and the form politely turns new visitors away. We email you when it happens. A Launch Pack removes the limit.</p></details>
+        <details><summary>I'm on a monthly Launch or Pro plan.</summary><p>Nothing changes. Your subscription renews as before, and Manage billing in the dashboard opens Polar's portal to update your card, get invoices or cancel. We just don't sell new subscriptions.</p></details>
+        <details><summary>Why is self-hosting free?</summary><p>Lobby is open source under the MIT license, and every waitlist feature ships in the binary. The Launch Pack is a service run by people, so it's the part we charge for.</p></details>
         <details><summary>Can I leave?</summary><p>Yes. Export your list as CSV or NDJSON any time, on any plan, and run the same open-source Lobby on your own server.</p></details>
       </div>
     </div>
@@ -242,11 +220,11 @@
 
   <div class="final">
     <img src="/logo.svg" alt="">
-    <h2>Start free. <span>Stay cheap.</span></h2>
-    <p>Run it yourself in a minute, or let us host it, free to start.</p>
+    <h2>Launch once. <span>Know what worked.</span></h2>
+    <p>Buy the Launch Pack, or start with a free waitlist and come back when you're ready.</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="/docs/self-hosting">Self-host for free</a>
-      <a class="btn btn-ghost" href="/signup">Start free on Cloud</a>
+      <a class="btn btn-primary" href="/checkout">Buy the Launch Pack</a>
+      <a class="btn btn-ghost" href="/signup">Start a free waitlist</a>
     </div>
   </div>
 </main>
@@ -257,6 +235,7 @@
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>
@@ -270,17 +249,6 @@
 <!-- /footer -->
 </div>
 
-<script>
-(() => {
-  const btns = document.querySelectorAll('[data-period]');
-  btns.forEach(b => b.addEventListener('click', () => {
-    btns.forEach(x => x.setAttribute('aria-pressed', x === b));
-    document.querySelectorAll('[data-month]').forEach(el => el.textContent = el.dataset[b.dataset.period]);
-    // The plan buttons carry the chosen period through signup to checkout.
-    document.querySelectorAll('[data-plan]').forEach(a => a.href = `/checkout?plan=${a.dataset.plan}&interval=${b.dataset.period}`);
-  }));
-})();
-</script>
 <script src="/site.js" defer></script>
 </body>
 </html>

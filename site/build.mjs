@@ -24,6 +24,7 @@ const order = sections.flatMap((s) => s.pages.map(([slug, label]) => ({ slug, la
 const href = (slug) => (slug === "index" ? "/docs" : `/docs/${slug}`)
 
 const navLinks = [
+  ["/launch", "Launch Pack"],
   ["/docs", "Docs"],
   ["/pricing", "Pricing"],
   ["/docs/self-hosting", "Self-host"],
@@ -70,6 +71,7 @@ const footer = `<!-- footer -->
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { toast } from "sonner"
+import { NewCampaignDialog } from "@/components/ops/new-campaign-dialog"
+import { OpsNav } from "@/components/ops/ops-nav"
 import { Page } from "@/components/page"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -47,6 +49,7 @@ export default function Ops() {
 
   return (
     <Page title="Operator" description="Every account on this Lobby Cloud instance.">
+      <OpsNav />
       {!data ? (
         <Skeleton className="h-40" />
       ) : (
@@ -80,7 +83,7 @@ export default function Ops() {
                   <TableHead className="text-right">Signups</TableHead>
                   <TableHead className="text-right">Emails</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead className="w-28" />
+                  <TableHead className="w-48" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -111,7 +114,12 @@ export default function Ops() {
                     <TableCell className="text-muted-foreground" title={dateTime(a.created_at)}>
                       {ago(a.created_at)}
                     </TableCell>
-                    <TableCell className="pr-4 text-right">
+                    <TableCell className="pr-4 text-right whitespace-nowrap">
+                      <NewCampaignDialog account={a}>
+                        <Button variant="ghost" size="sm">
+                          New campaign
+                        </Button>
+                      </NewCampaignDialog>
                       {a.suspended ? (
                         <Button variant="outline" size="sm" onClick={() => act(a, "unsuspend")}>
                           Unsuspend

@@ -145,7 +145,7 @@ func (s *Server) publicSignup(w http.ResponseWriter, r *http.Request) {
 	in := SignupInput{
 		Email: f["email"], Ref: f["ref"], SourceURL: source, Referrer: f["referrer"],
 		UTMSource: f["utm_source"], UTMMedium: f["utm_medium"], UTMCampaign: f["utm_campaign"],
-		UTMTerm: f["utm_term"], UTMContent: f["utm_content"],
+		UTMTerm: f["utm_term"], UTMContent: f["utm_content"], Answer: f["answer"],
 		IP: ip, Honeypot: f["website"], DwellMs: s.app.dwellFrom(f),
 	}
 	// Plain forms do not send UTM fields; recover them and ?ref= from the page URL.
@@ -323,6 +323,9 @@ func (s *Server) hostedPage(w http.ResponseWriter, r *http.Request) {
 		s.render(w, 404, "message", map[string]any{"Title": "Not found", "Message": "There's no waitlist here."})
 		return
 	}
+	if s.app.cfg.Cloud && countable(r) && s.app.spam.Allow("visit:"+strconv.FormatInt(p.ID, 10)+":"+s.clientIP(r), maxIPVisits, time.Hour) {
+		s.app.countVisit(r, p)
+	}
 	s.renderHosted(w, r, p, 200, "", "")
 }
 
@@ -332,8 +335,16 @@ func (s *Server) renderHosted(w http.ResponseWriter, r *http.Request, p *Project
 	if ref == "" {
 		ref = r.FormValue("ref")
 	}
+	// Campaign links carry UTM tags; pass them through so the signup keeps its source.
+	utm := map[string]string{}
+	for _, k := range []string{"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"} {
+		if v := r.FormValue(k); v != "" {
+			utm[k] = clip(v, 200)
+		}
+	}
 	s.render(w, code, "hosted", map[string]any{
-		"Project": p, "Count": count, "Error": errMsg, "Email": email, "Ref": ref,
+		"Project": p, "Count": count, "Error": errMsg, "Email": email, "Ref": ref, "UTM": utm,
+		"Answer":   r.PostFormValue("answer"),
 		"FormTime": s.app.signedFormTime(), "Action": "/v1/w/" + p.PublicKey + "/signup",
 		"PageURL": s.app.cfg.BaseURL + "/w/" + p.Slug,
 	})

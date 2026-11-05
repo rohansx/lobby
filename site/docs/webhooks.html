@@ -29,6 +29,7 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
+      <a href="/launch">Launch Pack</a>
       <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -44,7 +45,8 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/docs" aria-current="page">Docs</a>
+          <a href="/launch">Launch Pack</a>
+      <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
           <a href="/login">Sign in</a>
@@ -117,7 +119,7 @@
     <h2 id="adding-a-webhook"><a class="anchor" href="#adding-a-webhook" aria-hidden="true">#</a>Adding a webhook</h2>
 <p>In the project's <strong>Webhooks</strong> page, add the URL, choose the events, and copy the signing secret (<code>whsec_…</code>). It's shown once. You can also create webhooks <a href="/docs/api#webhooks-and-deliveries">through the API</a>.</p>
 <p>Choose <strong>Slack</strong> as the kind and paste a Slack incoming-webhook URL to get a readable message in a channel instead of JSON.</p>
-<p>On Lobby Cloud, webhooks come with the Launch and Pro plans.</p>
+<p>On Lobby Cloud, webhooks come with a Launch Pack (and the older Launch and Pro plans).</p>
 
 <h2 id="events"><a class="anchor" href="#events" aria-hidden="true">#</a>Events</h2>
 <div class="table"><table>
@@ -201,6 +203,7 @@ app.post(<span class="s">"/hooks/lobby"</span>, express.raw({ type: <span class=
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

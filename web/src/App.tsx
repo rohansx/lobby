@@ -17,6 +17,12 @@ const Settings = lazy(() => import("@/pages/settings"))
 const BillingPage = lazy(() => import("@/pages/billing"))
 const Checkout = lazy(() => import("@/pages/checkout"))
 const Ops = lazy(() => import("@/pages/ops"))
+const OpsCampaigns = lazy(() => import("@/pages/ops-campaigns"))
+const OpsCampaign = lazy(() => import("@/pages/ops-campaign"))
+const OpsDestinations = lazy(() => import("@/pages/ops-destinations"))
+const Campaigns = lazy(() => import("@/pages/campaigns"))
+const CampaignPage = lazy(() => import("@/pages/campaign"))
+const CampaignReport = lazy(() => import("@/pages/campaign-report"))
 
 // Signed-out pages: cloud instances have open signup and password reset.
 const publicModes: AuthMode[] = ["login", "signup", "forgot", "reset"]
@@ -81,6 +87,13 @@ export default function App() {
             {me.cloud && <Route path="/checkout" component={Checkout} />}
             {me.cloud && <Route path="/billing" component={BillingPage} />}
             {me.operator && <Route path="/ops" component={Ops} />}
+            {me.operator && me.cloud && <Route path="/ops/campaigns" component={OpsCampaigns} />}
+            {me.operator && me.cloud && <Route path="/ops/campaigns/:id" component={OpsCampaign} />}
+            {me.operator && me.cloud && <Route path="/ops/campaigns/:id/report" component={CampaignReport} />}
+            {me.operator && me.cloud && <Route path="/ops/destinations" component={OpsDestinations} />}
+            {me.cloud && <Route path="/campaigns" component={Campaigns} />}
+            {me.cloud && <Route path="/campaigns/:id" component={CampaignPage} />}
+            {me.cloud && <Route path="/campaigns/:id/report" component={CampaignReport} />}
             <Route path="/setup">
               <Redirect to="/dashboard" replace />
             </Route>

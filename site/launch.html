@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Launch Pack · Lobby</title>
+<meta name="description" content="A one-time launch campaign for your product: a readiness review, an approved shortlist of up to 20 suitable destinations, submissions done or guided, 30 days of follow-up and a results report tied to your waitlist. $99.">
+<meta name="theme-color" content="#fbfaf7">
+<meta property="og:title" content="The Lobby Launch Pack">
+<meta property="og:description" content="A readiness review, an approved shortlist of launch destinations, submissions tracked, and a report of which ones brought signups. $99 once.">
+<meta property="og:image" content="https://trylobby.app/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://trylobby.app/launch">
+<link rel="canonical" href="https://trylobby.app/launch">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+.l-price { display: flex; align-items: baseline; gap: 10px; margin-top: 26px; }
+.l-price b { font-size: 52px; font-weight: 300; letter-spacing: -0.05em; color: var(--ink); line-height: 1; }
+.l-price span { font-size: 14.5px; color: var(--muted); }
+.flow.five { grid-template-columns: repeat(5, 1fr); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-top: 48px; }
+.cols h3 { font-size: 20px; font-weight: 500; letter-spacing: -0.025em; }
+.cols p { font-size: 15.5px; margin-top: 10px; }
+.nots { list-style: none; padding: 0; margin: 24px 0 0; font-size: 15px; border-top: 1px solid var(--line); }
+.nots li { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.nots li::before { content: ""; flex: none; width: 16px; height: 16px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a296' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E") center / 16px no-repeat; }
+@media (max-width: 900px) {
+  .flow.five { grid-template-columns: 1fr; }
+  .flow.five .step + .step { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); margin-top: 28px; }
+  .cols { grid-template-columns: 1fr; gap: 40px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- header -->
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/launch" aria-current="page">Launch Pack</a>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/docs/self-hosting">Self-host</a>
+    </nav>
+    <div class="nav-right">
+      <a class="gh" href="https://github.com/rohansx/lobby" aria-label="Lobby on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>GitHub</span><b data-stars hidden></b>
+      </a>
+      <a class="signin" href="/login">Sign in</a>
+      <a class="btn btn-primary" href="/signup">Get started
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <details class="menu">
+        <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
+        <nav aria-label="Main">
+          <a href="/launch" aria-current="page">Launch Pack</a>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/docs/self-hosting">Self-host</a>
+          <a href="/login">Sign in</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+<!-- /header -->
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="kicker"><i></i>Launch Pack · pilot price</div>
+          <h1>Your launch, done properly.<span>Then measured.</span></h1>
+        </div>
+        <div class="hero-side">
+          <p class="sub">You describe your product once. We check it's ready, agree a shortlist of places that suit it, do the submissions that can be done for you and guide you through the ones you post yourself. Your Lobby waitlist records where each signup came from, and you get a report of what each place brought.</p>
+          <div class="l-price"><b>$99</b><span>once, for one product. No subscription.</span></div>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href="/checkout">Buy the Launch Pack
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn btn-ghost" href="#included">What's included</a>
+          </div>
+          <p class="hero-note">You'll create a Lobby account first if you don't have one. Payment goes through Polar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">How it works</div>
+        <h2>Five steps, <span>each one agreed with you.</span></h2>
+      </div>
+      <div class="flow five">
+        <div class="step"><h3>Describe</h3><p>Fill in one product profile: what it does, who it's for, pricing, stage, descriptions, screenshots and a demo. Anything missing is listed, never made up.</p></div>
+        <div class="step"><h3>Review</h3><p>We check your landing page, demo, signup flow, assets and tracking, and send you a short list of anything that would hold the launch back.</p></div>
+        <div class="step"><h3>Approve</h3><p>We propose destinations that suit your product and its stage, each with a reason, its fee and who does the final step. Nothing happens until you approve.</p></div>
+        <div class="step"><h3>Submit</h3><p>We do the submissions that may be done for you. Where a platform needs your own account, you get instructions and a checklist, and you post.</p></div>
+        <div class="step"><h3>Report</h3><p>Every destination is followed up and recorded. The report shows what was submitted, what went live, and the visits, signups and confirmations from each.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="included">
+    <div class="wrap">
+      <div class="head split">
+        <div>
+          <div class="eyebrow">Scope</div>
+          <h2>What you get, <span>and what you don't.</span></h2>
+        </div>
+        <p>A launch campaign is work we can do and show you. Whether a platform accepts or features your product is their decision, so we promise the work and the evidence, not the outcome.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h3>Included</h3>
+          <ul class="ticks">
+            <li>A readiness review with a short list of blockers</li>
+            <li>One approved product profile and asset kit, reused everywhere</li>
+            <li>A shortlist of up to 20 suitable destinations, approved by you</li>
+            <li>Submissions done for you, or guided where you post yourself</li>
+            <li>Submission work within 10 business days of your approval</li>
+            <li>Follow-up tracking for 30 days after that</li>
+            <li>A results report, with evidence for every submission</li>
+            <li>Waitlist limits lifted: unlimited signups, 3 waitlists, webhooks and API</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Not promised</h3>
+          <ul class="nots">
+            <li>Acceptance by any platform</li>
+            <li>Rankings, upvotes or a featured spot</li>
+            <li>Backlinks</li>
+            <li>Traffic, signups, customers or revenue</li>
+            <li>When a platform publishes; each sets its own timing</li>
+            <li>A fixed number of destinations; 20 is a maximum, not a quota</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="details">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">The details</div>
+        <h2>Fees, timing <span>and the rules we follow.</span></h2>
+      </div>
+      <div class="cols">
+        <div>
+          <h3>Platform fees are separate</h3>
+          <p>Some destinations charge for a listing. Each fee is shown in the plan before you approve it, and you pay it to the platform. It isn't part of the $99, and you can leave any paid destination out.</p>
+        </div>
+        <div>
+          <h3>When a destination isn't available</h3>
+          <p>Directories close, change their rules or turn products away. When that happens, the task records why, and we suggest a suitable replacement if there is one. We don't pad the list to reach a number. Reviews that are still pending at the end are reported as pending.</p>
+        </div>
+        <div>
+          <h3>Your accounts stay yours</h3>
+          <p>We never ask for your passwords. Product Hunt, Hacker News, Reddit and similar communities need a person posting from their own account, and their rules forbid automated or generated posts. For those you get a checklist, the right timing and reminders, and you write and post.</p>
+        </div>
+        <div>
+          <h3>How results are counted</h3>
+          <p>Each destination gets its own link to your hosted waitlist page. We count visits from those links per day, without storing anything about the visitor, and credit each signup to the source it arrived with. Signups with no source stay "unknown". The report shows counts next to every rate, and says where tracking wasn't possible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap faq-grid">
+      <div class="head">
+        <div class="eyebrow">FAQ</div>
+        <h2>Before you <span>buy.</span></h2>
+        <p>Something else? Email <a class="inline-link" href="mailto:support@trylobby.app">support@trylobby.app</a>.</p>
+      </div>
+      <div class="faq">
+        <details><summary>Who is it for?</summary><p>Founders and small teams with a working product, or a usable landing page and demo, who are launching soon and would rather not research destinations and fill in the same forms twenty times.</p></details>
+        <details><summary>My product isn't live yet. Is it still worth it?</summary><p>Maybe. Many destinations only list products people can use. For a pre-launch product the plan is smaller and limited to places that accept that stage. The readiness review will tell you if it's worth waiting.</p></details>
+        <details><summary>Do I need a Lobby waitlist?</summary><p>Yes: it's how the campaign is measured. You can use an existing Lobby waitlist or make one during intake. It's included.</p></details>
+        <details><summary>When does the clock start?</summary><p>The 10 business days for submission work start when you approve the plan. Follow-up tracking runs for 30 days after that, and the report comes at the end.</p></details>
+        <details><summary>Can I get a refund?</summary><p>Email <a class="inline-link" href="mailto:support@trylobby.app">support@trylobby.app</a>. A person reads every request and replies.</p></details>
+        <details><summary>I'm on a monthly Launch or Pro plan.</summary><p>Nothing changes for you. Your subscription keeps renewing, and you manage it from Billing in the dashboard. You can buy a Launch Pack as well.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <div class="final">
+    <img src="/logo.svg" alt="">
+    <h2>Launch once. <span>Know what worked.</span></h2>
+    <p>$99 for one product. Or start with a free waitlist, and buy the pack when you're ready.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="/checkout">Buy the Launch Pack</a>
+      <a class="btn btn-ghost" href="/signup">Start a free waitlist</a>
+    </div>
+  </div>
+</main>
+
+<!-- footer -->
+<footer>
+  <div class="wrap">
+    <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
+    <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
+    <nav>
+      <a href="/launch">Launch Pack</a>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/changelog">Changelog</a>
+      <a href="https://github.com/rohansx/lobby">GitHub</a>
+      <a href="mailto:support@trylobby.app">Support</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </div>
+</footer>
+<!-- /footer -->
+</div>
+<script src="/site.js" defer></script>
+</body>
+</html>

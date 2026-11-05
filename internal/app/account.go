@@ -106,33 +106,26 @@ func (s *Server) adminBilling(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 404, "not found")
 		return
 	}
-	list := []Plan{plans["free"], plans["launch"], plans["pro"]}
+	packs, err := s.app.Campaigns(r.Context(), ac.ID)
+	if err != nil {
+		jsonError(w, 500, "couldn't load your Launch Packs")
+		return
+	}
+	for i, c := range packs {
+		packs[i] = c.forFounder()
+	}
 	writeJSON(w, 200, map[string]any{
 		"account": ac, "plan": s.app.PlanOf(ac), "usage": s.app.UsageOf(r.Context(), ac.ID),
-		"plans": list, "billing_enabled": s.app.cfg.Polar.Enabled(),
+		"packs": packs, "billing_enabled": s.app.cfg.Polar.Enabled(),
+		// Only accounts still on a launch/pro subscription see it and the portal.
+		"subscriber": ac.PolarSubscription != "" && (ac.Plan == "launch" || ac.Plan == "pro"),
 	})
 }
 
+// adminCheckout was the subscription checkout. It stays so old links and
+// clients get a clear answer instead of a 404.
 func (s *Server) adminCheckout(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Plan, Interval string }
-	if err := decodeJSON(r, &body); err != nil {
-		jsonError(w, 400, "invalid JSON body")
-		return
-	}
-	ac, err := s.app.Account(r.Context(), adminID(r))
-	if err != nil {
-		jsonError(w, 404, "not found")
-		return
-	}
-	// Paying doesn't wait on email confirmation: the checkout collects the
-	// buyer's details itself, and creating waitlists still needs it.
-	u, err := s.app.Checkout(r.Context(), ac, body.Plan, body.Interval)
-	if err != nil {
-		s.app.log.Error("checkout", "err", err)
-		jsonError(w, 400, userMessage(err))
-		return
-	}
-	writeJSON(w, 200, map[string]any{"url": u})
+	jsonError(w, http.StatusGone, errNoSubscriptions.Error())
 }
 
 func (s *Server) adminPortal(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +169,7 @@ func (s *Server) adminDeleteAccount(w http.ResponseWriter, r *http.Request) {
 // userMessage keeps provider error bodies out of the dashboard.
 func userMessage(err error) string {
 	switch err.Error() {
-	case errBillingOff.Error(), "unknown plan", "You already have a subscription. Change plans from Manage billing.":
+	case errBillingOff.Error(), errPackBuyer.Error():
 		return err.Error()
 	}
 	return "Billing is unavailable right now. Try again in a minute."

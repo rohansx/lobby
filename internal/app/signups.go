@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -46,18 +47,20 @@ type Signup struct {
 	RemovedAt        *int64 `json:"removed_at"`
 	UnsubscribedAt   *int64 `json:"unsubscribed_at"`
 	LastStatusEmail  *int64 `json:"-"`
+	Answer           string `json:"answer,omitempty"`   // reply to the qualification question
+	Relevant         *bool  `json:"relevant,omitempty"` // founder's review: nil is not reviewed
 }
 
 const signupCols = `id, project_id, email, status, base_position, points, referral_code, referred_by, referral_credited,
 	source_url, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, consent_version, ip_hmac,
-	created_at, confirmed_at, invited_at, joined_at, removed_at, unsubscribed_at, last_status_email_at`
+	created_at, confirmed_at, invited_at, joined_at, removed_at, unsubscribed_at, last_status_email_at, answer, relevant`
 
 func scanSignup(row scanner) (*Signup, error) {
 	s := &Signup{}
 	err := row.Scan(&s.ID, &s.ProjectID, &s.Email, &s.Status, &s.BasePosition, &s.Points, &s.ReferralCode,
 		&s.ReferredBy, &s.ReferralCredited, &s.SourceURL, &s.Referrer, &s.UTMSource, &s.UTMMedium, &s.UTMCampaign,
 		&s.UTMTerm, &s.UTMContent, &s.ConsentVersion, &s.IPHMAC, &s.CreatedAt, &s.ConfirmedAt, &s.InvitedAt,
-		&s.JoinedAt, &s.RemovedAt, &s.UnsubscribedAt, &s.LastStatusEmail)
+		&s.JoinedAt, &s.RemovedAt, &s.UnsubscribedAt, &s.LastStatusEmail, &s.Answer, &s.Relevant)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -94,6 +97,7 @@ type SignupInput struct {
 	UTMCampaign string
 	UTMTerm     string
 	UTMContent  string
+	Answer      string // only kept when the project asks a qualification question
 	IP          string
 	Honeypot    string
 	DwellMs     int64 // milliseconds between form render and submit; -1 when unknown
@@ -129,6 +133,12 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 	email, domain, err := parseEmail(in.Email)
 	if err != nil {
 		return nil, &ValidationError{err.Error()}
+	}
+	answer := ""
+	if p.QualificationQuestion != "" {
+		if answer = strings.TrimSpace(in.Answer); utf8.RuneCountInString(answer) > maxAnswerChars {
+			return nil, &ValidationError{fmt.Sprintf("Keep your answer under %d characters.", maxAnswerChars)}
+		}
 	}
 	if in.Honeypot != "" || (in.DwellMs >= 0 && in.DwellMs < minDwellMs) {
 		return &SignupResult{Fake: true}, nil
@@ -191,10 +201,10 @@ func (a *App) SubmitSignup(ctx context.Context, p *Project, in SignupInput) (*Si
 	}
 	res, err := tx.ExecContext(ctx, `INSERT INTO signups (project_id, email, email_norm, status, base_position, referral_code,
 		referred_by, source_url, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, consent_version,
-		ip_hmac, created_at, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		ip_hmac, created_at, confirmed_at, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.ID, email, norm, status, base, randCode(8), referredBy, clip(in.SourceURL, 1000), clip(in.Referrer, 1000),
 		clip(in.UTMSource, 200), clip(in.UTMMedium, 200), clip(in.UTMCampaign, 200), clip(in.UTMTerm, 200),
-		clip(in.UTMContent, 200), p.ConsentVersion, a.ipHMAC(in.IP), now(), confirmedAt)
+		clip(in.UTMContent, 200), p.ConsentVersion, a.ipHMAC(in.IP), now(), confirmedAt, answer)
 	if err != nil {
 		return nil, err
 	}

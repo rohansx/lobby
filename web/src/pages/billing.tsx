@@ -1,85 +1,47 @@
-import { CheckIcon, ExternalLinkIcon, LoaderIcon } from "lucide-react"
-import { useEffect, useState } from "react"
-import { toast } from "sonner"
-import { useLocation } from "wouter"
+import { ExternalLinkIcon, LoaderIcon } from "lucide-react"
+import { useState } from "react"
+import { Link } from "wouter"
 import { LoadError } from "@/components/not-found"
 import { Page } from "@/components/page"
+import { PackOffer } from "@/components/pack-offer"
+import { CampaignBadge } from "@/components/status-badge"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { api, type Billing, type Plan } from "@/lib/api"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { api, type Billing } from "@/lib/api"
 import { toastError } from "@/lib/errors"
-import { date, num } from "@/lib/format"
-import { useSession } from "@/lib/session"
+import { date, money, num } from "@/lib/format"
 import { useApi } from "@/lib/use-api"
+import { PACK_PRICE, useBuyPack } from "@/lib/pack"
 import { cn } from "@/lib/utils"
 
-const features: Record<string, string[]> = {
-  free: ["500 signups", "1 waitlist", "1,000 emails a month", "Referrals and invite waves", "Lobby badge on hosted pages"],
-  launch: ["Unlimited signups", "3 waitlists", "5,000 emails a month", "Webhooks and REST API", "No Lobby badge"],
-  pro: ["Unlimited signups", "Unlimited waitlists", "25,000 emails a month", "Webhooks and REST API", "Priority support"],
-}
-
 export default function BillingPage() {
-  const { data, error, reload } = useApi<Billing>("/billing")
-  const { refreshMe } = useSession()
-  const [yearly, setYearly] = useState(true)
-  const [busy, setBusy] = useState("")
-  const [activating, setActivating] = useState(() => new URLSearchParams(window.location.search).has("checkout"))
-  const [, navigate] = useLocation()
-
-  // Back from checkout: the plan changes when Polar's webhook lands, usually
-  // within seconds, so poll briefly.
-  useEffect(() => {
-    if (!activating) return
-    let tries = 0
-    const t = setInterval(async () => {
-      tries++
-      const b = await api<Billing>("/billing").catch(() => null)
-      if (b && b.plan.id !== "free") {
-        clearInterval(t)
-        setActivating(false)
-        navigate("/billing", { replace: true })
-        await Promise.all([reload(), refreshMe()])
-        toast.success(`You're on ${b.plan.name}. Thanks for supporting Lobby.`)
-      } else if (tries >= 15) {
-        clearInterval(t)
-        setActivating(false)
-        navigate("/billing", { replace: true })
-        toast("Payment received. Your plan will update in a minute or two.")
-      }
-    }, 2000)
-    return () => clearInterval(t)
-  }, [activating, navigate, reload, refreshMe])
+  const { data, error } = useApi<Billing>("/billing")
+  const [busy, setBusy] = useState(false)
+  const pack = useBuyPack()
 
   if (error) return <LoadError error={error} />
 
-  const go = async (key: string, path: string, body?: object) => {
-    setBusy(key)
+  const portal = async () => {
+    setBusy(true)
     try {
-      const r = await api<{ url: string }>(path, { body: body ?? {} })
+      const r = await api<{ url: string }>("/billing/portal", { body: {} })
       window.location.href = r.url
     } catch (err) {
       toastError(err)
-      setBusy("")
+      setBusy(false)
     }
   }
 
   const a = data?.account
-  const paid = data && data.plan.id !== "free"
+  const packs = data?.packs ?? []
 
   return (
     <Page title="Plan and billing" description="Payments are handled by Polar, our merchant of record. Prices are in USD, tax included where it applies.">
-      {activating && (
-        <div className="mb-6 flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm">
-          <LoaderIcon className="size-4 animate-spin" />
-          Payment received. Activating your plan…
-        </div>
-      )}
-
       {!data ? (
         <Skeleton className="h-48" />
       ) : (
@@ -87,16 +49,18 @@ export default function BillingPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {data.plan.name} plan
-              {a?.status === "past_due" && <Badge variant="destructive">Payment failed</Badge>}
-              {a?.cancel_at_period_end && <Badge variant="outline">Ends {a.period_end ? date(a.period_end) : "soon"}</Badge>}
+              {data.subscriber && a?.status === "past_due" && <Badge variant="destructive">Payment failed</Badge>}
+              {data.subscriber && a?.cancel_at_period_end && <Badge variant="outline">Ends {a.period_end ? date(a.period_end) : "soon"}</Badge>}
             </CardTitle>
             <CardDescription>
-              {paid && a?.period_end
+              {data.subscriber && a?.period_end
                 ? a.cancel_at_period_end
-                  ? `You keep ${data.plan.name} until ${date(a.period_end)}, then move to Free.`
-                  : `Renews ${date(a.period_end)}, ${a.interval === "year" ? `$${data.plan.yearly * 12} a year` : `$${data.plan.monthly} a month`}.`
-                : "Free forever for small lists. Upgrade when your launch takes off."}
-              {a?.status === "past_due" && " Update your card in Manage billing to keep your plan."}
+                  ? `Your ${data.plan.name} subscription ends on ${date(a.period_end)}.`
+                  : `Your ${data.plan.name} subscription renews ${date(a.period_end)}. It stays as it is; we no longer sell new subscriptions.`
+                : data.plan.id === "pack"
+                  ? "Your Launch Pack keeps these limits for good. There is nothing to renew."
+                  : "Free for small lists. A Launch Pack removes the signup limit."}
+              {data.subscriber && a?.status === "past_due" && " Update your card in Manage billing to keep your plan."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5 sm:grid-cols-3">
@@ -104,99 +68,64 @@ export default function BillingPage() {
             <Meter label="Waitlists" used={data.usage.projects} limit={data.plan.projects} />
             <Meter label="Emails this month" used={data.usage.emails} limit={data.plan.emails} />
           </CardContent>
-          {paid && (
+          {data.subscriber && (
             <CardFooter className="border-t">
-              <Button variant="outline" disabled={!!busy} onClick={() => go("portal", "/billing/portal")}>
-                {busy === "portal" ? <LoaderIcon className="animate-spin" /> : <ExternalLinkIcon />}
+              <Button variant="outline" disabled={busy} onClick={portal}>
+                {busy ? <LoaderIcon className="animate-spin" /> : <ExternalLinkIcon />}
                 Manage billing
               </Button>
-              <span className="ml-3 text-xs text-muted-foreground">Change plan, update your card, get invoices or cancel.</span>
+              <span className="ml-3 text-xs text-muted-foreground">Update your card, get invoices or cancel.</span>
             </CardFooter>
           )}
         </Card>
       )}
 
       <div className="mt-10 mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-lg font-normal tracking-[-0.03em]">Plans</h2>
-        <div className="inline-flex rounded-lg border p-0.5 text-sm" role="group" aria-label="Billing period">
-          {[false, true].map((y) => (
-            <button
-              key={String(y)}
-              type="button"
-              aria-pressed={yearly === y}
-              onClick={() => setYearly(y)}
-              className={cn("rounded-md px-3 py-1 transition-colors", yearly === y ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
-            >
-              {y ? "Yearly · save 20%" : "Monthly"}
-            </button>
-          ))}
+        <h2 className="text-lg font-normal tracking-[-0.03em]">Launch Packs</h2>
+        {data && packs.length > 0 && data.billing_enabled && (
+          <Button variant="outline" disabled={pack.busy} onClick={pack.buy}>
+            {pack.busy && <LoaderIcon className="animate-spin" />}
+            Buy another, {PACK_PRICE}
+          </Button>
+        )}
+      </div>
+      {!data ? (
+        <Skeleton className="h-24" />
+      ) : packs.length === 0 ? (
+        data.billing_enabled ? <PackOffer /> : <p className="text-sm text-muted-foreground">The Launch Pack opens soon. Everything on Free works today.</p>
+      ) : (
+        <div className="overflow-hidden rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-4">Campaign</TableHead>
+                <TableHead>Paid</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="pr-4 text-right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {packs.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="pl-4">
+                    <Link href={`/campaigns/${c.id}`} className="font-medium hover:underline">
+                      Campaign #{c.id}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{date(c.paid_at ?? c.created_at)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{c.price_cents > 0 ? money(c.price_cents) : "No charge"}</TableCell>
+                  <TableCell className="pr-4 text-right">
+                    <CampaignBadge status={c.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {(data?.plans ?? []).map((p) => {
-          const current = data?.plan.id === p.id
-          return (
-            <Card key={p.id} className={cn(p.id === "launch" && "border-foreground/30")}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {p.name}
-                  {current ? <Badge variant="secondary">Current</Badge> : p.id === "launch" ? <Badge variant="outline">Most popular</Badge> : null}
-                </CardTitle>
-                <div className="pt-2">
-                  <span className="text-4xl font-light tabular-nums tracking-[-0.04em]">${yearly ? p.yearly : p.monthly}</span>
-                  <span className="text-sm text-muted-foreground">{p.id === "free" ? " forever" : " / month"}</span>
-                  {p.id !== "free" && yearly && <div className="text-xs text-muted-foreground">${p.yearly * 12} billed yearly</div>}
-                  {p.id !== "free" && !yearly && <div className="text-xs text-muted-foreground">billed monthly</div>}
-                  {p.id === "free" && <div className="text-xs text-muted-foreground">no card needed</div>}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid gap-2 text-sm">
-                  {features[p.id]?.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <CheckIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="mt-auto">
-                <PlanButton plan={p} current={current} paid={!!paid} enabled={!!data?.billing_enabled} busy={busy} onCheckout={() => go(p.id, "/billing/checkout", { plan: p.id, interval: yearly ? "year" : "month" })} onPortal={() => go("portal", "/billing/portal")} />
-              </CardFooter>
-            </Card>
-          )
-        })}
-      </div>
-      {data && !data.billing_enabled && <p className="mt-4 text-sm text-muted-foreground">Paid plans open soon. Everything on Free works today.</p>}
+      )}
 
       <DeleteAccount hasPassword={a?.has_password ?? true} />
     </Page>
-  )
-}
-
-function PlanButton(props: { plan: Plan; current: boolean; paid: boolean; enabled: boolean; busy: string; onCheckout: () => void; onPortal: () => void }) {
-  const { plan, current, paid, enabled, busy } = props
-  if (current) return <Button variant="outline" className="w-full" disabled>Your plan</Button>
-  if (plan.id === "free") {
-    return paid ? (
-      <Button variant="outline" className="w-full" disabled={!!busy} onClick={props.onPortal}>
-        Downgrade
-      </Button>
-    ) : null
-  }
-  if (paid) {
-    return (
-      <Button variant="outline" className="w-full" disabled={!!busy} onClick={props.onPortal}>
-        Switch to {plan.name}
-      </Button>
-    )
-  }
-  return (
-    <Button className="w-full" disabled={!enabled || !!busy} onClick={props.onCheckout}>
-      {busy === plan.id && <LoaderIcon className="animate-spin" />}
-      Upgrade to {plan.name}
-    </Button>
   )
 }
 

@@ -54,12 +54,12 @@ export default function Webhooks() {
       {locked ? (
         <Card className="border-dashed">
           <CardHeader className="text-center">
-            <CardTitle>Webhooks come with Launch</CardTitle>
-            <CardDescription>Send every signup, confirmation and invite to your app, Zapier or Slack, and use the REST API with your secret key. From $4 a month.</CardDescription>
+            <CardTitle>Webhooks come with a Launch Pack</CardTitle>
+            <CardDescription>Send every signup, confirmation and invite to your app, Zapier or Slack, and use the REST API with your secret key. Included with a Launch Pack, a one-time payment.</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
             <Button asChild>
-              <Link href="/billing">See plans</Link>
+              <Link href="/campaigns">See the Launch Pack</Link>
             </Button>
           </CardContent>
         </Card>

@@ -6,7 +6,7 @@ import { ApiError } from "./api"
 export function toastError(err: unknown) {
   const msg = (err as Error).message
   if (err instanceof ApiError && err.upgrade) {
-    toast.error(msg, { action: { label: "See plans", onClick: () => navigate("/billing") } })
+    toast.error(msg, { action: { label: "See the Launch Pack", onClick: () => navigate("/campaigns") } })
   } else {
     toast.error(msg)
   }

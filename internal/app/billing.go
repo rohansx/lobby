@@ -19,8 +19,9 @@ import (
 
 // Billing runs through Polar (polar.sh), which is the merchant of record:
 // it takes the payment, handles sales tax and hosts the customer portal.
-// Lobby only creates checkouts and portal sessions, and keeps each account's
-// plan in step with Polar's subscription webhooks.
+// Lobby only creates Launch Pack checkouts (pack.go) and portal sessions, and
+// keeps each account in step with Polar's webhooks. Subscriptions are no
+// longer sold; the subscription code below serves existing subscribers.
 
 var polarClient = &http.Client{Timeout: 20 * time.Second}
 
@@ -72,37 +73,14 @@ func accountFromExternal(ext string) (int64, bool) {
 
 var errBillingOff = errors.New("Billing isn't set up on this instance yet.")
 
-// Checkout returns a Polar checkout URL for a plan ("launch" or "pro") and
-// interval ("month" or "year").
-func (a *App) Checkout(ctx context.Context, ac *Account, plan, interval string) (string, error) {
-	if !a.cfg.Polar.Enabled() {
-		return "", errBillingOff
-	}
-	product := a.cfg.Polar.Products[plan+"_"+interval]
-	if product == "" {
-		return "", errors.New("unknown plan")
-	}
-	if ac.PolarSubscription != "" && paidStatus(ac.SubStatus) {
-		return "", errors.New("You already have a subscription. Change plans from Manage billing.")
-	}
-	var out struct {
-		URL string `json:"url"`
-	}
-	err := a.polar(ctx, "/v1/checkouts/", map[string]any{
-		"products":             []string{product},
-		"customer_email":       ac.Email,
-		"external_customer_id": externalID(ac.ID),
-		"success_url":          a.cfg.BaseURL + "/billing?checkout={CHECKOUT_ID}",
-		"return_url":           a.cfg.BaseURL + "/billing",
-		"metadata":             map[string]string{"account_id": strconv.FormatInt(ac.ID, 10)},
-	}, &out)
-	return out.URL, err
-}
+// errNoSubscriptions answers the old subscription checkout. Existing
+// subscribers keep their plan and manage it from the customer portal.
+var errNoSubscriptions = errors.New("Lobby Cloud no longer sells subscriptions. Buy a Launch Pack instead: one payment, no renewal.")
 
 // Portal returns a link to Polar's customer portal, where the customer
 // changes plan, updates their card, downloads invoices or cancels.
 func (a *App) Portal(ctx context.Context, ac *Account) (string, error) {
-	if !a.cfg.Polar.Enabled() {
+	if a.cfg.Polar.Token == "" {
 		return "", errBillingOff
 	}
 	body := map[string]any{"return_url": a.cfg.BaseURL + "/billing"}
@@ -149,19 +127,7 @@ type polarSubscription struct {
 // ApplySubscription brings an account's plan in line with a subscription.
 // An older subscription ending never overrides a newer paid one.
 func (a *App) ApplySubscription(ctx context.Context, sub *polarSubscription) error {
-	var id int64
-	if sub.Customer.ExternalID != nil {
-		id, _ = accountFromExternal(*sub.Customer.ExternalID)
-	}
-	if id == 0 {
-		if v, ok := sub.Metadata["account_id"].(string); ok {
-			id, _ = strconv.ParseInt(v, 10, 64)
-		}
-	}
-	if id == 0 {
-		a.db.W.QueryRowContext(ctx, `SELECT id FROM admins WHERE polar_customer_id = ?`, sub.CustomerID).Scan(&id)
-	}
-	ac, err := a.Account(ctx, id)
+	ac, err := a.Account(ctx, a.polarAccount(ctx, sub.Customer.ExternalID, sub.Metadata, sub.CustomerID))
 	if err != nil {
 		a.log.Warn("polar: subscription for unknown account", "subscription", sub.ID)
 		return nil
@@ -169,7 +135,7 @@ func (a *App) ApplySubscription(ctx context.Context, sub *polarSubscription) err
 	if ac.PolarSubscription != "" && ac.PolarSubscription != sub.ID && paidStatus(ac.SubStatus) && !paidStatus(sub.Status) {
 		return nil // an old subscription ending doesn't touch the current one
 	}
-	plan, interval := "free", ""
+	plan, interval := a.basePlan(ctx, ac.ID), ""
 	if paidStatus(sub.Status) {
 		p, iv, ok := a.planForProduct(sub.ProductID)
 		if !ok {
@@ -189,6 +155,25 @@ func (a *App) ApplySubscription(ctx context.Context, sub *polarSubscription) err
 		a.log.Info("billing: plan updated", "account", ac.ID, "plan", plan, "status", sub.Status)
 	}
 	return err
+}
+
+// polarAccount finds the account a Polar customer belongs to: by the external
+// id Lobby set at checkout, then the checkout metadata, then the customer id.
+// It returns 0 when none match.
+func (a *App) polarAccount(ctx context.Context, ext *string, meta map[string]any, customerID string) int64 {
+	var id int64
+	if ext != nil {
+		id, _ = accountFromExternal(*ext)
+	}
+	if id == 0 {
+		if v, ok := meta["account_id"].(string); ok {
+			id, _ = strconv.ParseInt(v, 10, 64)
+		}
+	}
+	if id == 0 && customerID != "" {
+		a.db.W.QueryRowContext(ctx, `SELECT id FROM admins WHERE polar_customer_id = ?`, customerID).Scan(&id)
+	}
+	return id
 }
 
 // verifyPolar checks Polar's Standard Webhooks signature. Secrets made before
@@ -245,7 +230,13 @@ func (s *Server) polarHook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad json", 400)
 		return
 	}
-	if strings.HasPrefix(ev.Type, "subscription.") {
+	switch {
+	case ev.Type == "order.paid" || ev.Type == "order.refunded":
+		if code := s.polarOrderEvent(ctx, ev.Type, ev.Data); code != 0 {
+			http.Error(w, "error", code)
+			return
+		}
+	case strings.HasPrefix(ev.Type, "subscription."):
 		var sub polarSubscription
 		if err := json.Unmarshal(ev.Data, &sub); err != nil {
 			http.Error(w, "bad subscription", 400)

@@ -46,7 +46,7 @@ export function AuthPage({ mode, me, onDone }: { mode: AuthMode; me: Me; onDone:
   }
 
   const next = new URLSearchParams(window.location.search).get("next") ?? ""
-  const intent = next.startsWith("/checkout") ? checkoutIntent(next.slice(next.indexOf("?"))) : null
+  const intent = next.startsWith("/checkout") ? checkoutIntent() : null
 
   return (
     <AuthFrame>

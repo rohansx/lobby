@@ -69,6 +69,15 @@ export default function Settings() {
           <Field label="Consent text" id="consent" hint="Shown under the form. Changing it bumps the consent version stored with new signups.">
             <Textarea id="consent" rows={2} {...text("consent_text")} />
           </Field>
+          {me.cloud && (
+            <Field
+              label="Qualification question"
+              id="question"
+              hint="Optional. One question on the hosted page, answered in up to 300 characters. Answers show on the signups page and in exports. Leave empty for no question."
+            >
+              <Input id="question" maxLength={200} placeholder="What are you hoping to use it for?" {...text("qualification_question")} />
+            </Field>
+          )}
         </Section>
 
         <Section title="Links" description="Where people come from and where they go.">

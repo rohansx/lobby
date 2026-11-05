@@ -90,6 +90,9 @@ button, .btn {
   gap: 6px;
 }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.question { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.question span { color: var(--ink-3); }
+.question input { flex: none; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .error { color: var(--bad); font-size: 15px; margin-top: 12px; }
 .fine { font-size: 13px; color: var(--ink-3); margin-top: 14px; }

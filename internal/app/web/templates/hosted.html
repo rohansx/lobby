@@ -17,8 +17,11 @@
     <input type="hidden" name="_t" value="{{.FormTime}}">
     <input type="hidden" name="ref" value="{{.Ref}}">
     <input type="hidden" name="source_url" value="{{.PageURL}}">
-    <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" value="{{.Email}}" aria-label="Email address">
-    <button type="submit">Join the waitlist</button>
+    {{range $k, $v := .UTM}}<input type="hidden" name="{{$k}}" value="{{$v}}">
+    {{end}}<input type="email" name="email" required autocomplete="email" placeholder="you@example.com" value="{{.Email}}" aria-label="Email address">
+    {{with .Project.QualificationQuestion}}<label class="question">{{.}} <span>(optional)</span>
+      <input type="text" name="answer" maxlength="300" autocomplete="off" value="{{$.Answer}}"></label>
+    {{end}}    <button type="submit">Join the waitlist</button>
   </form>
   {{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}
   {{if ge .Count 0}}<p class="count"><strong>{{num .Count}}</strong> people are already waiting.</p>{{end}}

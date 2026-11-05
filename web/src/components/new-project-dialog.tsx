@@ -15,7 +15,8 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 40)
 
-export function NewProjectDialog({ children }: { children: ReactNode }) {
+// onCreated replaces the default of opening the new project.
+export function NewProjectDialog({ children, onCreated }: { children: ReactNode; onCreated?: (p: Project) => void }) {
   const { refreshProjects } = useSession()
   const [, navigate] = useLocation()
   const [open, setOpen] = useState(false)
@@ -53,7 +54,8 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
                 await refreshProjects()
                 setOpen(false)
                 setSecret(r.secret_key)
-                navigate(`/p/${r.project.slug}`)
+                if (onCreated) onCreated(r.project)
+                else navigate(`/p/${r.project.slug}`)
               } catch (err) {
                 setError(err as Error)
               } finally {
@@ -96,8 +98,8 @@ export function NewProjectDialog({ children }: { children: ReactNode }) {
               <p className="text-sm text-destructive">
                 {error.message}{" "}
                 {error instanceof ApiError && error.upgrade && (
-                  <Link href="/billing" onClick={() => setOpen(false)} className="font-medium text-foreground underline underline-offset-2">
-                    See plans
+                  <Link href="/campaigns" onClick={() => setOpen(false)} className="font-medium text-foreground underline underline-offset-2">
+                    See the Launch Pack
                   </Link>
                 )}
               </p>

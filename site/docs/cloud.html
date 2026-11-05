@@ -5,10 +5,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lobby Cloud · Lobby docs</title>
-<meta name="description" content="Lobby Cloud plans, limits, what happens when you reach one, billing through Polar, and deleting your account.">
+<meta name="description" content="Lobby Cloud plans and limits, the one-time Launch Pack, billing through Polar, and deleting your account.">
 <meta name="theme-color" content="#fbfaf7">
 <meta property="og:title" content="Lobby Cloud · Lobby docs">
-<meta property="og:description" content="Lobby Cloud plans, limits, what happens when you reach one, billing through Polar, and deleting your account.">
+<meta property="og:description" content="Lobby Cloud plans and limits, the one-time Launch Pack, billing through Polar, and deleting your account.">
 <meta property="og:image" content="https://trylobby.app/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:url" content="https://trylobby.app/docs/cloud">
@@ -29,6 +29,7 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
+      <a href="/launch">Launch Pack</a>
       <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -44,7 +45,8 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/docs" aria-current="page">Docs</a>
+          <a href="/launch">Launch Pack</a>
+      <a href="/docs" aria-current="page">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
           <a href="/login">Sign in</a>
@@ -113,38 +115,50 @@
   <article class="prose">
     <p class="crumb">Running Lobby</p>
     <h1>Lobby Cloud</h1>
-    <p class="lede">The same Lobby, run for you at trylobby.app. Free to start, and the paid plans unlock everything the self-hosted version has.</p>
+    <p class="lede">The same Lobby, run for you at trylobby.app. A free waitlist to start, and a one-time Launch Pack when you're ready to launch.</p>
     <h2 id="plans"><a class="anchor" href="#plans" aria-hidden="true">#</a>Plans</h2>
 <div class="table"><table>
-  <thead><tr><th></th><th>Free</th><th>Launch</th><th>Pro</th></tr></thead>
+  <thead><tr><th></th><th>Free</th><th>With a Launch Pack</th></tr></thead>
   <tbody>
-    <tr><td>Price</td><td>$0</td><td>$5 a month, or $4 billed yearly</td><td>$12 a month, or $10 billed yearly</td></tr>
-    <tr><td>Signups</td><td>500 in total</td><td>Unlimited</td><td>Unlimited</td></tr>
-    <tr><td>Waitlists</td><td>1</td><td>3</td><td>Unlimited</td></tr>
-    <tr><td>Emails a month</td><td>1,000</td><td>5,000</td><td>25,000</td></tr>
-    <tr><td>Webhooks, REST API and CLI</td><td>No</td><td>Yes</td><td>Yes</td></tr>
-    <tr><td>"Powered by Lobby" badge</td><td>Shown</td><td>Removed</td><td>Removed</td></tr>
+    <tr><td>Price</td><td>$0</td><td>$99 once (pilot price), no renewal</td></tr>
+    <tr><td>Signups</td><td>500 in total</td><td>Unlimited</td></tr>
+    <tr><td>Waitlists</td><td>1</td><td>3</td></tr>
+    <tr><td>Emails a month</td><td>1,000</td><td>5,000</td></tr>
+    <tr><td>Webhooks, REST API and CLI</td><td>No</td><td>Yes</td></tr>
+    <tr><td>"Powered by Lobby" badge</td><td>Shown</td><td>Removed</td></tr>
   </tbody>
 </table></div>
-<p>Everything else is on every plan: the widget, form and hosted page, double opt-in, referrals, invites, broadcasts, exports and the dashboard. Compare in more detail on the <a href="/pricing">pricing page</a>.</p>
+<p>Everything else is on every plan: the widget, form and hosted page, double opt-in, referrals, invites, broadcasts, exports and the dashboard. The higher limits stay with your account after the campaign ends.</p>
+
+<h2 id="the-launch-pack"><a class="anchor" href="#the-launch-pack" aria-hidden="true">#</a>The Launch Pack</h2>
+<p>A Launch Pack is one launch campaign for one product, run by a person, with the waitlist as the measurement. You buy it from the <a href="/launch">Launch Pack page</a> or from <strong>Launch</strong> in the dashboard. It goes like this:</p>
+<ol>
+  <li><strong>Intake</strong>: pick the waitlist for the product, fill in the product profile once and upload your logo and screenshots. Anything missing is listed, never made up.</li>
+  <li><strong>Readiness review</strong>: we check your landing page, demo, signup flow, assets and tracking, and list anything that would hold the launch back.</li>
+  <li><strong>Plan</strong>: we propose up to 20 destinations that suit the product and its stage, each with a reason, its fee and who does the final step. Twenty is a maximum, not a quota. You approve the plan, or send it back with a note.</li>
+  <li><strong>Submissions</strong>: we do the submissions that are allowed to be done for you, within 10 business days of your approval. Where a platform needs your own account (Product Hunt, Hacker News, Reddit and similar), you get instructions and a checklist, and you post. We never ask for your passwords.</li>
+  <li><strong>Follow-up and report</strong>: we track every destination for 30 days after the submissions, then publish a report with what was submitted, what went live, and the visits, signups and confirmations each one brought.</li>
+</ol>
+<p>Platform fees, where a destination charges one, are shown in the plan before you approve it and paid separately. If a destination closes, changes its rules or turns the product away, the task records why, and we suggest a replacement where there's a suitable one. We don't promise acceptance, rankings, upvotes, backlinks, traffic, customers or revenue; each platform decides if and when it publishes.</p>
+<p>How the report counts: each destination gets its own link to your hosted page (<code>/w/your-slug?utm_source=…</code>). Lobby counts visits to the hosted page from those links, per day, without storing anything about the visitor, and leaves out bots and link previews. A signup is credited to the source it first arrived with; signups with no source are shown as unknown. Visits to the widget or a form on your own site aren't counted, and the report says so. Attribution is never complete, so the report always shows counts next to rates. You can add one optional question to the signup form and mark signups as relevant or not.</p>
 
 <h2 id="reaching-a-limit"><a class="anchor" href="#reaching-a-limit" aria-hidden="true">#</a>Reaching a limit</h2>
 <ul>
-  <li><strong>Signups (Free)</strong>: once your waitlists hold 500 people, new visitors see "This waitlist isn't taking new signups right now." Nobody already on the list is affected, and we email you (at most once a week) so you can upgrade.</li>
+  <li><strong>Signups (Free)</strong>: once your waitlists hold 500 people, new visitors see "This waitlist isn't taking new signups right now." Nobody already on the list is affected, and we email you (at most once a week).</li>
   <li><strong>Emails</strong>: confirmation emails always go out so no signup gets stuck. An invite wave or broadcast that would go over what's left this month is refused before anything is sent. The count resets on the first of each month (UTC).</li>
-  <li><strong>Waitlists</strong>: creating one more than your plan allows is refused, with a link to upgrade.</li>
+  <li><strong>Waitlists</strong>: creating one more than your plan allows is refused.</li>
 </ul>
 <p>The <a href="/billing">Billing</a> page shows how much of each limit you've used. API calls that hit a limit answer <code>402</code> with <code>"upgrade": true</code>.</p>
 
 <h2 id="billing"><a class="anchor" href="#billing" aria-hidden="true">#</a>Billing</h2>
-<p>Payments are handled by <a href="https://polar.sh">Polar</a>, which acts as the merchant of record: it charges your card and takes care of sales tax and VAT invoices. Upgrade from the pricing page or from <strong>Billing</strong> in the dashboard; your plan changes as soon as the payment goes through.</p>
-<p><strong>Manage billing</strong> on the Billing page opens Polar's customer portal, where you can switch between monthly and yearly, update your card, download invoices or cancel.</p>
-<p>If you cancel, you keep your plan until the end of the period you paid for, then move to Free. Nothing is deleted. If you're over the Free limits at that point, existing signups stay, but new ones and extra waitlists are paused until you upgrade again or trim the list.</p>
+<p>Payments are handled by <a href="https://polar.sh">Polar</a>, which acts as the merchant of record: it charges your card and takes care of sales tax and VAT invoices. A Launch Pack is a single payment. Your campaign opens and your limits go up as soon as Polar confirms it. The Billing page lists every pack you've bought, with its date and amount.</p>
+<p><strong>Existing subscribers</strong>: we no longer sell the monthly Launch and Pro plans. If you already have one, nothing changes: it renews as before, and <strong>Manage billing</strong> on the Billing page opens Polar's customer portal to update your card, download invoices or cancel. If you cancel, you keep the plan until the end of the period you paid for. After that you move to Free, or keep the Launch Pack limits if you've bought a pack.</p>
+<p>Refunds are handled by a person: email <a href="mailto:support@trylobby.app">support@trylobby.app</a>.</p>
 
 <h2 id="your-data"><a class="anchor" href="#your-data" aria-hidden="true">#</a>Your data</h2>
 <ul>
   <li>Export any waitlist as CSV or NDJSON from the dashboard at any time, on every plan.</li>
-  <li><strong>Delete account</strong> at the bottom of the Billing page removes your account, every waitlist and every signup. Cancel a paid subscription in Manage billing first, so you aren't charged again.</li>
+  <li><strong>Delete account</strong> at the bottom of the Billing page removes your account, every waitlist, every signup and your campaign files. If you have a subscription, cancel it in Manage billing first so you aren't charged again.</li>
 </ul>
 <p>See the <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a> for the details, or email <a href="mailto:support@trylobby.app">support@trylobby.app</a>.</p>
     <div class="doc-foot">
@@ -159,6 +173,7 @@
   <nav class="toc" aria-label="On this page">
     <p>On this page</p>
     <a href="#plans">Plans</a>
+    <a href="#the-launch-pack">The Launch Pack</a>
     <a href="#reaching-a-limit">Reaching a limit</a>
     <a href="#billing">Billing</a>
     <a href="#your-data">Your data</a>
@@ -171,6 +186,7 @@
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

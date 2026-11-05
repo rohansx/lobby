@@ -447,7 +447,7 @@ func (s *Server) adminCreateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
-		limitError(w, &ErrLimit{"Webhooks come with the Launch plan. Upgrade to add one."})
+		limitError(w, &ErrLimit{"Webhooks come with a Launch Pack."})
 		return
 	}
 	wh, err := s.app.CreateWebhook(r.Context(), p, strings.TrimSpace(body.URL), body.Kind, body.Events)

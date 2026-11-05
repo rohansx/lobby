@@ -4,7 +4,7 @@
 <p>Send the project's secret key as a bearer token. You get it once when you create the project; <strong>Rotate secret key</strong> on the project's Overview makes a new one and stops the old one working.</p>
 <pre><code>curl https://trylobby.app/v1/stats -H <span class="s">"Authorization: Bearer sk_…"</span></code></pre>
 <div class="callout warn"><p>The secret key can read every address on the list. Keep it on your server, never in a browser or mobile app. Public pages use the public <code>pk_…</code> key instead, which can only add signups.</p></div>
-<p>On Lobby Cloud, the API comes with the Launch and Pro plans. On the Free plan every API call answers 402.</p>
+<p>On Lobby Cloud, the API comes with a Launch Pack (and the older Launch and Pro plans). On the Free plan every API call answers 402.</p>
 
 <h2>Requests and errors</h2>
 <p>Send JSON with <code>Content-Type: application/json</code>; responses are JSON. Errors have a status code and a readable message:</p>

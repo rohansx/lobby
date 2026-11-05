@@ -30,15 +30,19 @@ type Config struct {
 }
 
 type PolarConfig struct {
-	Token         string            // POLAR_ACCESS_TOKEN, an organization access token
-	WebhookSecret string            // POLAR_WEBHOOK_SECRET
-	Sandbox       bool              // POLAR_SANDBOX=1 uses sandbox-api.polar.sh
-	APIURL        string            // POLAR_API_URL overrides both, for tests
-	Products      map[string]string // "launch_month" etc. to Polar product IDs, from POLAR_PRODUCT_LAUNCH_MONTHLY etc.
+	Token         string // POLAR_ACCESS_TOKEN, an organization access token
+	WebhookSecret string // POLAR_WEBHOOK_SECRET
+	Sandbox       bool   // POLAR_SANDBOX=1 uses sandbox-api.polar.sh
+	APIURL        string // POLAR_API_URL overrides both, for tests
+	LaunchPack    string // POLAR_PRODUCT_LAUNCH_PACK, the one-time Launch Pack product
+	// Products maps "launch_month" etc. to the legacy subscription products
+	// (POLAR_PRODUCT_LAUNCH_MONTHLY etc.). Only existing subscribers use them:
+	// no new subscriptions are sold, but their webhooks still need the mapping.
+	Products map[string]string
 }
 
-// Enabled reports whether checkout can work at all.
-func (p PolarConfig) Enabled() bool { return p.Token != "" && len(p.Products) > 0 }
+// Enabled reports whether the Launch Pack can be bought.
+func (p PolarConfig) Enabled() bool { return p.Token != "" && p.LaunchPack != "" }
 
 func ConfigFromEnv() Config {
 	c := Config{
@@ -62,6 +66,7 @@ func ConfigFromEnv() Config {
 			WebhookSecret: env("POLAR_WEBHOOK_SECRET", ""),
 			Sandbox:       env("POLAR_SANDBOX", "") == "1",
 			APIURL:        strings.TrimRight(env("POLAR_API_URL", ""), "/"),
+			LaunchPack:    env("POLAR_PRODUCT_LAUNCH_PACK", ""),
 			Products:      map[string]string{},
 		},
 	}

@@ -18,7 +18,7 @@ export interface Me {
 
 // Cloud plans; -1 means unlimited.
 export interface Plan {
-  id: "free" | "launch" | "pro" | "self"
+  id: "free" | "pack" | "launch" | "pro" | "self"
   name: string
   signups: number
   projects: number
@@ -42,8 +42,9 @@ export interface Billing {
   }
   plan: Plan
   usage: { signups: number; projects: number; emails: number }
-  plans: Plan[]
+  packs: Campaign[]
   billing_enabled: boolean
+  subscriber: boolean // a grandfathered launch/pro subscription
 }
 
 export interface OpsAccount {
@@ -100,6 +101,7 @@ export interface Project {
   invite_url: string
   consent_text: string
   consent_version: number
+  qualification_question: string // cloud: one optional question on the hosted page
   created_at: number
 }
 
@@ -140,6 +142,8 @@ export interface Signup {
   referrals: number
   position: number
   status_url: string
+  answer?: string // reply to the qualification question
+  relevant?: boolean // founder's review; absent means not reviewed
 }
 
 export interface Webhook {
@@ -175,6 +179,192 @@ export interface Broadcast {
   created_at: number
 }
 
+// Launch Pack (cloud only).
+export type CampaignStatus = "intake" | "readiness" | "planning" | "awaiting_approval" | "executing" | "reporting" | "done" | "cancelled"
+
+export const campaignLabel: Record<CampaignStatus, string> = {
+  intake: "Intake",
+  readiness: "Readiness review",
+  planning: "Planning",
+  awaiting_approval: "Your approval",
+  executing: "Executing",
+  reporting: "Reporting",
+  done: "Done",
+  cancelled: "Cancelled",
+}
+
+export interface ReadinessItem {
+  label: string
+  ok: boolean
+  note: string
+}
+
+export interface Campaign {
+  id: number
+  project_id: number | null
+  project_slug: string
+  owner_id: number
+  owner_email: string
+  status: CampaignStatus
+  price_cents: number
+  paid_at: number | null
+  readiness: ReadinessItem[]
+  profile_version_id: number | null
+  approved_at: number | null
+  changes_note: string
+  report_note: string // empty until the report is published
+  report_published_at: number | null
+  tasks: number
+  created_at: number
+  updated_at: number
+}
+
+export type TaskState = "planned" | "needs_assets" | "awaiting_approval" | "awaiting_founder" | "ready" | "submitted" | "live" | "rejected" | "blocked"
+
+export interface CampaignTask {
+  id: number
+  campaign_id: number
+  destination_id: number
+  destination_slug: string
+  destination_name: string
+  destination_url: string
+  owner: "staff" | "founder"
+  state: TaskState
+  reason: string
+  fee_cents: number
+  instructions: string
+  submitted_at: number | null
+  live_at: number | null
+  listing_url: string
+  evidence: string
+  exception_note: string
+  campaign_link: string // hosted page tagged for this destination; empty without a waitlist
+  created_at: number
+  updated_at: number
+}
+
+export interface CampaignDetail {
+  campaign: Campaign
+  tasks: CampaignTask[]
+}
+
+export interface ReportRow {
+  kind: "task" | "unknown" | "other" | "total"
+  task_id?: number
+  label: string
+  source: string
+  destination_url?: string
+  owner?: "staff" | "founder"
+  state?: TaskState
+  submitted_at?: number
+  live_at?: number
+  listing_url?: string
+  fee_cents: number
+  visits: number | null // null: no visits recorded, not zero
+  signups: number
+  confirmed: number
+  relevant: number
+  conversion: number | null // signups / visits, only when visits > 0
+}
+
+export interface CampaignReport {
+  campaign: Campaign
+  from: number | null // null until the plan is approved
+  to: number
+  visits_tracked: boolean
+  rows: ReportRow[]
+  unknown: ReportRow
+  other: ReportRow
+  total: ReportRow
+  pack_price_cents: number
+  platform_fees_cents: number
+  attributed_confirmed: number
+  cost_per_confirmed_cents: number | null
+}
+
+export interface ProductProfile {
+  name: string
+  url: string
+  audience: string
+  problem: string
+  category: string
+  pricing: string
+  stage: "" | "idea" | "prelaunch" | "beta" | "live"
+  availability: string
+  founder_name: string
+  founder_email: string
+  founder_links: string // one URL per line
+  tagline: string
+  short_description: string
+  long_description: string
+  demo_url: string
+}
+
+export interface ProfileVersion {
+  id: number
+  profile: ProductProfile
+  created_at: number
+  approved_at: number | null
+}
+
+export interface ProfileView {
+  latest: ProfileVersion | null
+  approved: ProfileVersion | null
+  missing: (keyof ProductProfile)[]
+}
+
+export type AssetKind = "logo" | "screenshot" | "banner" | "demo" | "other"
+
+export interface Asset {
+  id: number
+  kind: AssetKind
+  filename: string
+  mime: string
+  size: number
+  created_at: number
+}
+
+// Operator views (LOBBY_OPERATORS) of the same records, with the fields founders don't see.
+export type ProfileStage = "idea" | "prelaunch" | "beta" | "live"
+export const PROFILE_STAGES: ProfileStage[] = ["idea", "prelaunch", "beta", "live"]
+
+export interface Destination {
+  id: number
+  slug: string
+  name: string
+  url: string
+  audience: string
+  stages: string // comma-separated ProfileStage values; empty accepts any
+  fee_cents: number
+  fee_note: string
+  fields: string
+  rules: string
+  mode: "staff" | "founder" | "guided"
+  active: boolean
+  last_verified_at: number | null
+  notes: string
+  created_at: number
+  updated_at: number
+}
+
+export interface OpsCampaign extends Campaign {
+  operator_minutes?: number
+  task_states?: Partial<Record<TaskState, number>>
+  task_minutes?: number
+}
+
+export interface OpsTask extends CampaignTask {
+  minutes?: number
+}
+
+export interface OpsCampaignDetail {
+  campaign: OpsCampaign
+  tasks: OpsTask[]
+  profile: ProfileView | null
+  assets: Asset[]
+  moves: CampaignStatus[] // statuses the server lets an operator move to from here
+}
+
 export class ApiError extends Error {
   status: number
   upgrade: boolean
@@ -185,11 +375,13 @@ export class ApiError extends Error {
   }
 }
 
+// A FormData body is sent as multipart, anything else as JSON.
 export async function api<T = unknown>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const form = init?.body instanceof FormData
   const res = await fetch("/api/admin" + path, {
     method: init?.method ?? (init?.body === undefined ? "GET" : "POST"),
-    headers: init?.body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+    headers: init?.body === undefined || form ? undefined : { "Content-Type": "application/json" },
+    body: init?.body === undefined ? undefined : form ? (init.body as FormData) : JSON.stringify(init.body),
     credentials: "same-origin",
   })
   const data = await res.json().catch(() => ({}))

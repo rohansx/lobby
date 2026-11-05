@@ -108,6 +108,13 @@ func (a *App) runJobs(ctx context.Context) (int, error) {
 }
 
 func (a *App) runJob(ctx context.Context, kind, payload string) error {
+	if kind == "email.lobby" { // account mail from Lobby itself, already composed (see mailLobby)
+		var m Message
+		if err := json.Unmarshal([]byte(payload), &m); err != nil {
+			return fmt.Errorf("%w: %v", ErrPermanent, err)
+		}
+		return a.mailer.Send(ctx, &m)
+	}
 	var j emailJob
 	if err := json.Unmarshal([]byte(payload), &j); err != nil {
 		return fmt.Errorf("%w: %v", ErrPermanent, err)

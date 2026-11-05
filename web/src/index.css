@@ -138,3 +138,10 @@
     @apply font-mono;
     }
 }
+
+/* Printing (the campaign report): only the page content. */
+@media print {
+  [data-slot="sidebar"], [data-slot="sidebar-gap"], [data-slot="sidebar-container"], [data-slot="sidebar-inset"] > header {
+    display: none !important;
+  }
+}

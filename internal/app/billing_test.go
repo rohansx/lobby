@@ -9,7 +9,8 @@ import (
 	"testing"
 )
 
-// TestCloudMoneyPath runs signup -> verify -> checkout -> paid webhook ->
+// TestCloudMoneyPath runs signup -> verify -> refused subscription checkout ->
+// grandfathered subscription webhook ->
 // higher limits -> cancel/revoke -> free, all through the HTTP handler and a
 // fake Polar API.
 func TestCloudMoneyPath(t *testing.T) {
@@ -75,13 +76,13 @@ func TestCloudMoneyPath(t *testing.T) {
 		t.Fatalf("free plan must refuse a second waitlist: %d", code)
 	}
 
-	code, out := c.do("POST", "/api/admin/billing/checkout", `{"plan":"launch","interval":"month"}`)
-	if code != 200 || out["url"] != "https://polar.test/checkout/ch_1" {
-		t.Fatalf("checkout: %d %v", code, out)
+	// New subscriptions aren't sold; the webhooks below are a grandfathered subscriber.
+	if code, out := c.do("POST", "/api/admin/billing/checkout", `{"plan":"launch","interval":"month"}`); code != http.StatusGone || out["error"] != errNoSubscriptions.Error() {
+		t.Fatalf("subscription checkout must be refused: %d %v", code, out)
 	}
 	mu.Lock()
-	if p, _ := checkout["products"].([]any); len(p) != 1 || p[0] != "prod-launch-m" || checkout["external_customer_id"] != externalID(id) {
-		t.Fatalf("checkout request: %v", checkout)
+	if checkout != nil {
+		t.Fatalf("a refused checkout must not reach Polar: %v", checkout)
 	}
 	mu.Unlock()
 
@@ -103,9 +104,6 @@ func TestCloudMoneyPath(t *testing.T) {
 	}
 	if code, out := c.do("POST", "/api/admin/projects", `{"name":"Two","slug":"two"}`); code != 201 {
 		t.Fatalf("launch allows a second waitlist: %d %v", code, out)
-	}
-	if code, _ := c.do("POST", "/api/admin/billing/checkout", `{"plan":"pro","interval":"year"}`); code != 400 {
-		t.Fatalf("a second checkout while subscribed must fail: %d", code)
 	}
 
 	// Cancelling keeps the plan until the period ends.

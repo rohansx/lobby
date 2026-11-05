@@ -29,7 +29,7 @@ func (s *Server) requireKey(next http.Handler) http.Handler {
 			return
 		}
 		if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
-			jsonError(w, http.StatusPaymentRequired, "the REST API comes with the Launch plan")
+			jsonError(w, http.StatusPaymentRequired, "the REST API comes with a Launch Pack")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), projectKey, p)))
@@ -271,7 +271,11 @@ func (s *Server) export(w http.ResponseWriter, r *http.Request, p *Project, form
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="`+p.Slug+`-waitlist.csv"`)
 		cw := csv.NewWriter(w)
-		cw.Write(csvHeader)
+		hdr := csvHeader
+		if s.app.cfg.Cloud {
+			hdr = append(hdr[:len(hdr):len(hdr)], "answer", "relevant")
+		}
+		cw.Write(hdr)
 		cw.Flush()
 		for _, st := range statuses {
 			s.writeCSVRows(w, r, p, st)
@@ -289,17 +293,26 @@ func (s *Server) export(w http.ResponseWriter, r *http.Request, p *Project, form
 func (s *Server) writeCSVRows(w http.ResponseWriter, r *http.Request, p *Project, status string) {
 	cw := csv.NewWriter(w)
 	refs := s.creditedCounts(r, p)
+	cloud := s.app.cfg.Cloud
 	s.app.EachSignup(r.Context(), p, status, func(su *Signup) error {
 		refBy := ""
 		if su.ReferredBy != nil {
 			refBy = strconv.FormatInt(*su.ReferredBy, 10)
 		}
 		created := su.CreatedAt
-		return cw.Write([]string{strconv.FormatInt(su.ID, 10), csvSafe(su.Email), su.Status, strconv.FormatInt(su.BasePosition, 10),
+		row := []string{strconv.FormatInt(su.ID, 10), csvSafe(su.Email), su.Status, strconv.FormatInt(su.BasePosition, 10),
 			strconv.FormatInt(su.Points, 10), su.ReferralCode, refBy, strconv.FormatInt(refs[su.ID], 10), csvSafe(su.SourceURL),
 			csvSafe(su.Referrer), csvSafe(su.UTMSource), csvSafe(su.UTMMedium), csvSafe(su.UTMCampaign), csvSafe(su.UTMTerm),
 			csvSafe(su.UTMContent), strconv.Itoa(su.ConsentVersion), isoTime(&created), isoTime(su.ConfirmedAt),
-			isoTime(su.InvitedAt), isoTime(su.JoinedAt), isoTime(su.UnsubscribedAt)})
+			isoTime(su.InvitedAt), isoTime(su.JoinedAt), isoTime(su.UnsubscribedAt)}
+		if cloud {
+			rel := ""
+			if su.Relevant != nil {
+				rel = strconv.FormatBool(*su.Relevant)
+			}
+			row = append(row, csvSafe(su.Answer), rel)
+		}
+		return cw.Write(row)
 	})
 	cw.Flush()
 }

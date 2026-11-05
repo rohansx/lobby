@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lobby: waitlists for every product you launch</title>
-<meta name="description" content="Waitlists for every product you launch: referrals, double opt-in, invite waves and a dashboard. Free for your first 500 signups, or self-host the open-source version.">
+<title>Lobby: a launch campaign, measured by your waitlist</title>
+<meta name="description" content="The Lobby Launch Pack: a readiness review, an approved shortlist of up to 20 suitable launch destinations, submissions done or guided, and a report of which ones brought signups. $99 once. The waitlist is free to start or self-host.">
 <meta name="theme-color" content="#fbfaf7">
-<meta property="og:title" content="Lobby: waitlists for every product you launch">
-<meta property="og:description" content="Referrals, double opt-in, invite waves and a dashboard. Free for your first 500 signups. Open source.">
+<meta property="og:title" content="Lobby: a launch campaign, measured by your waitlist">
+<meta property="og:description" content="A readiness review, an approved shortlist of launch destinations, submissions tracked, and a report of which ones brought signups. $99 once.">
 <meta property="og:image" content="https://trylobby.app/og.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trylobby.app/">
@@ -28,6 +28,7 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -43,7 +44,8 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/docs">Docs</a>
+          <a href="/launch">Launch Pack</a>
+      <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
           <a href="/login">Sign in</a>
@@ -59,19 +61,19 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="kicker"><i></i>Free for your first 500 signups · <a href="https://github.com/rohansx/lobby">Open source</a></div>
-          <h1>Your waitlist.<span>Live in five minutes.</span></h1>
+          <div class="kicker"><i></i>Launch Pack · $99 once · <a href="https://github.com/rohansx/lobby">Open-source waitlist</a></div>
+          <h1>Launch in the right places.<span>See which ones brought signups.</span></h1>
         </div>
         <div class="hero-side">
-          <p class="sub">Lobby gives every product you launch a signup form, double opt-in, a place in line, referral links that move people up, and invite waves for launch day. Paste one line onto your site and you're collecting signups.</p>
+          <p class="sub">Describe your product once. We check that it's ready to launch, agree a shortlist of up to 20 suitable directories and communities with you, do the submissions where that's allowed and guide you through the rest. Your Lobby waitlist tags every signup by where it came from, so the report shows what each place brought in.</p>
           <div class="hero-ctas">
-            <a class="btn btn-primary" href="/signup">Start for free
+            <a class="btn btn-primary" href="/launch">See the Launch Pack
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
             <a class="btn btn-ghost" href="#demo">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
               Watch the demo</a>
           </div>
-          <p class="hero-note">No credit card needed. Rather run it yourself? <a href="#self-host">Self-host it free</a>.</p>
+          <p class="hero-note">Only need a waitlist? <a href="/signup">Start free</a> up to 500 signups, or <a href="#self-host">self-host it</a>.</p>
         </div>
       </div>
     </div>
@@ -93,7 +95,7 @@
   <div class="numbers reveal">
     <div class="num"><b>5 min</b><span>to a live waitlist</span></div>
     <div class="num"><b>500</b><span>signups free, no card</span></div>
-    <div class="num"><b>$4</b><span>a month for unlimited</span></div>
+    <div class="num"><b>$99</b><span>once for a Launch Pack</span></div>
     <div class="num"><b>&lt;2 KB</b><span>embed widget, gzipped</span></div>
     <div class="num"><b>MIT</b><span>open source, self-host free</span></div>
   </div>
@@ -273,10 +275,10 @@ curl -X POST https://trylobby.app/v1/invites \
         <table>
           <thead><tr><th></th><th>Lobby</th><th>Typical hosted waitlist</th></tr></thead>
           <tbody>
-            <tr><td>Price</td><td>Free for 500 signups, then $4 a month for unlimited. Or self-host for free</td><td>A monthly plan, often priced per list or per signup</td></tr>
-            <tr><td>Multiple products</td><td>Three waitlists on Launch, unlimited on Pro, all in one dashboard</td><td>Often one list per plan</td></tr>
+            <tr><td>Price</td><td>Free for 500 signups. A one-time Launch Pack removes the limit. Or self-host for free</td><td>A monthly plan, often priced per list or per signup</td></tr>
+            <tr><td>Multiple products</td><td>Three waitlists with a Launch Pack, unlimited self-hosted, all in one dashboard</td><td>Often one list per plan</td></tr>
             <tr><td>Referrals and invites</td><td>On every plan, with fraud checks</td><td>Often on higher tiers</td></tr>
-            <tr><td>Webhooks and API</td><td>From $4 a month, with a CLI and <code>/llms.txt</code> for agents</td><td>Usually the top tier</td></tr>
+            <tr><td>Webhooks and API</td><td>Included with a Launch Pack, with a CLI and <code>/llms.txt</code> for agents</td><td>Usually the top tier</td></tr>
             <tr><td>Leaving</td><td>CSV or NDJSON export on every plan. The code is MIT, so you can always run it yourself</td><td>Export, if your plan includes it</td></tr>
           </tbody>
         </table>
@@ -334,6 +336,7 @@ lobby export --format csv</pre>
       </div>
       <div class="faq reveal">
         <details><summary>Is it really free?</summary><p>Self-hosted, yes. Lobby is MIT licensed with no signup limits and no phone-home. You pay for the server it runs on and for your email provider, and Resend's free tier is enough for a small launch. Rather not run a server? <a class="inline-link" href="/pricing">Lobby Cloud</a> is free up to 500 signups.</p></details>
+        <details><summary>What is the Launch Pack?</summary><p>A one-time, $99 launch campaign run by a person: a readiness review, a shortlist of up to 20 suitable destinations that you approve, submissions done or guided, 30 days of follow-up and a results report. It doesn't promise acceptance, rankings, traffic or customers. <a class="inline-link" href="/launch">What's included</a>.</p></details>
         <details><summary>What do I need to run it?</summary><p>Anything that runs a Docker container: a small VPS, Dokploy, Coolify, Fly.io or Railway. It idles at about 20 MB of memory. Mount a volume at <code>/data</code> so your list survives restarts.</p></details>
         <details><summary>Can I run waitlists for several products?</summary><p>Yes. Each project has its own form, keys, allowed origins, emails, referral rules and settings, and they all share one dashboard.</p></details>
         <details><summary>How do I stop people gaming referrals?</summary><p>A referral only counts after the friend confirms their email, credits are capped per IP address and per hour, and addresses are normalized so Gmail dots and +tags can't create duplicates. Disposable domains are rejected.</p></details>
@@ -346,9 +349,10 @@ lobby export --format csv</pre>
   <div class="final reveal">
     <img src="/logo.svg" alt="">
     <h2>Open the doors <span>on your terms.</span></h2>
-    <p>Start free in five minutes, or run it on your own server. Either way, the list is yours.</p>
+    <p>Buy a Launch Pack, start a free waitlist in five minutes, or run Lobby on your own server. Either way, the list is yours.</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="/signup">Start for free</a>
+      <a class="btn btn-primary" href="/launch">See the Launch Pack</a>
+      <a class="btn btn-ghost" href="/signup">Start for free</a>
       <a class="btn btn-ghost" href="/docs/self-hosting">Self-host it</a>
     </div>
   </div>
@@ -360,6 +364,7 @@ lobby export --format csv</pre>
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
+      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

@@ -18,6 +18,7 @@ import { toastError } from "@/lib/errors"
 import { ago, dateTime, num } from "@/lib/format"
 import { useSession } from "@/lib/session"
 import { invalidate, useApi } from "@/lib/use-api"
+import { cn } from "@/lib/utils"
 
 type Action = "invite" | "confirm" | "resend" | "joined" | "remove" | "delete"
 
@@ -32,7 +33,7 @@ const actionLabels: Record<Action, string> = {
 
 export default function Signups() {
   const { slug } = useParams<{ slug: string }>()
-  const { refreshProjects } = useSession()
+  const { me, refreshProjects } = useSession()
   const [status, setStatus] = useState("all")
   const [search, setSearch] = useState("")
   const [q, setQ] = useState("")
@@ -81,6 +82,20 @@ export default function Signups() {
       reload()
       refreshProjects()
     } catch (err) {
+      toastError(err)
+    }
+  }
+
+  // Optimistic: the row changes at once and goes back if the save fails.
+  async function review(id: number, relevant: boolean | null) {
+    const patch = (v: boolean | null) =>
+      setPages((ps) => ps.map((pg) => pg.map((r) => (r.id === id ? { ...r, relevant: v ?? undefined } : r))))
+    const was = rows.find((r) => r.id === id)?.relevant ?? null
+    patch(relevant)
+    try {
+      await api(projectPath(slug, `/signups/${id}/relevant`), { method: "PUT", body: { relevant } })
+    } catch (err) {
+      patch(was)
       toastError(err)
     }
   }
@@ -144,6 +159,7 @@ export default function Signups() {
               <TableHead className="hidden text-right md:table-cell">Referrals</TableHead>
               <TableHead className="hidden lg:table-cell">Source</TableHead>
               <TableHead className="hidden sm:table-cell">Signed up</TableHead>
+              {me.cloud && <TableHead>Relevant</TableHead>}
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -151,14 +167,14 @@ export default function Signups() {
             {!data &&
               [0, 1, 2, 3, 4].map((i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={8} className="pl-4">
+                  <TableCell colSpan={9} className="pl-4">
                     <Skeleton className="h-5" />
                   </TableCell>
                 </TableRow>
               ))}
             {data && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">
                   {q || status !== "all" ? "No signups match." : "No signups yet."}
                 </TableCell>
               </TableRow>
@@ -182,6 +198,11 @@ export default function Signups() {
                 <TableCell className="max-w-64 truncate font-medium">
                   {s.email}
                   {s.unsubscribed_at && <span className="ml-2 text-xs font-normal text-muted-foreground">unsubscribed</span>}
+                  {s.answer && (
+                    <span className="block truncate text-xs font-normal text-muted-foreground" title={s.answer}>
+                      {s.answer}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={s.status} />
@@ -192,6 +213,11 @@ export default function Signups() {
                 <TableCell className="hidden text-muted-foreground sm:table-cell" title={dateTime(s.created_at)}>
                   {ago(s.created_at)}
                 </TableCell>
+                {me.cloud && (
+                  <TableCell>
+                    <RelevantPicker value={s.relevant ?? null} onChange={(v) => review(s.id, v)} />
+                  </TableCell>
+                )}
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -263,6 +289,33 @@ function ActionItems({ onSelect }: { onSelect: (a: Action) => void }) {
         </DropdownMenuItem>
       ))}
     </>
+  )
+}
+
+const relevantChoices: { v: boolean | null; label: string; title: string }[] = [
+  { v: true, label: "Yes", title: "Relevant" },
+  { v: false, label: "No", title: "Not relevant" },
+  { v: null, label: "–", title: "Not reviewed" },
+]
+
+// Relevant, not relevant or not reviewed: the founder's call, counted in the Launch Pack report.
+function RelevantPicker({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
+  return (
+    <div role="radiogroup" aria-label="Relevant" className="inline-flex rounded-md border">
+      {relevantChoices.map((c) => (
+        <button
+          key={c.label}
+          type="button"
+          role="radio"
+          aria-checked={value === c.v}
+          title={c.title}
+          onClick={() => value !== c.v && onChange(c.v)}
+          className={cn("px-2 py-0.5 text-xs first:rounded-l-md last:rounded-r-md", value === c.v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
   )
 }
 

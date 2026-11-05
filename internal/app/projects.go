@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/mail"
 	"net/url"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -38,13 +40,15 @@ type Project struct {
 	InviteURL         string `json:"invite_url"`
 	ConsentText       string `json:"consent_text"`
 	ConsentVersion    int    `json:"consent_version"`
-	CreatedAt         int64  `json:"created_at"`
-	OwnerID           int64  `json:"-"`
+	// QualificationQuestion is one optional question on the hosted page (cloud only).
+	QualificationQuestion string `json:"qualification_question"`
+	CreatedAt             int64  `json:"created_at"`
+	OwnerID               int64  `json:"-"`
 }
 
 const projectCols = `id, slug, name, public_key, secret_key_hash, allowed_origins, doi_enabled, position_mode,
 	points_per_referral, referral_ip_cap, referral_hourly_cap, show_position, counter_floor, from_name, reply_to,
-	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at, notify_email, COALESCE(owner_id, 0)`
+	headline, description, site_url, redirect_url, invite_url, consent_text, consent_version, created_at, notify_email, COALESCE(owner_id, 0), qualification_question`
 
 type scanner interface{ Scan(...any) error }
 
@@ -53,7 +57,7 @@ func scanProject(row scanner) (*Project, error) {
 	err := row.Scan(&p.ID, &p.Slug, &p.Name, &p.PublicKey, &p.SecretKeyHash, &p.AllowedOrigins, &p.DOIEnabled,
 		&p.PositionMode, &p.PointsPerReferral, &p.ReferralIPCap, &p.ReferralHourlyCap, &p.ShowPosition,
 		&p.CounterFloor, &p.FromName, &p.ReplyTo, &p.Headline, &p.Description, &p.SiteURL, &p.RedirectURL, &p.InviteURL,
-		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt, &p.NotifyEmail, &p.OwnerID)
+		&p.ConsentText, &p.ConsentVersion, &p.CreatedAt, &p.NotifyEmail, &p.OwnerID, &p.QualificationQuestion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -173,14 +177,21 @@ func (a *App) UpdateProject(ctx context.Context, p *Project) error {
 	}
 	p.AllowedOrigins = strings.Join(origins, "\n")
 	p.DOIEnabled = p.DOIEnabled || a.cfg.Cloud
+	p.QualificationQuestion = strings.TrimSpace(p.QualificationQuestion)
+	if !a.cfg.Cloud {
+		p.QualificationQuestion = ""
+	}
+	if utf8.RuneCountInString(p.QualificationQuestion) > maxQuestionChars {
+		return fmt.Errorf("keep the question under %d characters", maxQuestionChars)
+	}
 	_, err := a.db.W.ExecContext(ctx, `UPDATE projects SET name=?, allowed_origins=?, doi_enabled=?, position_mode=?,
 		points_per_referral=?, referral_ip_cap=?, referral_hourly_cap=?, show_position=?, counter_floor=?, from_name=?,
-		reply_to=?, notify_email=?, headline=?, description=?, site_url=?, redirect_url=?, invite_url=?,
+		reply_to=?, notify_email=?, headline=?, description=?, site_url=?, redirect_url=?, invite_url=?, qualification_question=?,
 		consent_version = CASE WHEN consent_text != ? THEN consent_version + 1 ELSE consent_version END,
 		consent_text=? WHERE id=?`,
 		p.Name, p.AllowedOrigins, p.DOIEnabled, p.PositionMode, p.PointsPerReferral, p.ReferralIPCap,
 		p.ReferralHourlyCap, p.ShowPosition, p.CounterFloor, p.FromName, p.ReplyTo, p.NotifyEmail, p.Headline, p.Description,
-		p.SiteURL, p.RedirectURL, p.InviteURL, p.ConsentText, p.ConsentText, p.ID)
+		p.SiteURL, p.RedirectURL, p.InviteURL, p.QualificationQuestion, p.ConsentText, p.ConsentText, p.ID)
 	return err
 }
 

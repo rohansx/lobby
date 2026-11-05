@@ -17,3 +17,6 @@ export function ago(t: number) {
   if (abs < 86400 * 30) return rtf.format(Math.round(s / 86400), "day")
   return date(t)
 }
+
+const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+export const money = (cents: number) => usd.format(cents / 100)

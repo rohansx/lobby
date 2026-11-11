@@ -1,0 +1,10 @@
+{{define "title"}}{{.Title}}{{end}}
+{{define "meta"}}<meta name="robots" content="noindex">{{end}}
+{{define "content"}}
+<div class="card">
+  {{with .Project}}<p class="eyebrow">{{.Name}}</p>{{end}}
+  <h1>{{.Title}}</h1>
+  <p>{{.Message}}</p>
+  <form method="post" action="{{.Action}}"><button type="submit">{{.Button}}</button></form>
+</div>
+{{end}}

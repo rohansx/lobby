@@ -280,6 +280,67 @@ var migrations = []string{
 		created_at INTEGER NOT NULL,
 		updated_at INTEGER NOT NULL,
 		UNIQUE (campaign_id, destination_id));`,
+	// Feedback: invited users report problems on elements of the founder's app.
+	// Reports group into issues; fixing one emails its reporters.
+	`ALTER TABLE signups ADD COLUMN feedback_blocked_at INTEGER;
+	ALTER TABLE signups ADD COLUMN feedback_unsub_at INTEGER;
+	CREATE TABLE feedback_settings (
+		project_id INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+		console INTEGER NOT NULL DEFAULT 1,
+		agent_key_hash TEXT UNIQUE);
+	CREATE TABLE feedback_issues (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		title TEXT NOT NULL,
+		type TEXT NOT NULL,
+		state TEXT NOT NULL DEFAULT 'open',
+		fingerprint TEXT NOT NULL,
+		path TEXT NOT NULL,
+		selector TEXT NOT NULL,
+		element_text TEXT NOT NULL DEFAULT '',
+		agent_note TEXT NOT NULL DEFAULT '',
+		agent_note_at INTEGER,
+		merged_into INTEGER REFERENCES feedback_issues(id) ON DELETE CASCADE,
+		handoffs INTEGER NOT NULL DEFAULT 0,
+		handoff_at INTEGER,
+		approved_at INTEGER,
+		fixed_at INTEGER,
+		closed_at INTEGER,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL);
+	CREATE INDEX feedback_issues_fp ON feedback_issues(project_id, fingerprint);
+	CREATE INDEX feedback_issues_merged ON feedback_issues(merged_into);
+	CREATE TABLE feedback_reports (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		issue_id INTEGER NOT NULL REFERENCES feedback_issues(id) ON DELETE CASCADE,
+		signup_id INTEGER NOT NULL REFERENCES signups(id) ON DELETE CASCADE,
+		type TEXT NOT NULL,
+		comment TEXT NOT NULL,
+		origin TEXT NOT NULL DEFAULT '',
+		path TEXT NOT NULL,
+		selector TEXT NOT NULL,
+		element_tag TEXT NOT NULL DEFAULT '',
+		element_text TEXT NOT NULL DEFAULT '',
+		viewport TEXT NOT NULL DEFAULT '',
+		browser TEXT NOT NULL DEFAULT '',
+		console_errors TEXT NOT NULL DEFAULT '[]',
+		failed_requests TEXT NOT NULL DEFAULT '[]',
+		release TEXT NOT NULL DEFAULT '',
+		created_at INTEGER NOT NULL);
+	CREATE INDEX feedback_reports_issue ON feedback_reports(issue_id);
+	CREATE INDEX feedback_reports_signup ON feedback_reports(signup_id, created_at);
+	CREATE INDEX feedback_reports_project ON feedback_reports(project_id);
+	CREATE TABLE feedback_replies (
+		id INTEGER PRIMARY KEY,
+		issue_id INTEGER NOT NULL REFERENCES feedback_issues(id) ON DELETE CASCADE,
+		signup_id INTEGER NOT NULL REFERENCES signups(id) ON DELETE CASCADE,
+		created_at INTEGER NOT NULL,
+		sent_at INTEGER,
+		answer TEXT NOT NULL DEFAULT '',
+		answered_at INTEGER);
+	CREATE INDEX feedback_replies_signup ON feedback_replies(signup_id);
+	CREATE INDEX feedback_replies_issue ON feedback_replies(issue_id);`,
 }
 
 func (s *Store) migrate() error {

@@ -90,6 +90,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.healthz)
 	mux.HandleFunc("GET /llms.txt", s.llms)
 	mux.HandleFunc("GET /v1/wl.js", s.widgetJS)
+	mux.HandleFunc("GET /v1/fb.js", s.feedbackJS)
+	mux.HandleFunc("OPTIONS /v1/feedback", s.feedbackPreflight)
+	mux.HandleFunc("POST /v1/feedback", s.publicFeedback)
+	mux.HandleFunc("GET /f/{token}/{answer}", s.fixAnswerPage)
+	mux.HandleFunc("POST /f/{token}/{answer}", s.fixAnswerPost)
+	mux.HandleFunc("GET /fu/{token}", s.feedbackUnsubPage)
+	mux.HandleFunc("POST /fu/{token}", s.feedbackUnsubPost)
+	mux.HandleFunc("POST /v1/reporters", s.apiReporter)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheFor(http.FileServerFS(static), 3600)))
 	mux.HandleFunc("OPTIONS /v1/w/{pk}/signup", s.preflight)
 	mux.HandleFunc("POST /v1/w/{pk}/signup", s.publicSignup)
@@ -132,6 +140,15 @@ func (s *Server) Handler() http.Handler {
 		mux.Handle(p, s.requireKey(api))
 	}
 
+	// Feedback API: the secret key, or the agent key for approved issues only.
+	issues := http.NewServeMux()
+	issues.HandleFunc("GET /v1/issues", s.apiIssues)
+	issues.HandleFunc("GET /v1/issues/{id}/packet", s.apiPacket)
+	issues.HandleFunc("POST /v1/issues/{id}/note", s.apiIssueNote)
+	issues.HandleFunc("POST /v1/issues/{id}/state", s.apiIssueState)
+	mux.Handle("/v1/issues", s.requireIssueKey(issues))
+	mux.Handle("/v1/issues/", s.requireIssueKey(issues))
+
 	// Dashboard: a single-page app plus a JSON API behind the session cookie.
 	// Cross-origin writes are refused for both.
 	admin := http.NewServeMux()
@@ -166,6 +183,12 @@ func (s *Server) Handler() http.Handler {
 	authed.HandleFunc("POST /api/admin/projects/{slug}/webhooks", s.adminCreateWebhook)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/webhooks/{id}/{action}", s.adminWebhookAction)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/deliveries/{id}/redeliver", s.adminRedeliver)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/feedback", s.adminFeedback)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/feedback/settings", s.adminFeedbackSettings)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/feedback/agent-key", s.adminAgentKey)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/feedback/{id}", s.adminGetIssue)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/feedback/{id}/{action}", s.adminIssueAction)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/reporters/{id}/{action}", s.adminReporter)
 	authed.HandleFunc("GET /api/admin/projects/{slug}/broadcasts", s.adminBroadcasts)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/broadcasts", s.adminBroadcast)
 	admin.Handle("/api/admin/", s.requireSession(authed))

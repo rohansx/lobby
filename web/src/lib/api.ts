@@ -365,6 +365,79 @@ export interface OpsCampaignDetail {
   moves: CampaignStatus[] // statuses the server lets an operator move to from here
 }
 
+// Feedback: reports from invited users grouped into issues per element and route.
+export type IssueType = "bug" | "confusing" | "idea"
+export type IssueState = "open" | "approved" | "fixed" | "dismissed"
+export const ISSUE_TYPES: IssueType[] = ["bug", "confusing", "idea"]
+export const ISSUE_STATES: IssueState[] = ["open", "approved", "fixed", "dismissed"]
+
+export interface Issue {
+  id: number
+  title: string
+  type: IssueType
+  state: IssueState
+  path: string
+  selector: string
+  element_text: string
+  agent_note: string
+  agent_note_at: number | null
+  handoffs: number
+  handoff_at: number | null
+  approved_at: number | null
+  fixed_at: number | null
+  closed_at: number | null
+  created_at: number
+  updated_at: number
+  reporters: number
+  reports: number
+}
+
+export interface FeedbackReport {
+  id: number
+  issue_id: number
+  signup_id: number
+  type: IssueType
+  comment: string
+  origin: string // e.g. https://app.example.com, empty when unknown
+  path: string
+  selector: string
+  element_tag: string
+  element_text: string
+  viewport: string
+  browser: string
+  console_errors: string[] | null
+  failed_requests: { path: string; status: number }[] | null
+  release: string
+  created_at: number
+  email?: string
+  source?: string
+  wave?: string
+}
+
+export interface FeedbackSettings {
+  console: boolean
+  agent_key_set: boolean
+}
+
+export interface FeedbackList {
+  data: Issue[] | null // ranked by reporters
+  waves: string[] | null // invite dates, YYYY-MM-DD
+  sources: string[] | null
+  settings: FeedbackSettings
+  api: boolean // API, CLI and agent key are on this plan
+  reports: number
+  report_limit: number // -1 means unlimited
+}
+
+export interface IssueDetail {
+  issue: Issue
+  reports: FeedbackReport[] | null
+  packet: unknown
+  packet_md: string
+  replies: { sent: number; works: number; broken: number }
+  blocked: number[] | null // signup ids that can't report
+}
+
 export class ApiError extends Error {
   status: number
   upgrade: boolean

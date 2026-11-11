@@ -60,6 +60,10 @@ CLI (needs LOBBY_URL and LOBBY_KEY=sk_... for the project):
   lobby remove ID [--hard]           remove (or delete and suppress)
   lobby export [--format csv|ndjson] [--status all]
   lobby webhooks                     list webhooks
+  lobby feedback list                feedback issues, most reported first
+  lobby feedback approve|fix ID      approve for the agent, or mark fixed and email reporters
+  lobby feedback next [--format md]  the next approved issue as a work packet (agent key works)
+  lobby feedback note ID "text"      record what changed (agent key works)
   lobby version
 
 Server environment:

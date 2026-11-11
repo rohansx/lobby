@@ -152,7 +152,7 @@ func TestQualificationAnswer(t *testing.T) {
 	req = httptest.NewRequest("GET", "/api/admin/projects/orbit/export/csv?status=all", nil)
 	req.AddCookie(e.alice.cookie)
 	e.h.ServeHTTP(rec, req)
-	if lines := strings.Split(rec.Body.String(), "\n"); !strings.HasSuffix(lines[0], ",answer,relevant") || !strings.Contains(rec.Body.String(), "Dev tools") {
+	if lines := strings.Split(rec.Body.String(), "\n"); !strings.HasSuffix(lines[0], ",answer,relevant,feedback") || !strings.Contains(rec.Body.String(), "Dev tools") {
 		t.Fatalf("csv: %s", rec.Body.String())
 	}
 }

@@ -418,6 +418,8 @@ func (a *App) tokenSig(purpose, id string) string {
 	return hex.EncodeToString(m.Sum(nil))[:24]
 }
 
+func hmacEqual(a, b string) bool { return hmac.Equal([]byte(a), []byte(b)) }
+
 func (a *App) parseToken(purpose, tok string) (int64, bool) {
 	id, sig, ok := strings.Cut(tok, ".")
 	if !ok || !hmac.Equal([]byte(sig), []byte(a.tokenSig(purpose, id))) {

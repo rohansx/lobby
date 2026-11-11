@@ -68,6 +68,8 @@ type signupOut struct {
 	Position     any    `json:"position"`
 	StatusURL    string `json:"status_url"`
 	ReferralLink string `json:"referral_link"`
+	// ReporterToken is set on redeem: pass it to the feedback widget as data-reporter.
+	ReporterToken string `json:"reporter_token,omitempty"`
 }
 
 func (s *Server) signupOut(r *http.Request, p *Project, su *Signup, withPosition bool) signupOut {
@@ -206,7 +208,9 @@ func (s *Server) apiRedeem(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 500, err.Error())
 		return
 	}
-	writeJSON(w, 200, s.signupOut(r, p, su, false))
+	out := s.signupOut(r, p, su, false)
+	out.ReporterToken = s.app.ReporterToken(su)
+	writeJSON(w, 200, out)
 }
 
 var csvHeader = []string{"id", "email", "status", "base_position", "points", "referral_code", "referred_by", "referrals_credited",
@@ -275,22 +279,30 @@ func (s *Server) export(w http.ResponseWriter, r *http.Request, p *Project, form
 		if s.app.cfg.Cloud {
 			hdr = append(hdr[:len(hdr):len(hdr)], "answer", "relevant")
 		}
+		hdr = append(hdr[:len(hdr):len(hdr)], "feedback")
 		cw.Write(hdr)
 		cw.Flush()
+		fb, _ := s.app.FeedbackBySignup(r.Context(), p)
 		for _, st := range statuses {
-			s.writeCSVRows(w, r, p, st)
+			s.writeCSVRows(w, r, p, st, fb)
 		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-ndjson")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+p.Slug+`-waitlist.ndjson"`)
 	enc := json.NewEncoder(w)
+	fb, _ := s.app.FeedbackBySignup(r.Context(), p)
 	for _, st := range statuses {
-		s.app.EachSignup(r.Context(), p, st, func(su *Signup) error { return enc.Encode(su) })
+		s.app.EachSignup(r.Context(), p, st, func(su *Signup) error {
+			return enc.Encode(struct {
+				*Signup
+				Feedback []string `json:"feedback,omitempty"`
+			}{su, fb[su.ID]})
+		})
 	}
 }
 
-func (s *Server) writeCSVRows(w http.ResponseWriter, r *http.Request, p *Project, status string) {
+func (s *Server) writeCSVRows(w http.ResponseWriter, r *http.Request, p *Project, status string, fb map[int64][]string) {
 	cw := csv.NewWriter(w)
 	refs := s.creditedCounts(r, p)
 	cloud := s.app.cfg.Cloud
@@ -312,6 +324,7 @@ func (s *Server) writeCSVRows(w http.ResponseWriter, r *http.Request, p *Project
 			}
 			row = append(row, csvSafe(su.Answer), rel)
 		}
+		row = append(row, csvSafe(strings.Join(fb[su.ID], "\n---\n")))
 		return cw.Write(row)
 	})
 	cw.Flush()

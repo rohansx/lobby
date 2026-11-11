@@ -15,14 +15,19 @@ type emailJob struct {
 	SignupID    int64 `json:"signup_id"`
 	InviteID    int64 `json:"invite_id,omitempty"`
 	BroadcastID int64 `json:"broadcast_id,omitempty"`
+	IssueID     int64 `json:"issue_id,omitempty"`
 }
 
 func (a *App) enqueue(ctx context.Context, tx *sql.Tx, kind string, payload any) error {
+	return a.enqueueAt(ctx, tx, kind, payload, now())
+}
+
+func (a *App) enqueueAt(ctx context.Context, tx *sql.Tx, kind string, payload any, runAt int64) error {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO jobs (kind, payload, run_at, created_at) VALUES (?, ?, ?, ?)`, kind, string(b), now(), now())
+	_, err = tx.ExecContext(ctx, `INSERT INTO jobs (kind, payload, run_at, created_at) VALUES (?, ?, ?, ?)`, kind, string(b), runAt, now())
 	return err
 }
 
@@ -163,6 +168,15 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 			return err
 		}
 		m = a.composeInvite(p, s, inv)
+	case "email.feedback_notify":
+		if p.NotifyEmail == "" {
+			return nil
+		}
+		if m, err = a.composeFeedbackNotify(ctx, p, s, j.IssueID); err != nil || m == nil {
+			return err
+		}
+	case "email.feedback_fixed":
+		return a.sendFixedMail(ctx, p, s)
 	case "email.broadcast":
 		if s.UnsubscribedAt != nil {
 			return nil
@@ -179,7 +193,7 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 		return err
 	}
 	// Notifications to the owner don't count against their plan.
-	if kind != "email.notify" {
+	if kind != "email.notify" && kind != "email.feedback_notify" {
 		a.countEmail(ctx, p)
 	}
 	return nil
@@ -293,4 +307,5 @@ func (a *App) maintain(ctx context.Context) {
 	a.db.W.ExecContext(ctx, `DELETE FROM billing_events WHERE created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM jobs WHERE status = 'done' AND created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM deliveries WHERE status IN ('success', 'skipped') AND created_at < ?`, now()-90*86400)
+	a.pruneFeedback(ctx)
 }

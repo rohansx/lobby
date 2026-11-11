@@ -1,4 +1,4 @@
-import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, PlusIcon, RocketIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
+import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, MessageSquareWarningIcon, PlusIcon, RocketIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useRoute } from "wouter"
 import { NewProjectDialog } from "@/components/new-project-dialog"
@@ -30,6 +30,7 @@ import { useSession } from "@/lib/session"
 const sections = [
   { path: "", label: "Overview", icon: LayoutDashboardIcon },
   { path: "/signups", label: "Signups", icon: UsersIcon },
+  { path: "/feedback", label: "Feedback", icon: MessageSquareWarningIcon },
   { path: "/webhooks", label: "Webhooks", icon: WebhookIcon },
   { path: "/broadcast", label: "Broadcast", icon: MegaphoneIcon },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
@@ -70,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     const href = `/p/${current.slug}${s.path}`
                     return (
                       <SidebarMenuItem key={s.label}>
-                        <SidebarMenuButton asChild isActive={location === href} tooltip={s.label}>
+                        <SidebarMenuButton asChild isActive={location === href || (s.path !== "" && location.startsWith(href + "/"))} tooltip={s.label}>
                           <Link href={href}>
                             <s.icon />
                             <span>{s.label}</span>

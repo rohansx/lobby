@@ -234,6 +234,7 @@ type email struct {
 	Code      string      // optional, set apart in a box
 	Rows      [][2]string // optional label/value table
 	CTA, URL  string      // optional button
+	Links     [][2]string // optional label/URL text links, after the button
 	Footer    string      // plain text
 	Unsub     string      // optional unsubscribe URL
 }
@@ -266,6 +267,12 @@ func (e email) render() (string, string) {
 	}
 	if e.URL != "" {
 		t.WriteString(e.CTA + ": " + e.URL + "\n\n")
+	}
+	for _, l := range e.Links {
+		t.WriteString(l[0] + ": " + l[1] + "\n")
+	}
+	if len(e.Links) > 0 {
+		t.WriteString("\n")
 	}
 	if e.Footer != "" {
 		t.WriteString("--\n" + e.Footer + "\n")
@@ -310,6 +317,9 @@ func (e email) render() (string, string) {
 		h.WriteString(`<a href="` + u + `" target="_blank" style="display:inline-block;padding:12px 24px;border:1px solid ` + mailInk + `;border-radius:8px;font-family:` + mailFont + `;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;mso-padding-alt:0">` + esc(e.CTA) + `</a>`)
 		h.WriteString(`</td></tr></table>`)
 		h.WriteString(`<p style="margin:0;font-size:13px;line-height:20px;color:` + mailMuted + `">Or open this link:<br><a href="` + u + `" target="_blank" style="color:` + mailMuted + `;text-decoration:underline;word-break:break-all">` + u + `</a></p>`)
+	}
+	for _, l := range e.Links {
+		h.WriteString(`<p style="margin:0 0 10px;font-size:15px;line-height:22px"><a href="` + esc(l[1]) + `" target="_blank" style="color:` + mailInk + `;text-decoration:underline">` + esc(l[0]) + `</a></p>`)
 	}
 	h.WriteString(`</td></tr></table>`)
 	if e.Footer != "" || e.Unsub != "" {

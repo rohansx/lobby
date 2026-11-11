@@ -25,7 +25,7 @@ func newClient() (*client, error) {
 	base := strings.TrimRight(os.Getenv("LOBBY_URL"), "/")
 	key := os.Getenv("LOBBY_KEY")
 	if base == "" || key == "" {
-		return nil, errors.New("set LOBBY_URL (e.g. https://wait.example.com) and LOBBY_KEY (the project's sk_ secret key)")
+		return nil, errors.New("set LOBBY_URL (e.g. https://wait.example.com) and LOBBY_KEY (the project's sk_ secret key, or the ak_ agent key for feedback next and note)")
 	}
 	return &client{base: base, key: key, http: &http.Client{Timeout: 60 * time.Second}}, nil
 }
@@ -226,6 +226,8 @@ func runCLI(cmd string, args []string) error {
 		return c.do("GET", path, nil, os.Stdout)
 	case "webhooks":
 		return c.do("GET", "/v1/webhooks", nil, os.Stdout)
+	case "feedback", "fb":
+		return runFeedback(c, tw, args)
 	default:
 		usage()
 		return fmt.Errorf("unknown command %q", cmd)

@@ -19,7 +19,8 @@ import (
 )
 
 // Events a webhook can subscribe to.
-var Events = []string{"signup.created", "signup.confirmed", "signup.referred", "signup.invited", "signup.joined", "signup.removed"}
+var Events = []string{"signup.created", "signup.confirmed", "signup.referred", "signup.invited", "signup.joined", "signup.removed",
+	"feedback.reported", "feedback.issue_opened", "feedback.issue_fixed"}
 
 type Webhook struct {
 	ID             int64  `json:"id"`
@@ -371,6 +372,27 @@ func slackText(d *Delivery) string {
 		return "Joined: " + s.Email
 	case "signup.removed":
 		return "Removed from waitlist: " + s.Email
+	case "feedback.reported", "feedback.issue_opened", "feedback.issue_fixed":
+		var f struct {
+			Issue struct {
+				ID        int64  `json:"id"`
+				Title     string `json:"title"`
+				Reporters int64  `json:"reporters"`
+			} `json:"issue"`
+			Report *struct {
+				Reporter string `json:"reporter"`
+			} `json:"report"`
+		}
+		json.Unmarshal(ev.Data, &f)
+		switch ev.Type {
+		case "feedback.issue_fixed":
+			return fmt.Sprintf("Fixed: issue #%d %s. Lobby is emailing its %s.", f.Issue.ID, f.Issue.Title, plural(f.Issue.Reporters, "reporter"))
+		case "feedback.issue_opened":
+			return fmt.Sprintf("New feedback issue #%d: %s", f.Issue.ID, f.Issue.Title)
+		}
+		if f.Report != nil {
+			return fmt.Sprintf("%s added feedback to issue #%d: %s", f.Report.Reporter, f.Issue.ID, f.Issue.Title)
+		}
 	case "webhook.test":
 		return "Lobby test event: your Slack webhook works."
 	}

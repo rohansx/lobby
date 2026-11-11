@@ -23,6 +23,8 @@ const OpsDestinations = lazy(() => import("@/pages/ops-destinations"))
 const Campaigns = lazy(() => import("@/pages/campaigns"))
 const CampaignPage = lazy(() => import("@/pages/campaign"))
 const CampaignReport = lazy(() => import("@/pages/campaign-report"))
+const Feedback = lazy(() => import("@/pages/feedback"))
+const FeedbackIssue = lazy(() => import("@/pages/feedback-issue"))
 
 // Signed-out pages: cloud instances have open signup and password reset.
 const publicModes: AuthMode[] = ["login", "signup", "forgot", "reset"]
@@ -99,6 +101,8 @@ export default function App() {
             </Route>
             <Route path="/p/:slug" component={Overview} />
             <Route path="/p/:slug/signups" component={Signups} />
+            <Route path="/p/:slug/feedback" component={Feedback} />
+            <Route path="/p/:slug/feedback/:id" component={FeedbackIssue} />
             <Route path="/p/:slug/webhooks" component={Webhooks} />
             <Route path="/p/:slug/broadcast" component={Broadcast} />
             <Route path="/p/:slug/settings" component={Settings} />

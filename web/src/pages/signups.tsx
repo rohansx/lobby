@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { useParams } from "wouter"
 import { Page } from "@/components/page"
+import { AddTestersDialog } from "@/components/feedback/add-testers-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -139,6 +140,7 @@ export default function Signups() {
             ))}
           </SelectContent>
         </Select>
+        <AddTestersDialog slug={slug} onAdded={() => reload()} />
         {selected.size > 0 && (
           <div className="ml-auto flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{num(selected.size)} selected</span>
@@ -215,7 +217,13 @@ export default function Signups() {
                 </TableCell>
                 <TableCell className="max-w-64 truncate font-medium">
                   {s.email}
-                  {s.unsubscribed_at && <span className="ml-2 text-xs font-normal text-muted-foreground">unsubscribed</span>}
+                  {s.utm_source === "tester" ? (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground" title="Added by you to send feedback. Gets no waitlist or launch email.">
+                      tester
+                    </span>
+                  ) : (
+                    s.unsubscribed_at && <span className="ml-2 text-xs font-normal text-muted-foreground">unsubscribed</span>
+                  )}
                   {s.answer && (
                     <span className="block truncate text-xs font-normal text-muted-foreground" title={s.answer}>
                       {s.answer}

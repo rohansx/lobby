@@ -191,6 +191,7 @@ func (s *Server) Handler() http.Handler {
 	authed.HandleFunc("POST /api/admin/projects/{slug}/feedback/{id}/{action}", s.adminIssueAction)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/reporters/{id}/{action}", s.adminReporter)
 	authed.HandleFunc("PUT /api/admin/projects/{slug}/signups/{id}/feedback", s.adminSignupFeedback)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/testers", s.adminAddTesters)
 	authed.HandleFunc("GET /api/admin/projects/{slug}/broadcasts", s.adminBroadcasts)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/broadcasts", s.adminBroadcast)
 	admin.Handle("/api/admin/", s.requireSession(authed))

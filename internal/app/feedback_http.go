@@ -126,6 +126,44 @@ func (s *Server) adminSignupFeedback(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
+// adminAddTesters adds people by email who may send feedback without joining
+// the waitlist: {"emails": ["a@x.com", ...], "only_these": true}. only_these
+// also limits the widget to people switched on by hand.
+func (s *Server) adminAddTesters(w http.ResponseWriter, r *http.Request) {
+	p := s.adminProject(w, r)
+	if p == nil {
+		return
+	}
+	var body struct {
+		Emails    []string `json:"emails"`
+		OnlyThese bool     `json:"only_these"`
+	}
+	if err := decodeJSON(r, &body); err != nil {
+		jsonError(w, 400, `send {"emails": ["..."]}`)
+		return
+	}
+	res, err := s.app.AddTesters(r.Context(), p, body.Emails)
+	var ve *ValidationError
+	switch {
+	case errors.As(err, &ve):
+		jsonError(w, 400, ve.Msg)
+		return
+	case errors.Is(err, ErrWaitlistFull):
+		jsonError(w, 403, "this account is suspended")
+		return
+	case err != nil:
+		jsonError(w, 500, err.Error())
+		return
+	}
+	if body.OnlyThese {
+		if err := s.app.SetFeedbackAudience(r.Context(), p, AudienceSelected); err != nil {
+			jsonError(w, 500, err.Error())
+			return
+		}
+	}
+	writeJSON(w, 200, res)
+}
+
 // ---- public: the reporter's answer and unsubscribe ----
 
 func (s *Server) fixAnswerPage(w http.ResponseWriter, r *http.Request) {

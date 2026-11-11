@@ -274,6 +274,49 @@ func TestFeedbackAudienceAndSwitch(t *testing.T) {
 	mustCode(t, c, "POST", base+"/feedback/settings", `{"audience":"nope"}`, 400)
 }
 
+func TestAddTesters(t *testing.T) {
+	e := newFBEnv(t)
+	ctx := context.Background()
+	waiting := signup(t, e.a, e.p, "waiting@example.com", "", "10.4.4.4").Signup
+	e.runJobs() // their own signup emails
+	sent := len(e.mail.snapshot())
+	c := &client{t: t, h: e.h}
+	mustCode(t, c, "POST", "/api/admin/login", `{"email":"owner@example.com","password":"a-long-password-1"}`, 200)
+	out := mustCode(t, c, "POST", "/api/admin/projects/"+e.p.Slug+"/testers",
+		`{"emails":["beta@example.com"," Beta@Example.com ","waiting@example.com","not an email",""],"only_these":true}`, 200)
+	if out["added"] != 1.0 || out["updated"] != 1.0 || len(out["skipped"].([]any)) != 1 {
+		t.Fatalf("result: %v", out)
+	}
+	e.runJobs()
+	if got := len(e.mail.snapshot()) - sent; got != 0 {
+		t.Fatalf("adding testers sent %d emails", got)
+	}
+	if e.a.FeedbackSettings(ctx, e.p).Audience != AudienceSelected {
+		t.Fatal("only_these should limit the widget to people switched on")
+	}
+	// The new tester can get a token and report; they're never on waitlist mail.
+	e.api(e.sk, "POST", "/v1/reporters", `{"email":"beta@example.com"}`, 200)
+	tok := e.api(e.sk, "POST", "/v1/reporters", `{"email":"waiting@example.com"}`, 200)["reporter_token"].(string)
+	if rec := e.report(tok, "/", "a", "existing signup switched on"); rec.Code != 201 {
+		t.Fatalf("report: %d", rec.Code)
+	}
+	var tester *Signup
+	list, _ := e.a.ListSignups(ctx, e.p, SignupFilter{Query: "beta@"})
+	tester = list[0]
+	if tester.Status != StatusJoined || tester.UnsubscribedAt == nil || tester.UTMSource != "tester" {
+		t.Fatalf("tester row: %+v", tester)
+	}
+	if got, _ := e.a.Signup(ctx, e.p.ID, waiting.ID); got.UnsubscribedAt != nil || got.Status != StatusConfirmed {
+		t.Fatal("an existing signup must keep their status and subscription")
+	}
+	// Removed people stay removed.
+	e.a.Remove(ctx, e.p, waiting.ID, false)
+	out = mustCode(t, c, "POST", "/api/admin/projects/"+e.p.Slug+"/testers", `{"emails":["waiting@example.com"]}`, 200)
+	if out["added"] != 0.0 || len(out["skipped"].([]any)) != 1 {
+		t.Fatalf("removed person re-added: %v", out)
+	}
+}
+
 func TestFeedbackLimitsAndBlocking(t *testing.T) {
 	e := newFBEnv(t)
 	s, rt := e.invited("ana@example.com")

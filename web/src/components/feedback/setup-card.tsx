@@ -153,7 +153,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             <Link href={`/p/${slug}/signups`} className="underline">
               Signups page
             </Link>
-            . A switch you set there always wins, and the widget checks on every page load, so changes apply at once.
+            . To let in people who aren't on the waitlist, use Add testers there. A switch you set always wins, and the widget checks on every page load, so changes apply at once.
           </p>
         </div>
 

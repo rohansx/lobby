@@ -11,7 +11,7 @@ Your job in the app is two things:
 1. **On the server:** for the logged-in user, ask Lobby for a *reporter token* using their email.
 2. **In the page:** if you got a token, add one `<script>` tag with it.
 
-Lobby decides who actually sees the button (everyone invited, or only people the founder switches on), and the widget hides itself for everyone else. You don't need any per-user logic beyond step 1.
+Lobby decides who actually sees the button (everyone invited, or only people the founder switches on or adds as testers by email), and the widget hides itself for everyone else. You don't need any per-user logic beyond step 1.
 
 ## Before you start
 
@@ -174,7 +174,7 @@ For full control, set CSS variables on `:root` in your app: `--wl-accent`, `--wl
 
 ## Step 5: verify
 
-1. In the Lobby dashboard, make sure a test account's email is on the waitlist and has the Feedback switch on (Signups page). Log in to your app with that email.
+1. In the Lobby dashboard, open Signups → **Add testers** and add the email of a test account in your app (or switch Feedback on for someone already on the list). Log in to your app with that email.
 2. The Feedback button appears. Click it, click an element, type a comment, send. You should see "Thanks, got it".
 3. Open Lobby → Feedback: the issue is there with the page path, selector and your comment.
 4. Log in as a user who isn't on the waitlist: no button, no errors in the console, and the app works normally.

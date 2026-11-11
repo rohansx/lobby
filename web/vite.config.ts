@@ -12,6 +12,8 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
   build: { outDir: "../internal/app/web/dist", emptyOutDir: true },
   server: {
+    // The Feedback page bundles ../docs/feedback-integration.md.
+    fs: { allow: [".", "../docs"] },
     proxy: Object.fromEntries(["/api", "/v1", "/w/", "/s/", "/u/", "/static", "/healthz"].map((p) => [p, backend])),
   },
 })

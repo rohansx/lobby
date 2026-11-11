@@ -1,10 +1,12 @@
 # The UI and the Go binary are built on the build host and cross-compiled,
 # so a multi-arch image needs no emulation.
 FROM --platform=$BUILDPLATFORM node:24-alpine AS web
-WORKDIR /web
+WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY web/ ./
+# The dashboard bundles the agent integration guide from docs/.
+COPY docs/feedback-integration.md /src/docs/
 RUN npx vite build --outDir /dist
 
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build

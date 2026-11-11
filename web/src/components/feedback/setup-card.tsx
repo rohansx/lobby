@@ -3,6 +3,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Link } from "wouter"
 import { CopyField } from "@/components/copy-field"
+import { AgentGuideButtons } from "@/components/feedback/agent-guide"
 import { SecretKeyDialog } from "@/components/secret-key-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -70,6 +71,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
         <CardDescription>Add the widget to your app for invited users only. They click an element and leave a comment.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 text-sm">
+        <AgentGuideButtons baseUrl={baseUrl} publicKey={publicKey} projectName={slug} />
         <CopyField value={snippet} multiline />
         <div className="grid gap-2 text-xs text-muted-foreground">
           <p>
@@ -134,7 +136,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
                 {data.settings.agent_key_set ? "Rotate agent key" : "Generate agent key"}
               </Button>
               {data.settings.agent_key_set && <p className="text-xs text-muted-foreground">Rotating replaces the current key at once.</p>}
-              <CopyField value={cli} />
+              <CopyField value={cli} multiline />
             </>
           ) : (
             <p className="text-xs text-muted-foreground">

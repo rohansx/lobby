@@ -26,7 +26,7 @@ export function CopyButton({ value, className }: { value: string; className?: st
 export function CopyField({ value, multiline, className }: { value: string; multiline?: boolean; className?: string }) {
   return (
     <div className={cn("relative min-w-0 rounded-lg border bg-muted/40", className)}>
-      <pre className={cn("overflow-x-auto px-3 py-2 pr-11 font-mono text-xs leading-relaxed", !multiline && "whitespace-nowrap")}>{value}</pre>
+      <pre className={cn("px-3 py-2 pr-11 font-mono text-xs leading-relaxed", multiline ? "break-all whitespace-pre-wrap" : "overflow-x-auto whitespace-nowrap")}>{value}</pre>
       <CopyButton value={value} className="absolute top-1 right-1" />
     </div>
   )

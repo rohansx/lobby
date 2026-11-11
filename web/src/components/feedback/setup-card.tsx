@@ -41,6 +41,16 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
     }
   }
 
+  async function setFlag(key: "ai" | "digest", on: boolean, msg: string) {
+    try {
+      await api(projectPath(slug, "/feedback/settings"), { body: { [key]: on } })
+      toast.success(msg)
+      onChange()
+    } catch (err) {
+      toastError(err)
+    }
+  }
+
   async function setAudience(audience: string) {
     try {
       await api(projectPath(slug, "/feedback/settings"), { body: { audience } })
@@ -94,6 +104,37 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             reports used on the free plan.
           </p>
         )}
+
+        <Separator />
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label htmlFor="fb-ai">Summaries and duplicates</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {data.ai_available
+                ? "Claude reads each issue's reports, writes a clear title and summary, and points out issues that look like the same problem. You decide what to merge. Reports are sent to Anthropic to do this."
+                : "Not available on this instance: it needs an Anthropic API key (ANTHROPIC_API_KEY)."}
+            </p>
+          </div>
+          <Switch
+            id="fb-ai"
+            checked={data.ai_available && data.settings.ai}
+            disabled={!data.ai_available}
+            onCheckedChange={(on) => setFlag("ai", on, on ? "Claude will summarize new reports" : "AI summaries are off")}
+          />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label htmlFor="fb-digest">Weekly digest</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              An email to the project's notification address in weeks with feedback: the numbers, the top issues{data.ai_available && data.settings.ai ? ", and Claude's read on what to look at first" : ""}.
+            </p>
+          </div>
+          <Switch
+            id="fb-digest"
+            checked={data.settings.digest}
+            onCheckedChange={(on) => setFlag("digest", on, on ? "Weekly digest on" : "Weekly digest off")}
+          />
+        </div>
 
         <Separator />
         <div className="grid gap-2">

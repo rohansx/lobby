@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, CheckIcon, ClipboardCopyIcon, ExternalLinkIcon, PencilIcon, RotateCcwIcon, ThumbsUpIcon, XIcon } from "lucide-react"
+import { ArrowLeftIcon, CheckIcon, ClipboardCopyIcon, ExternalLinkIcon, PencilIcon, RotateCcwIcon, SparklesIcon, ThumbsUpIcon, XIcon } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { toast } from "sonner"
 import { Link, useLocation, useParams } from "wouter"
@@ -164,6 +164,49 @@ export default function FeedbackIssue() {
           </Button>
         )}
       </div>
+
+      {(data.suggestions ?? []).map((s) => (
+        <div key={s.issue.id} className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+          <SparklesIcon className="size-4 shrink-0 text-amber-600" />
+          <div className="min-w-0 flex-1">
+            Looks like the same problem as{" "}
+            <Link href={`/p/${slug}/feedback/${s.issue.id}`} className="font-medium underline">
+              #{s.issue.id} {s.issue.title}
+            </Link>
+            <span className="block text-xs text-muted-foreground">{s.reason}</span>
+          </div>
+          <Button
+            size="sm"
+            onClick={async () => {
+              if (await post("merge", { into: s.issue.id }, "Merged")) navigate(`/p/${slug}/feedback/${s.issue.id}`)
+            }}
+          >
+            Merge into #{s.issue.id}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              if (await post("not-duplicate", { into: s.issue.id })) reload()
+            }}
+          >
+            Not the same
+          </Button>
+        </div>
+      ))}
+
+      {issue.ai_summary && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SparklesIcon className="size-4" />
+              Summary
+            </CardTitle>
+            <CardDescription>Written by Claude from the reports below{issue.ai_at ? `, ${ago(issue.ai_at)}` : ""}. Check the quotes before acting on it.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm whitespace-pre-wrap">{issue.ai_summary}</CardContent>
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Card>

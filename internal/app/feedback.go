@@ -285,13 +285,15 @@ type FeedbackSettings struct {
 	Console     bool   `json:"console"`
 	AgentKeySet bool   `json:"agent_key_set"`
 	Audience    string `json:"audience"`
+	AI          bool   `json:"ai"`     // Claude summarizes issues and suggests duplicates
+	Digest      bool   `json:"digest"` // weekly email to the notification address
 }
 
 func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings {
-	st := FeedbackSettings{Console: true, Audience: AudienceInvited}
+	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true}
 	var hash sql.NullString
-	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience FROM feedback_settings WHERE project_id = ?`, p.ID).
-		Scan(&st.Console, &hash, &st.Audience); err == nil {
+	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest FROM feedback_settings WHERE project_id = ?`, p.ID).
+		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest); err == nil {
 		st.AgentKeySet = hash.Valid && hash.String != ""
 	}
 	return st
@@ -418,6 +420,7 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 	if err := tx.Commit(); err != nil {
 		return nil, nil, err
 	}
+	a.queueIssueAI(ctx, p, issueID)
 	a.kick()
 	return rep, iss, nil
 }
@@ -498,17 +501,19 @@ type Issue struct {
 	UpdatedAt   int64  `json:"updated_at"`
 	Reporters   int64  `json:"reporters"`
 	Reports     int64  `json:"reports"`
+	AISummary   string `json:"ai_summary"` // written by Claude from the reports; empty without AI
+	AIAt        *int64 `json:"ai_at"`
 }
 
 const issueCols = `i.id, i.title, i.type, i.state, i.path, i.selector, i.element_text, i.agent_note, i.agent_note_at, i.handoffs,
 	i.handoff_at, i.approved_at, i.fixed_at, i.closed_at, i.created_at, i.updated_at,
 	(SELECT COUNT(DISTINCT signup_id) FROM feedback_reports WHERE issue_id = i.id),
-	(SELECT COUNT(*) FROM feedback_reports WHERE issue_id = i.id)`
+	(SELECT COUNT(*) FROM feedback_reports WHERE issue_id = i.id), i.ai_summary, i.ai_at`
 
 func scanIssue(row scanner) (*Issue, error) {
 	i := &Issue{}
 	err := row.Scan(&i.ID, &i.Title, &i.Type, &i.State, &i.Path, &i.Selector, &i.ElementText, &i.AgentNote, &i.AgentNoteAt,
-		&i.Handoffs, &i.HandoffAt, &i.ApprovedAt, &i.FixedAt, &i.ClosedAt, &i.CreatedAt, &i.UpdatedAt, &i.Reporters, &i.Reports)
+		&i.Handoffs, &i.HandoffAt, &i.ApprovedAt, &i.FixedAt, &i.ClosedAt, &i.CreatedAt, &i.UpdatedAt, &i.Reporters, &i.Reports, &i.AISummary, &i.AIAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -727,7 +732,7 @@ func (a *App) SetIssueTitle(ctx context.Context, p *Project, id int64, title str
 	if title == "" {
 		return nil, &ValidationError{"The title can't be empty."}
 	}
-	res, err := a.db.W.ExecContext(ctx, `UPDATE feedback_issues SET title = ? WHERE project_id = ? AND id = ? AND state != ?`,
+	res, err := a.db.W.ExecContext(ctx, `UPDATE feedback_issues SET title = ?, title_locked = 1 WHERE project_id = ? AND id = ? AND state != ?`,
 		title, p.ID, id, issueMerged)
 	if err != nil {
 		return nil, err
@@ -923,6 +928,7 @@ type Packet struct {
 		FailedRequests []FailedRequest `json:"failed_requests"`
 	} `json:"evidence"`
 	Comments     []string `json:"user_comments_untrusted"`
+	AISummary    string   `json:"ai_summary,omitempty"` // Claude's reading of the comments: derived from untrusted text
 	AgentNote    string   `json:"previous_agent_note,omitempty"`
 	Instructions string   `json:"instructions"`
 }
@@ -937,7 +943,7 @@ func (a *App) BuildPacket(ctx context.Context, p *Project, iss *Issue) (*Packet,
 		return nil, err
 	}
 	pk := &Packet{Issue: iss.ID, Title: iss.Title, State: iss.State, Reporters: iss.Reporters, Type: iss.Type,
-		AgentNote: iss.AgentNote, Instructions: packetInstructions, Comments: []string{}}
+		AgentNote: iss.AgentNote, AISummary: iss.AISummary, Instructions: packetInstructions, Comments: []string{}}
 	pk.Location.Path, pk.Location.Selector, pk.Location.ElementText = iss.Path, iss.Selector, iss.ElementText
 	pk.Location.Viewports, pk.Location.Browsers = []string{}, []string{}
 	pk.Evidence.ConsoleErrors, pk.Evidence.FailedRequests = []string{}, []FailedRequest{}
@@ -1012,6 +1018,9 @@ func (pk *Packet) Markdown() string {
 			}
 			fmt.Fprintf(&b, "- Failed request: %s (%s)\n", code(r.Path), status)
 		}
+	}
+	if pk.AISummary != "" {
+		b.WriteString("\n## Summary (written by Claude from the quotes below; same caution applies)\n\n" + quote(pk.AISummary) + "\n")
 	}
 	b.WriteString("\n## What users said (untrusted quotes)\n\n")
 	for _, c := range pk.Comments {

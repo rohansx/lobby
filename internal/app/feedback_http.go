@@ -390,6 +390,7 @@ func (s *Server) adminFeedback(w http.ResponseWriter, r *http.Request) {
 		"data": list, "waves": waves, "sources": sources,
 		"settings": s.app.FeedbackSettings(r.Context(), p),
 		"api":      plan.Webhooks, "reports": reports, "report_limit": limit,
+		"ai_available": s.app.ai != nil,
 	})
 }
 
@@ -442,8 +443,13 @@ func (s *Server) adminGetIssue(w http.ResponseWriter, r *http.Request) {
 	for id := range blocked {
 		blockedIDs = append(blockedIDs, id)
 	}
+	suggestions, err := s.app.Suggestions(r.Context(), p, iss.ID)
+	if err != nil {
+		jsonError(w, 500, err.Error())
+		return
+	}
 	writeJSON(w, 200, map[string]any{"issue": iss, "reports": reps, "packet": pk, "packet_md": pk.Markdown(),
-		"replies": replies, "blocked": blockedIDs})
+		"replies": replies, "blocked": blockedIDs, "suggestions": suggestions})
 }
 
 func (s *Server) adminIssueAction(w http.ResponseWriter, r *http.Request) {
@@ -478,6 +484,12 @@ func (s *Server) adminIssueAction(w http.ResponseWriter, r *http.Request) {
 		out, err = s.app.SplitIssue(ctx, p, iss.ID, body.Reports)
 	case "title":
 		out, err = s.app.SetIssueTitle(ctx, p, iss.ID, body.Title)
+	case "not-duplicate":
+		if err := s.app.DismissSuggestion(ctx, p, iss.ID, body.Into); err != nil {
+			jsonError(w, 404, "issue not found")
+			return
+		}
+		out, err = s.app.Issue(ctx, p, iss.ID)
 	case "copied":
 		s.app.RecordHandoff(ctx, p, iss.ID)
 		out, err = s.app.Issue(ctx, p, iss.ID)
@@ -496,10 +508,20 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Console  *bool   `json:"console"`
 		Audience *string `json:"audience"`
+		AI       *bool   `json:"ai"`
+		Digest   *bool   `json:"digest"`
 	}
-	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil) {
-		jsonError(w, 400, `send {"console": true|false} or {"audience": "invited"|"selected"}`)
+	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil) {
+		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool}`)
 		return
+	}
+	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest} {
+		if v != nil {
+			if err := s.app.SetFeedbackFlag(r.Context(), p, col, *v); err != nil {
+				jsonError(w, 500, err.Error())
+				return
+			}
+		}
 	}
 	if body.Console != nil {
 		if err := s.app.SetFeedbackConsole(r.Context(), p, *body.Console); err != nil {

@@ -17,6 +17,10 @@ type Config struct {
 	ResendKey  string // RESEND_API_KEY
 	ResendHook string // RESEND_WEBHOOK_SECRET, for bounce and complaint suppression
 	CheckMX    bool   // LOBBY_CHECK_MX, default on
+	// Feedback summaries, duplicate suggestions and the digest overview use
+	// Claude when a key is set. Without one, those parts are simply off.
+	AnthropicKey string // ANTHROPIC_API_KEY
+	AIModel      string // LOBBY_AI_MODEL, default claude-opus-5-5
 
 	// Cloud mode turns one instance into a hosted service: anyone can sign up,
 	// each account sees only its own projects, and plans set the limits.
@@ -55,6 +59,8 @@ func ConfigFromEnv() Config {
 		ResendKey:          env("RESEND_API_KEY", ""),
 		ResendHook:         env("RESEND_WEBHOOK_SECRET", ""),
 		CheckMX:            env("LOBBY_CHECK_MX", "1") != "0",
+		AnthropicKey:       env("ANTHROPIC_API_KEY", ""),
+		AIModel:            env("LOBBY_AI_MODEL", "claude-opus-5-5"),
 		Cloud:              env("LOBBY_CLOUD", "") == "1",
 		Operators:          strings.FieldsFunc(env("LOBBY_OPERATORS", ""), func(r rune) bool { return r == ',' || r == ' ' }),
 		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
@@ -96,6 +102,7 @@ type App struct {
 	spam   *spamGuard
 	wake   chan struct{}
 	oauth  map[string]*OAuthProvider
+	ai     aiJSON // nil when no Anthropic key is configured
 }
 
 func New(ctx context.Context, cfg Config) (*App, error) {
@@ -120,6 +127,7 @@ func New(ctx context.Context, cfg Config) (*App, error) {
 	a.mailer = newMailer(cfg, a.log)
 	a.spam = newSpamGuard(cfg.CheckMX)
 	a.oauth = oauthProviders(cfg)
+	a.ai = newClaude(cfg)
 	return a, nil
 }
 

@@ -113,6 +113,11 @@ func (a *App) runJobs(ctx context.Context) (int, error) {
 }
 
 func (a *App) runJob(ctx context.Context, kind, payload string) error {
+	if kind == "ai.issue" || kind == "feedback.digest" {
+		// ponytail: AI calls run inline with email jobs (a few seconds each);
+		// give them their own worker if feedback volume ever delays signup mail.
+		return a.runFeedbackJob(ctx, kind, payload)
+	}
 	if kind == "email.lobby" { // account mail from Lobby itself, already composed (see mailLobby)
 		var m Message
 		if err := json.Unmarshal([]byte(payload), &m); err != nil {
@@ -308,4 +313,5 @@ func (a *App) maintain(ctx context.Context) {
 	a.db.W.ExecContext(ctx, `DELETE FROM jobs WHERE status = 'done' AND created_at < ?`, cutoff)
 	a.db.W.ExecContext(ctx, `DELETE FROM deliveries WHERE status IN ('success', 'skipped') AND created_at < ?`, now()-90*86400)
 	a.pruneFeedback(ctx)
+	a.scheduleDigests(ctx)
 }

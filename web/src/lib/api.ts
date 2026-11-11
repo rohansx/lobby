@@ -392,6 +392,13 @@ export interface Issue {
   updated_at: number
   reporters: number
   reports: number
+  ai_summary: string // written by Claude from the reports; empty when AI is off
+  ai_at: number | null
+}
+
+export interface IssueSuggestion {
+  issue: Issue
+  reason: string // why Claude thinks it's the same problem
 }
 
 export interface FeedbackReport {
@@ -420,6 +427,8 @@ export interface FeedbackSettings {
   console: boolean
   agent_key_set: boolean
   audience: "invited" | "selected"
+  ai: boolean // Claude summaries and duplicate suggestions
+  digest: boolean // weekly feedback email
 }
 
 export interface FeedbackList {
@@ -430,6 +439,7 @@ export interface FeedbackList {
   api: boolean // API, CLI and agent key are on this plan
   reports: number
   report_limit: number // -1 means unlimited
+  ai_available: boolean // the instance has an Anthropic key
 }
 
 export interface IssueDetail {
@@ -439,6 +449,7 @@ export interface IssueDetail {
   packet_md: string
   replies: { sent: number; works: number; broken: number }
   blocked: number[] | null // signup ids that can't report
+  suggestions: IssueSuggestion[] | null // likely duplicates, from Claude
 }
 
 export class ApiError extends Error {

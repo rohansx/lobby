@@ -347,6 +347,22 @@ var migrations = []string{
 	`ALTER TABLE signups ADD COLUMN feedback_access INTEGER;
 	UPDATE signups SET feedback_access = 0 WHERE feedback_blocked_at IS NOT NULL;
 	ALTER TABLE feedback_settings ADD COLUMN audience TEXT NOT NULL DEFAULT 'invited';`,
+	// Claude reads feedback: a summary and title per issue, duplicate
+	// suggestions the founder confirms, and a weekly digest.
+	`ALTER TABLE feedback_issues ADD COLUMN ai_summary TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_issues ADD COLUMN ai_at INTEGER;
+	ALTER TABLE feedback_issues ADD COLUMN title_locked INTEGER NOT NULL DEFAULT 0;
+	ALTER TABLE feedback_settings ADD COLUMN ai INTEGER NOT NULL DEFAULT 1;
+	ALTER TABLE feedback_settings ADD COLUMN digest INTEGER NOT NULL DEFAULT 1;
+	ALTER TABLE feedback_settings ADD COLUMN digest_at INTEGER;
+	CREATE TABLE feedback_suggestions (
+		issue_id INTEGER NOT NULL REFERENCES feedback_issues(id) ON DELETE CASCADE,
+		other_id INTEGER NOT NULL REFERENCES feedback_issues(id) ON DELETE CASCADE,
+		reason TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		dismissed_at INTEGER,
+		PRIMARY KEY (issue_id, other_id));
+	CREATE INDEX feedback_suggestions_other ON feedback_suggestions(other_id);`,
 }
 
 func (s *Store) migrate() error {

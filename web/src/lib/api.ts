@@ -144,6 +144,8 @@ export interface Signup {
   status_url: string
   answer?: string // reply to the qualification question
   relevant?: boolean // founder's review; absent means not reviewed
+  feedback: boolean // sees the feedback widget
+  feedback_set: boolean // switched by hand rather than following the project's audience
 }
 
 export interface Webhook {
@@ -417,6 +419,7 @@ export interface FeedbackReport {
 export interface FeedbackSettings {
   console: boolean
   agent_key_set: boolean
+  audience: "invited" | "selected"
 }
 
 export interface FeedbackList {

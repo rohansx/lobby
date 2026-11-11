@@ -207,6 +207,73 @@ func TestIssueTitle(t *testing.T) {
 	}
 }
 
+func TestFeedbackAudienceAndSwitch(t *testing.T) {
+	e := newFBEnv(t)
+	ctx := context.Background()
+	ana, rt := e.invited("ana@example.com")
+	beta := signup(t, e.a, e.p, "beta@example.com", "", "10.7.7.7").Signup // on the list, never invited
+	access := func(tok string) bool {
+		rec := e.req("GET", "/v1/feedback/access?project="+e.p.PublicKey+"&reporter="+tok, "", "Origin", "https://app.example.com")
+		var out map[string]any
+		json.Unmarshal(rec.Body.Bytes(), &out)
+		return out["enabled"] == true
+	}
+	betaTok := e.a.ReporterToken(beta)
+	if !access(rt) || access(betaTok) || access("rt_forged") {
+		t.Fatal("default: invited people only")
+	}
+	if rec := e.req("GET", "/v1/feedback/access?project="+e.p.PublicKey+"&reporter="+rt, "", "Origin", "https://evil.example"); rec.Code != 403 {
+		t.Fatalf("access check from another site: %d", rec.Code)
+	}
+	// Only selected people: invited Ana loses the widget until switched on.
+	if err := e.a.SetFeedbackAudience(ctx, e.p, AudienceSelected); err != nil {
+		t.Fatal(err)
+	}
+	if access(rt) {
+		t.Fatal("selected audience should hide the widget from invited people by default")
+	}
+	if rec := e.report(rt, "/", "a", "x"); rec.Code != 403 {
+		t.Fatalf("report while switched off: %d", rec.Code)
+	}
+	e.api(e.sk, "POST", "/v1/reporters", `{"email":"ana@example.com"}`, 403)
+	on := true
+	e.a.SetFeedbackAccess(ctx, e.p, []int64{ana.ID, beta.ID}, &on)
+	if !access(rt) || !access(betaTok) {
+		t.Fatal("switching on should work, even for people never invited")
+	}
+	if rec := e.report(betaTok, "/", "a", "beta tester"); rec.Code != 201 {
+		t.Fatalf("switched-on beta tester: %d %s", rec.Code, rec.Body.String())
+	}
+	e.api(e.sk, "POST", "/v1/reporters", `{"email":"beta@example.com"}`, 200)
+	// Back to the default.
+	e.a.SetFeedbackAccess(ctx, e.p, []int64{beta.ID}, nil)
+	if access(betaTok) {
+		t.Fatal("reset should follow the audience again")
+	}
+	if err := e.a.SetFeedbackAudience(ctx, e.p, "everyone"); err == nil {
+		t.Fatal("unknown audience accepted")
+	}
+
+	// Dashboard: the Signups page shows the switch and bulk actions set it.
+	c := &client{t: t, h: e.h}
+	mustCode(t, c, "POST", "/api/admin/login", `{"email":"owner@example.com","password":"a-long-password-1"}`, 200)
+	base := "/api/admin/projects/" + e.p.Slug
+	mustCode(t, c, "POST", base+"/signups/action", fmt.Sprintf(`{"action":"feedback_off","ids":[%d]}`, ana.ID), 200)
+	rows := mustCode(t, c, "GET", base+"/signups", "", 200)["data"].([]any)
+	for _, r := range rows {
+		m := r.(map[string]any)
+		if m["email"] == "ana@example.com" && (m["feedback"] != false || m["feedback_set"] != true) {
+			t.Fatalf("signups row: %v", m)
+		}
+	}
+	mustCode(t, c, "PUT", fmt.Sprintf("%s/signups/%d/feedback", base, ana.ID), `{"access":true}`, 200)
+	if !access(rt) {
+		t.Fatal("per-row switch didn't apply")
+	}
+	mustCode(t, c, "POST", base+"/feedback/settings", `{"audience":"invited"}`, 200)
+	mustCode(t, c, "POST", base+"/feedback/settings", `{"audience":"nope"}`, 400)
+}
+
 func TestFeedbackLimitsAndBlocking(t *testing.T) {
 	e := newFBEnv(t)
 	s, rt := e.invited("ana@example.com")
@@ -219,8 +286,9 @@ func TestFeedbackLimitsAndBlocking(t *testing.T) {
 		t.Fatalf("daily cap: %d", rec.Code)
 	}
 	_, rt2 := e.invited("ben@example.com")
-	e.a.BlockReporter(context.Background(), e.p, s.ID, true)
-	if rec := e.report(rt, "/", "a", "x"); rec.Code != 401 {
+	off := false
+	e.a.SetFeedbackAccess(context.Background(), e.p, []int64{s.ID}, &off)
+	if rec := e.report(rt, "/", "a", "x"); rec.Code != 403 {
 		t.Fatalf("blocked reporter: %d", rec.Code)
 	}
 	if rec := e.report(rt2, "/", "a", "x"); rec.Code != 201 {

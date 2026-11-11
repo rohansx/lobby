@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api, projectPath, STATUSES, type Signup } from "@/lib/api"
 import { toastError } from "@/lib/errors"
@@ -20,13 +21,15 @@ import { useSession } from "@/lib/session"
 import { invalidate, useApi } from "@/lib/use-api"
 import { cn } from "@/lib/utils"
 
-type Action = "invite" | "confirm" | "resend" | "joined" | "remove" | "delete"
+type Action = "invite" | "confirm" | "resend" | "joined" | "feedback_on" | "feedback_off" | "remove" | "delete"
 
 const actionLabels: Record<Action, string> = {
   invite: "Invite",
   confirm: "Mark confirmed",
   resend: "Resend status email",
   joined: "Mark joined",
+  feedback_on: "Feedback widget on",
+  feedback_off: "Feedback widget off",
   remove: "Remove",
   delete: "Delete and suppress",
 }
@@ -82,6 +85,20 @@ export default function Signups() {
       reload()
       refreshProjects()
     } catch (err) {
+      toastError(err)
+    }
+  }
+
+  // The feedback widget switch, optimistic like the review below.
+  async function setFeedback(id: number, on: boolean) {
+    const patch = (feedback: boolean, feedback_set: boolean) =>
+      setPages((ps) => ps.map((pg) => pg.map((r) => (r.id === id ? { ...r, feedback, feedback_set } : r))))
+    const was = rows.find((r) => r.id === id)
+    patch(on, true)
+    try {
+      await api(projectPath(slug, `/signups/${id}/feedback`), { method: "PUT", body: { access: on } })
+    } catch (err) {
+      if (was) patch(was.feedback, was.feedback_set)
       toastError(err)
     }
   }
@@ -160,6 +177,7 @@ export default function Signups() {
               <TableHead className="hidden lg:table-cell">Source</TableHead>
               <TableHead className="hidden sm:table-cell">Signed up</TableHead>
               {me.cloud && <TableHead>Relevant</TableHead>}
+              <TableHead title="Shows the feedback widget in your app to this person">Feedback</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -167,14 +185,14 @@ export default function Signups() {
             {!data &&
               [0, 1, 2, 3, 4].map((i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={9} className="pl-4">
+                  <TableCell colSpan={10} className="pl-4">
                     <Skeleton className="h-5" />
                   </TableCell>
                 </TableRow>
               ))}
             {data && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="py-12 text-center text-muted-foreground">
                   {q || status !== "all" ? "No signups match." : "No signups yet."}
                 </TableCell>
               </TableRow>
@@ -218,6 +236,15 @@ export default function Signups() {
                     <RelevantPicker value={s.relevant ?? null} onChange={(v) => review(s.id, v)} />
                   </TableCell>
                 )}
+                <TableCell>
+                  <Switch
+                    checked={s.feedback}
+                    disabled={s.status === "removed"}
+                    onCheckedChange={(on) => setFeedback(s.id, on)}
+                    aria-label={`Feedback widget for ${s.email}`}
+                    title={s.feedback_set ? "Switched by you" : "Follows the setting on the Feedback page"}
+                  />
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -277,7 +304,7 @@ export default function Signups() {
 function ActionItems({ onSelect }: { onSelect: (a: Action) => void }) {
   return (
     <>
-      {(["invite", "confirm", "resend", "joined"] as Action[]).map((a) => (
+      {(["invite", "confirm", "resend", "joined", "feedback_on", "feedback_off"] as Action[]).map((a) => (
         <DropdownMenuItem key={a} onSelect={() => onSelect(a)}>
           {actionLabels[a]}
         </DropdownMenuItem>

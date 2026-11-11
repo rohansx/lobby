@@ -124,9 +124,16 @@
     picking = false, picked = null, type = "bug";
 
   function mount() { if (!host.isConnected) document.documentElement.appendChild(host); }
-  mount();
-  // Single-page apps sometimes replace the whole document body; stay attached.
-  new MutationObserver(mount).observe(document.documentElement, { childList: true });
+  // Ask Lobby first: the founder can switch the widget off for someone at any
+  // time, and it should disappear without the app changing anything.
+  of0(api + "/v1/feedback/access?project=" + encodeURIComponent(d.project) + "&reporter=" + encodeURIComponent(d.reporter))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j.enabled) return;
+      mount();
+      // Single-page apps sometimes replace the whole document body; stay attached.
+      new MutationObserver(mount).observe(document.documentElement, { childList: true });
+    }).catch(function () {});
 
   function ours(el) { return el === host || host.contains(el); }
   function label(el) {

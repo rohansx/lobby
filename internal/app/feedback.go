@@ -42,7 +42,7 @@ var (
 	ErrNotReporter    = errors.New("this reporter token isn't valid for this project")
 	ErrReporterLimit  = errors.New("you've sent a lot of reports today; please try again tomorrow")
 	ErrBadIssueMove   = errors.New("that change isn't possible from the issue's current state")
-	ErrNotInvitedYet  = errors.New("only people who were invited from the waitlist can send feedback")
+	ErrNoFeedback     = errors.New("feedback isn't on for this person: invite them, or switch feedback on for them on the Signups page")
 	errFeedbackLength = fmt.Errorf("keep the comment under %d characters", maxFeedbackComment)
 )
 
@@ -76,15 +76,57 @@ func (a *App) parseReporter(tok string) (int64, bool) {
 	return id, err == nil
 }
 
-// MintReporter returns a token for an invited or joined signup, looked up by email.
+const (
+	AudienceInvited  = "invited"  // everyone invited or joined, unless switched off
+	AudienceSelected = "selected" // only people the founder switches on
+)
+
+// canReport decides whether a signup sees the widget. An explicit switch on
+// the Signups page wins; otherwise the project's audience decides.
+func canReport(status string, access *bool, audience string) bool {
+	if status == StatusRemoved {
+		return false
+	}
+	if access != nil {
+		return *access
+	}
+	return audience != AudienceSelected && (status == StatusInvited || status == StatusJoined)
+}
+
+func (a *App) feedbackAccess(ctx context.Context, q querier, signupID int64) (*bool, error) {
+	var v *bool
+	err := q.QueryRowContext(ctx, `SELECT feedback_access FROM signups WHERE id = ?`, signupID).Scan(&v)
+	return v, err
+}
+
+// ReporterAllowed is what the widget asks on each page load, so switching
+// someone off takes effect without the founder redeploying.
+func (a *App) ReporterAllowed(ctx context.Context, p *Project, tok string) bool {
+	id, ok := a.parseReporter(tok)
+	if !ok {
+		return false
+	}
+	su, err := getSignup(ctx, a.db.R, p.ID, id)
+	if err != nil {
+		return false
+	}
+	access, err := a.feedbackAccess(ctx, a.db.R, su.ID)
+	return err == nil && canReport(su.Status, access, a.FeedbackSettings(ctx, p).Audience)
+}
+
+// MintReporter returns a token for a signup who may send feedback, looked up by email.
 func (a *App) MintReporter(ctx context.Context, p *Project, email string) (string, *Signup, error) {
 	s, err := scanSignup(a.db.R.QueryRowContext(ctx, `SELECT `+signupCols+` FROM signups WHERE project_id = ? AND email_norm = ?`,
 		p.ID, normalizeEmail(email)))
 	if err != nil {
 		return "", nil, err
 	}
-	if s.Status != StatusInvited && s.Status != StatusJoined {
-		return "", nil, ErrNotInvitedYet
+	access, err := a.feedbackAccess(ctx, a.db.R, s.ID)
+	if err != nil {
+		return "", nil, err
+	}
+	if !canReport(s.Status, access, a.FeedbackSettings(ctx, p).Audience) {
+		return "", nil, ErrNoFeedback
 	}
 	return a.ReporterToken(s), s, nil
 }
@@ -240,15 +282,16 @@ func issueTitle(in *ReportInput) string {
 }
 
 type FeedbackSettings struct {
-	Console     bool `json:"console"`
-	AgentKeySet bool `json:"agent_key_set"`
+	Console     bool   `json:"console"`
+	AgentKeySet bool   `json:"agent_key_set"`
+	Audience    string `json:"audience"`
 }
 
 func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings {
-	st := FeedbackSettings{Console: true}
+	st := FeedbackSettings{Console: true, Audience: AudienceInvited}
 	var hash sql.NullString
-	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash FROM feedback_settings WHERE project_id = ?`, p.ID).
-		Scan(&st.Console, &hash); err == nil {
+	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience FROM feedback_settings WHERE project_id = ?`, p.ID).
+		Scan(&st.Console, &hash, &st.Audience); err == nil {
 		st.AgentKeySet = hash.Valid && hash.String != ""
 	}
 	return st
@@ -257,6 +300,15 @@ func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings
 func (a *App) SetFeedbackConsole(ctx context.Context, p *Project, on bool) error {
 	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, console) VALUES (?, ?)
 		ON CONFLICT(project_id) DO UPDATE SET console = excluded.console`, p.ID, on)
+	return err
+}
+
+func (a *App) SetFeedbackAudience(ctx context.Context, p *Project, audience string) error {
+	if audience != AudienceInvited && audience != AudienceSelected {
+		return &ValidationError{"Audience must be invited or selected."}
+	}
+	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, audience) VALUES (?, ?)
+		ON CONFLICT(project_id) DO UPDATE SET audience = excluded.audience`, p.ID, audience)
 	return err
 }
 
@@ -280,7 +332,8 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 	if !ok {
 		return nil, nil, ErrNotReporter
 	}
-	if err := in.clean(a.FeedbackSettings(ctx, p).Console); err != nil {
+	settings := a.FeedbackSettings(ctx, p)
+	if err := in.clean(settings.Console); err != nil {
 		return nil, nil, err
 	}
 	plan, _ := a.planForOwner(ctx, p.OwnerID)
@@ -296,12 +349,12 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 	} else if err != nil {
 		return nil, nil, err
 	}
-	var blocked *int64
-	if err := tx.QueryRowContext(ctx, `SELECT feedback_blocked_at FROM signups WHERE id = ?`, su.ID).Scan(&blocked); err != nil {
+	access, err := a.feedbackAccess(ctx, tx, su.ID)
+	if err != nil {
 		return nil, nil, err
 	}
-	if blocked != nil || su.Status == StatusRemoved {
-		return nil, nil, ErrNotReporter
+	if !canReport(su.Status, access, settings.Audience) {
+		return nil, nil, ErrNoFeedback
 	}
 	var today int
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM feedback_reports WHERE signup_id = ? AND created_at > ?`,
@@ -796,19 +849,38 @@ func (a *App) RecordHandoff(ctx context.Context, p *Project, id int64) {
 		WHERE project_id = ? AND id = ?`, now(), p.ID, id)
 }
 
-func (a *App) BlockReporter(ctx context.Context, p *Project, signupID int64, block bool) error {
-	var v any
-	if block {
-		v = now()
+// SetFeedbackAccess switches the widget on or off for people; nil goes back
+// to following the project's audience. Blocking a reporter is switching off.
+func (a *App) SetFeedbackAccess(ctx context.Context, p *Project, ids []int64, on *bool) (int, error) {
+	n := 0
+	for _, id := range ids {
+		res, err := a.db.W.ExecContext(ctx, `UPDATE signups SET feedback_access = ? WHERE project_id = ? AND id = ?`, on, p.ID, id)
+		if err != nil {
+			return n, err
+		}
+		k, _ := res.RowsAffected()
+		n += int(k)
 	}
-	res, err := a.db.W.ExecContext(ctx, `UPDATE signups SET feedback_blocked_at = ? WHERE project_id = ? AND id = ?`, v, p.ID, signupID)
+	return n, nil
+}
+
+// FeedbackAccessMap returns the explicit switches set on a project's signups.
+func (a *App) FeedbackAccessMap(ctx context.Context, p *Project) (map[int64]bool, error) {
+	rows, err := a.db.R.QueryContext(ctx, `SELECT id, feedback_access FROM signups WHERE project_id = ? AND feedback_access IS NOT NULL`, p.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrNotFound
+	defer rows.Close()
+	out := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		var on bool
+		if err := rows.Scan(&id, &on); err != nil {
+			return nil, err
+		}
+		out[id] = on
 	}
-	return nil
+	return out, rows.Err()
 }
 
 // FeedbackBySignup maps signup id to their comments, for exports.

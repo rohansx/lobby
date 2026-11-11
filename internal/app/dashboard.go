@@ -276,6 +276,10 @@ type signupRow struct {
 	Referrals int64  `json:"referrals"`
 	Position  int64  `json:"position"`
 	StatusURL string `json:"status_url"`
+	// Feedback is whether this person sees the feedback widget; FeedbackSet
+	// says it was switched by hand rather than following the project default.
+	Feedback    bool `json:"feedback"`
+	FeedbackSet bool `json:"feedback_set"`
 }
 
 func (s *Server) adminSignups(w http.ResponseWriter, r *http.Request) {
@@ -292,9 +296,16 @@ func (s *Server) adminSignups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	refs := s.creditedCounts(r, p)
+	access, _ := s.app.FeedbackAccessMap(r.Context(), p)
+	audience := s.app.FeedbackSettings(r.Context(), p).Audience
 	rows := []signupRow{}
 	for _, su := range list {
 		row := signupRow{Signup: su, Referrals: refs[su.ID], StatusURL: s.app.cfg.BaseURL + "/s/" + s.app.StatusToken(su)}
+		var set *bool
+		if v, ok := access[su.ID]; ok {
+			set = &v
+		}
+		row.Feedback, row.FeedbackSet = canReport(su.Status, set, audience), set != nil
 		if su.Status == StatusConfirmed {
 			if pl, err := s.app.PlaceOf(r.Context(), p, su); err == nil {
 				row.Position = pl.Position
@@ -337,6 +348,19 @@ func (s *Server) adminSignupAction(w http.ResponseWriter, r *http.Request) {
 		if n < len(body.IDs) {
 			msg += ". The rest were skipped: only confirmed people can be invited."
 		}
+	case "feedback_on", "feedback_off":
+		on := body.Action == "feedback_on"
+		k, err := s.app.SetFeedbackAccess(ctx, p, body.IDs, &on)
+		if err != nil {
+			jsonError(w, 500, err.Error())
+			return
+		}
+		n = k
+		who := strconv.Itoa(n) + " people"
+		if n == 1 {
+			who = "1 person"
+		}
+		msg = "Feedback switched " + map[bool]string{true: "on", false: "off"}[on] + " for " + who
 	case "joined":
 		for _, id := range body.IDs {
 			if _, err := s.app.MarkJoined(ctx, p, id); err == nil {

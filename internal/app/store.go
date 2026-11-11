@@ -341,6 +341,12 @@ var migrations = []string{
 		answered_at INTEGER);
 	CREATE INDEX feedback_replies_signup ON feedback_replies(signup_id);
 	CREATE INDEX feedback_replies_issue ON feedback_replies(issue_id);`,
+	// Who sees the feedback widget: everyone invited, or only people the founder
+	// switches on. feedback_access is that per-person switch (NULL follows the
+	// project's audience); it replaces feedback_blocked_at, which is no longer read.
+	`ALTER TABLE signups ADD COLUMN feedback_access INTEGER;
+	UPDATE signups SET feedback_access = 0 WHERE feedback_blocked_at IS NOT NULL;
+	ALTER TABLE feedback_settings ADD COLUMN audience TEXT NOT NULL DEFAULT 'invited';`,
 }
 
 func (s *Store) migrate() error {

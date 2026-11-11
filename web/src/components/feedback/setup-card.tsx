@@ -7,6 +7,7 @@ import { SecretKeyDialog } from "@/components/secret-key-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { api, projectPath, type FeedbackList } from "@/lib/api"
@@ -39,6 +40,16 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
     }
   }
 
+  async function setAudience(audience: string) {
+    try {
+      await api(projectPath(slug, "/feedback/settings"), { body: { audience } })
+      toast.success(audience === "selected" ? "Only people you switch on see the widget" : "Everyone you invite sees the widget")
+      onChange()
+    } catch (err) {
+      toastError(err)
+    }
+  }
+
   async function makeKey() {
     setBusy(true)
     try {
@@ -62,7 +73,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
         <CopyField value={snippet} multiline />
         <div className="grid gap-2 text-xs text-muted-foreground">
           <p>
-            Each user needs their own reporter token. It comes back as <code className={code}>reporter_token</code> from <code className={code}>POST /v1/invites/redeem</code>, or from <code className={code}>POST /v1/reporters {"{\"email\"}"}</code> with the secret key. Tokens last 90 days.
+            Your app's server asks for each logged-in user's reporter token by their email: <code className={code}>POST /v1/reporters {"{\"email\"}"}</code> with the secret key. It also comes back as <code className={code}>reporter_token</code> from <code className={code}>POST /v1/invites/redeem</code>. Tokens last 90 days.
           </p>
           <p>
             Add <code className={code}>data-lobby-id</code> to elements whose markup changes so reports keep grouping. Add <code className={code}>data-lobby-mask</code> to anything whose text must never be captured.
@@ -81,6 +92,27 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             reports used on the free plan.
           </p>
         )}
+
+        <Separator />
+        <div className="grid gap-2">
+          <Label htmlFor="fb-audience">Who sees the widget</Label>
+          <Select value={data.settings.audience} onValueChange={setAudience}>
+            <SelectTrigger id="fb-audience" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="invited">Everyone I've invited</SelectItem>
+              <SelectItem value="selected">Only people I switch on</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Switch it on or off per person in the Feedback column on the{" "}
+            <Link href={`/p/${slug}/signups`} className="underline">
+              Signups page
+            </Link>
+            . A switch you set there always wins, and the widget checks on every page load, so changes apply at once.
+          </p>
+        </div>
 
         <Separator />
         <div className="flex items-start justify-between gap-3">

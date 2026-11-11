@@ -76,12 +76,54 @@ func (s *Server) publicFeedback(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 402, le.Msg)
 	case errors.Is(err, ErrNotReporter):
 		jsonError(w, 401, err.Error())
+	case errors.Is(err, ErrNoFeedback):
+		jsonError(w, 403, "feedback isn't turned on for you here")
 	case errors.Is(err, ErrReporterLimit):
 		jsonError(w, 429, err.Error())
 	default:
 		s.app.log.Error("feedback", "err", err)
 		jsonError(w, 500, "something went wrong")
 	}
+}
+
+// publicFeedbackAccess tells the widget whether to show itself for this
+// reporter. It only ever answers true or false.
+func (s *Server) publicFeedbackAccess(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	p, err := s.app.ProjectByPublicKey(r.Context(), q.Get("project"))
+	if err != nil {
+		jsonError(w, 404, "unknown project")
+		return
+	}
+	if !s.cors(w, r, p) {
+		jsonError(w, 403, "this site isn't on the project's allowed origins")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	ok := !s.app.ownerSuspended(r.Context(), p.OwnerID) && s.app.ReporterAllowed(r.Context(), p, q.Get("reporter"))
+	writeJSON(w, 200, map[string]any{"enabled": ok})
+}
+
+// adminSignupFeedback is the per-person switch on the Signups page:
+// {"access": true|false|null}, null going back to the project default.
+func (s *Server) adminSignupFeedback(w http.ResponseWriter, r *http.Request) {
+	p := s.adminProject(w, r)
+	if p == nil {
+		return
+	}
+	id, _ := pathID(r)
+	var body struct {
+		Access *bool `json:"access"`
+	}
+	if err := decodeJSON(r, &body); err != nil {
+		jsonError(w, 400, `send {"access": true|false|null}`)
+		return
+	}
+	if n, err := s.app.SetFeedbackAccess(r.Context(), p, []int64{id}, body.Access); err != nil || n == 0 {
+		jsonError(w, 404, "signup not found")
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
 // ---- public: the reporter's answer and unsubscribe ----
@@ -312,7 +354,7 @@ func (s *Server) apiReporter(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]any{"reporter_token": rt, "signup_id": su.ID, "expires_in": reporterTTL})
 	case errors.Is(err, ErrNotFound):
 		jsonError(w, 404, "no one with that email is on this waitlist")
-	case errors.Is(err, ErrNotInvitedYet):
+	case errors.Is(err, ErrNoFeedback):
 		jsonError(w, 403, err.Error())
 	default:
 		jsonError(w, 500, err.Error())
@@ -387,7 +429,7 @@ func (s *Server) adminGetIssue(w http.ResponseWriter, r *http.Request) {
 	}
 	blocked := map[int64]bool{}
 	rows, err := s.app.db.R.QueryContext(r.Context(), `SELECT DISTINCT s.id FROM feedback_reports f JOIN signups s ON s.id = f.signup_id
-		WHERE f.issue_id = ? AND s.feedback_blocked_at IS NOT NULL`, iss.ID)
+		WHERE f.issue_id = ? AND s.feedback_access = 0`, iss.ID)
 	if err == nil {
 		for rows.Next() {
 			var id int64
@@ -452,15 +494,24 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Console *bool `json:"console"`
+		Console  *bool   `json:"console"`
+		Audience *string `json:"audience"`
 	}
-	if err := decodeJSON(r, &body); err != nil || body.Console == nil {
-		jsonError(w, 400, `send {"console": true|false}`)
+	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil) {
+		jsonError(w, 400, `send {"console": true|false} or {"audience": "invited"|"selected"}`)
 		return
 	}
-	if err := s.app.SetFeedbackConsole(r.Context(), p, *body.Console); err != nil {
-		jsonError(w, 500, err.Error())
-		return
+	if body.Console != nil {
+		if err := s.app.SetFeedbackConsole(r.Context(), p, *body.Console); err != nil {
+			jsonError(w, 500, err.Error())
+			return
+		}
+	}
+	if body.Audience != nil {
+		if err := s.app.SetFeedbackAudience(r.Context(), p, *body.Audience); err != nil {
+			jsonError(w, 400, err.Error())
+			return
+		}
 	}
 	writeJSON(w, 200, s.app.FeedbackSettings(r.Context(), p))
 }
@@ -488,7 +539,12 @@ func (s *Server) adminReporter(w http.ResponseWriter, r *http.Request) {
 	id, _ := pathID(r)
 	switch r.PathValue("action") {
 	case "block", "unblock":
-		if err := s.app.BlockReporter(r.Context(), p, id, r.PathValue("action") == "block"); err != nil {
+		var on *bool // unblock: back to following the project's audience
+		if r.PathValue("action") == "block" {
+			off := false
+			on = &off
+		}
+		if n, err := s.app.SetFeedbackAccess(r.Context(), p, []int64{id}, on); err != nil || n == 0 {
 			jsonError(w, 404, "signup not found")
 			return
 		}
@@ -499,8 +555,9 @@ func (s *Server) adminReporter(w http.ResponseWriter, r *http.Request) {
 			jsonError(w, 404, "signup not found")
 			return
 		}
-		if su.Status != StatusInvited && su.Status != StatusJoined {
-			jsonError(w, 409, "invite this person first: only invited people can send feedback")
+		access, _ := s.app.feedbackAccess(r.Context(), s.app.db.R, su.ID)
+		if !canReport(su.Status, access, s.app.FeedbackSettings(r.Context(), p).Audience) {
+			jsonError(w, 409, ErrNoFeedback.Error())
 			return
 		}
 		writeJSON(w, 200, map[string]any{"reporter_token": s.app.ReporterToken(su)})

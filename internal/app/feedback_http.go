@@ -767,3 +767,15 @@ func (s *Server) publicVoice(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 502, "couldn't transcribe that; please try again or type instead")
 	}
 }
+
+// publicShot serves a screenshot through its signed, expiring link.
+func (s *Server) publicShot(w http.ResponseWriter, r *http.Request) {
+	im, err := s.app.ShotByLink(r.Context(), r.PathValue("token"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("X-Robots-Tag", "noindex")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	writeShot(w, im)
+}

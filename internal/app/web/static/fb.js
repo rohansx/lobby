@@ -401,28 +401,52 @@
     }, function (e) { el.removeAttribute("data-lobby-picked"); throw e; }).then(function (full) {
       // The copy can lay out a few pixels off the page (margins, defaults); find the
       // picked element's marker in the render to learn the shift.
-      var dx = 0, dy = 0;
+      // mk is the marker's box in the render: the picked element as the copy drew it,
+      // which can be wider than on the page (no scrollbar, different clipping).
+      var dx = 0, dy = 0, mk = null;
       if (!whole && r.top >= area.top && r.left >= area.left) {
-        var ex = Math.round((r.left - rr.left - 5) * scale), ey = Math.round((r.top - rr.top - 5) * scale), R = Math.round(48 * scale);
-        var x0 = Math.max(0, ex - R), y0 = Math.max(0, ey - R), ww = Math.min(full.width - x0, 2 * R), hh = Math.min(full.height - y0, 2 * R);
+        var ex = Math.round((r.left - rr.left - 5) * scale), ey = Math.round((r.top - rr.top - 5) * scale), R = Math.round(48 * scale), X = Math.round(96 * scale);
+        var x0 = Math.max(0, ex - R), y0 = Math.max(0, ey - R);
+        var ww = Math.min(full.width - x0, Math.round((r.width + 10) * scale) + R + X), hh = Math.min(full.height - y0, Math.round((r.height + 10) * scale) + R + X);
         if (ww > 0 && hh > 0) {
-          var px = full.getContext("2d").getImageData(x0, y0, ww, hh).data, mx = 1e9, my = 1e9;
-          for (var i = 0; i < px.length; i += 4) if (px[i] > 250 && px[i + 1] < 6 && px[i + 2] > 249) { var j = i / 4; mx = Math.min(mx, j % ww); my = Math.min(my, Math.floor(j / ww)); }
-          if (mx < 1e9) { dx = x0 + mx - ex; dy = y0 + my - ey; }
+          var px = full.getContext("2d").getImageData(x0, y0, ww, hh).data, mx = 1e9, my = 1e9, Mx = -1, My = -1;
+          for (var i = 0; i < px.length; i += 4) if (px[i] > 250 && px[i + 1] < 6 && px[i + 2] > 249) {
+            var j = i / 4, jx = j % ww, jy = Math.floor(j / ww);
+            if (jx < mx) mx = jx; if (jy < my) my = jy; if (jx > Mx) Mx = jx; if (jy > My) My = jy;
+          }
+          if (Mx >= 0) { dx = x0 + mx - ex; dy = y0 + my - ey; mk = { x: x0 + mx, y: y0 + my, w: Mx - mx + 1, h: My - my + 1 }; }
         }
       }
       var w = Math.round((area.right - area.left) * scale), h = Math.round((area.bottom - area.top) * scale);
       var k = Math.min(1, 1400 / w), c = document.createElement("canvas");
       c.width = Math.round(w * k); c.height = Math.round(h * k);
-      var g = c.getContext("2d"), s = scale * k;
+      var g = c.getContext("2d"), s = scale * k, cx = (area.left - rr.left) * scale + dx, cy = (area.top - rr.top) * scale + dy;
       g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); // past the rendered element: page background, not black
-      g.drawImage(full, (area.left - rr.left) * scale + dx, (area.top - rr.top) * scale + dy, w, h, 0, 0, c.width, c.height);
+      g.drawImage(full, cx, cy, w, h, 0, 0, c.width, c.height);
+      // Where the outline goes in the output: the marker's box, or the page's measurements without one.
+      var box = mk ? { x: (mk.x - cx) * k, y: (mk.y - cy) * k, w: mk.w * k, h: mk.h * k }
+        : { x: (r.left - area.left - 5) * s, y: (r.top - area.top - 5) * s, w: (r.width + 10) * s, h: (r.height + 10) * s };
+      // The copy can be a little wider than the page (no scrollbar, clipping), so some of
+      // the marker can survive past the outline: repaint it with the page background.
+      if (!whole) {
+        var ring = 4 * s, rx = Math.max(0, Math.floor(box.x - ring)), ry = Math.max(0, Math.floor(box.y - ring));
+        var rw = Math.min(c.width - rx, Math.ceil(box.w + 2 * ring)), rh = Math.min(c.height - ry, Math.ceil(box.h + 2 * ring));
+        if (rw > 0 && rh > 0) {
+          var probe = document.createElement("canvas").getContext("2d"), bgc;
+          probe.fillStyle = bg; probe.fillRect(0, 0, 1, 1); bgc = probe.getImageData(0, 0, 1, 1).data;
+          var im = g.getImageData(rx, ry, rw, rh), pd = im.data, hit = 0;
+          for (var u = 0; u < pd.length; u += 4) {
+            if (pd[u] - pd[u + 1] > 90 && pd[u + 2] - pd[u + 1] > 90 && Math.abs(pd[u] - pd[u + 2]) < 50) { pd[u] = bgc[0]; pd[u + 1] = bgc[1]; pd[u + 2] = bgc[2]; hit++; }
+          }
+          if (hit) g.putImageData(im, rx, ry);
+        }
+      }
       // Second layer: paint over the same parts at their measured places.
       g.fillStyle = "#9ca3af";
       masks.forEach(function (b) { g.fillRect((b.left - area.left) * s, (b.top - area.top) * s, b.width * s, b.height * s); });
       if (!whole) { // outline what they picked, over the marker
         g.strokeStyle = mark; g.lineWidth = Math.max(4, 4 * s);
-        g.strokeRect((r.left - area.left - 4) * s, (r.top - area.top - 4) * s, (r.width + 8) * s, (r.height + 8) * s);
+        g.strokeRect(box.x + s, box.y + s, box.w - 2 * s, box.h - 2 * s);
       }
       for (var q = 0.82, url = ""; q > 0.3; q -= 0.2) {
         url = c.toDataURL("image/jpeg", q);

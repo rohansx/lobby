@@ -95,6 +95,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/feedback", s.publicFeedback)
 	mux.HandleFunc("GET /v1/feedback/access", s.publicFeedbackAccess)
 	mux.HandleFunc("GET /v1/fb-shot.js", s.feedbackShotJS)
+	mux.HandleFunc("GET /v1/shots/{token}", s.publicShot)
 	mux.HandleFunc("OPTIONS /v1/feedback/reports/{id}/{action}", s.feedbackPreflight)
 	mux.HandleFunc("POST /v1/feedback/reports/{id}/{action}", s.publicFollowup)
 	mux.HandleFunc("OPTIONS /v1/feedback/voice", s.feedbackPreflight)

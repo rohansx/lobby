@@ -69,6 +69,36 @@ func (a *App) ReportShot(ctx context.Context, p *Project, reportID int64) (*aiIm
 		JOIN feedback_reports r ON r.id = f.report_id WHERE r.project_id = ? AND f.report_id = ?`, p.ID, reportID))
 }
 
+// Screenshot links let a pasted prompt, or an agent without a Lobby key, open the
+// picture: a signed, expiring capability for one report's screenshot. The image
+// itself already has private text blanked.
+const shotLinkTTL = 7 * 86400
+
+func (a *App) ShotLink(reportID int64) string {
+	body := strconv.FormatInt(reportID, 36) + "." + strconv.FormatInt(now()+shotLinkTTL, 36)
+	return a.cfg.BaseURL + "/v1/shots/" + body + "." + a.tokenSig("shot", body)
+}
+
+func (a *App) parseShotLink(tok string) (int64, bool) {
+	i := strings.LastIndexByte(tok, '.')
+	if i < 0 || !hmacEqual(tok[i+1:], a.tokenSig("shot", tok[:i])) {
+		return 0, false
+	}
+	idPart, expPart, ok := strings.Cut(tok[:i], ".")
+	id, err1 := strconv.ParseInt(idPart, 36, 64)
+	exp, err2 := strconv.ParseInt(expPart, 36, 64)
+	return id, ok && err1 == nil && err2 == nil && exp >= now()
+}
+
+// ShotByLink is the screenshot a signed link points at.
+func (a *App) ShotByLink(ctx context.Context, tok string) (*aiImage, error) {
+	id, ok := a.parseShotLink(tok)
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return scanShot(a.db.R.QueryRowContext(ctx, `SELECT mime, data FROM feedback_shots WHERE report_id = ?`, id))
+}
+
 // IssueShot is the latest screenshot on an issue.
 func (a *App) IssueShot(ctx context.Context, p *Project, issueID int64) (*aiImage, error) {
 	return scanShot(a.db.R.QueryRowContext(ctx, `SELECT f.mime, f.data FROM feedback_shots f

@@ -966,7 +966,7 @@ type Packet struct {
 		Selector    string   `json:"selector"`
 		ElementText string   `json:"element_text"`
 		Context     string   `json:"context"`
-		Screenshot  string   `json:"screenshot,omitempty"` // path on Lobby; fetch with the same key
+		Screenshot  string   `json:"screenshot,omitempty"` // signed link to the latest screenshot, valid 7 days
 		Href        string   `json:"href,omitempty"`
 		Outline     string   `json:"outline,omitempty"`
 		Release     string   `json:"release"`
@@ -1028,7 +1028,7 @@ func (a *App) BuildPacket(ctx context.Context, p *Project, iss *Issue) (*Packet,
 			pk.Comments = append(pk.Comments, c)
 		}
 		if r.HasScreenshot {
-			pk.Location.Screenshot = fmt.Sprintf("/v1/issues/%d/screenshot", iss.ID) // the latest one
+			pk.Location.Screenshot = a.ShotLink(r.ID) // the latest one; opens without a key for 7 days
 		}
 	}
 	return pk, nil
@@ -1071,7 +1071,7 @@ func (pk *Packet) Markdown() string {
 		fmt.Fprintf(&b, "- Element outline (tags and classes, no text): %s\n", code(pk.Location.Outline))
 	}
 	if pk.Location.Screenshot != "" {
-		fmt.Fprintf(&b, "- Screenshot of the area (private text shown as grey bars): GET %s with your key\n", code(pk.Location.Screenshot))
+		fmt.Fprintf(&b, "- Screenshot of the area, picked element outlined, private text shown as grey bars (link valid 7 days): %s\n", pk.Location.Screenshot)
 	} else {
 		b.WriteString("- Screenshot: none (switched off, removed by the reporter, or the browser couldn't capture it)\n")
 	}

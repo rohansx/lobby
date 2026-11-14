@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -47,14 +48,27 @@ func TestFeedbackScreenshots(t *testing.T) {
 		t.Fatal("report doesn't say it has a screenshot")
 	}
 	pk, _ := e.a.BuildPacket(ctx, e.p, iss)
-	if pk.Location.Screenshot != fmt.Sprintf("/v1/issues/%d/screenshot", iss.ID) {
-		t.Fatalf("packet screenshot: %q", pk.Location.Screenshot)
+	// The packet carries a signed link that opens without a key, so a pasted prompt works.
+	link := strings.TrimPrefix(pk.Location.Screenshot, e.a.cfg.BaseURL)
+	if !strings.HasPrefix(link, "/v1/shots/") || !strings.Contains(pk.Markdown(), pk.Location.Screenshot) {
+		t.Fatalf("packet screenshot link: %q", pk.Location.Screenshot)
 	}
-	// Agents fetch it with their key once the issue is approved; the secret key always can.
-	if rec := e.req("GET", pk.Location.Screenshot, "", "Authorization", "Bearer "+e.sk); rec.Code != 200 || rec.Header().Get("Content-Type") != "image/png" {
-		t.Fatalf("api screenshot: %d %s", rec.Code, rec.Header().Get("Content-Type"))
+	if rec := e.req("GET", link, ""); rec.Code != 200 || rec.Header().Get("Content-Type") != "image/png" {
+		t.Fatalf("signed link: %d %s", rec.Code, rec.Header().Get("Content-Type"))
 	}
-	if rec := e.req("GET", pk.Location.Screenshot, "", "Authorization", "Bearer "+e.ak); rec.Code != 404 {
+	if rec := e.req("GET", link[:len(link)-1]+"0", ""); rec.Code != 404 {
+		t.Fatalf("tampered link served: %d", rec.Code)
+	}
+	expired := strconv.FormatInt(rid, 36) + "." + strconv.FormatInt(now()-1, 36)
+	if rec := e.req("GET", "/v1/shots/"+expired+"."+e.a.tokenSig("shot", expired), ""); rec.Code != 404 {
+		t.Fatalf("expired link served: %d", rec.Code)
+	}
+	// With a key: the secret key always; the agent key only once the issue is approved.
+	path := fmt.Sprintf("/v1/issues/%d/screenshot", iss.ID)
+	if rec := e.req("GET", path, "", "Authorization", "Bearer "+e.sk); rec.Code != 200 {
+		t.Fatalf("api screenshot: %d", rec.Code)
+	}
+	if rec := e.req("GET", path, "", "Authorization", "Bearer "+e.ak); rec.Code != 404 {
 		t.Fatalf("agent key read an unapproved issue's screenshot: %d", rec.Code)
 	}
 

@@ -434,6 +434,7 @@ export interface FeedbackSettings {
   ai: boolean // Claude summaries and duplicate suggestions
   digest: boolean // weekly feedback email
   screenshots: boolean // the widget captures the picked area
+  voice: boolean // reporters can speak instead of typing
 }
 
 export interface FeedbackList {
@@ -445,6 +446,7 @@ export interface FeedbackList {
   reports: number
   report_limit: number // -1 means unlimited
   ai_available: boolean // the instance has an Anthropic key
+  voice_available: boolean // the instance has a Sarvam key
 }
 
 export interface IssueDetail {

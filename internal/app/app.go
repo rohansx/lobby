@@ -21,6 +21,9 @@ type Config struct {
 	// Claude when a key is set. Without one, those parts are simply off.
 	AnthropicKey string // ANTHROPIC_API_KEY
 	AIModel      string // LOBBY_AI_MODEL, default claude-opus-5-5
+	// Voice input in the feedback widget: Sarvam AI transcribes and translates
+	// to English. Without a key the widget has no mic button.
+	SarvamKey string // SARVAM_API_KEY
 
 	// Cloud mode turns one instance into a hosted service: anyone can sign up,
 	// each account sees only its own projects, and plans set the limits.
@@ -61,6 +64,7 @@ func ConfigFromEnv() Config {
 		CheckMX:            env("LOBBY_CHECK_MX", "1") != "0",
 		AnthropicKey:       env("ANTHROPIC_API_KEY", ""),
 		AIModel:            env("LOBBY_AI_MODEL", "claude-opus-5-5"),
+		SarvamKey:          env("SARVAM_API_KEY", ""),
 		Cloud:              env("LOBBY_CLOUD", "") == "1",
 		Operators:          strings.FieldsFunc(env("LOBBY_OPERATORS", ""), func(r rune) bool { return r == ',' || r == ' ' }),
 		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
@@ -102,7 +106,8 @@ type App struct {
 	spam   *spamGuard
 	wake   chan struct{}
 	oauth  map[string]*OAuthProvider
-	ai     aiJSON // nil when no Anthropic key is configured
+	ai     aiJSON    // nil when no Anthropic key is configured
+	voice  voiceText // nil when no Sarvam key is configured
 }
 
 func New(ctx context.Context, cfg Config) (*App, error) {
@@ -128,6 +133,7 @@ func New(ctx context.Context, cfg Config) (*App, error) {
 	a.spam = newSpamGuard(cfg.CheckMX)
 	a.oauth = oauthProviders(cfg)
 	a.ai = newClaude(cfg)
+	a.voice = newSarvam(cfg)
 	return a, nil
 }
 

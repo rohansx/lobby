@@ -27,6 +27,8 @@ And in the Lobby dashboard, **Settings → Allowed origins** must include your a
 
 If your app sends a Content-Security-Policy header, allow Lobby in it: add `{LOBBY_URL}` to `script-src` (the widget and its screenshot code) and `connect-src` (reports), and make sure `img-src` includes `data:` and `blob:` (screenshots are rendered through them; without them reports still work, just without a screenshot). Look for the policy in your web server or proxy config (Caddy, nginx), framework middleware or `<meta http-equiv>` tags.
 
+If your app sends a `Permissions-Policy` header with `microphone=()`, the widget hides its mic button (people can still type). To let them speak instead, change it to `microphone=(self)`. The recording goes to Lobby, which has it transcribed and translated to English by Sarvam AI; the audio isn't kept.
+
 Add the three values to your app's environment (`.env`, secrets manager, hosting dashboard). Never expose `LOBBY_SECRET_KEY` to the browser, never commit it, and never put it in a `NEXT_PUBLIC_`, `VITE_` or similar client-side variable.
 
 ## Step 1: get a reporter token on the server

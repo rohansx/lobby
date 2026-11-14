@@ -378,6 +378,9 @@ var migrations = []string{
 		mime TEXT NOT NULL,
 		data BLOB NOT NULL,
 		created_at INTEGER NOT NULL);`,
+
+	// 13: voice input in the widget, per waitlist.
+	`ALTER TABLE feedback_settings ADD COLUMN voice INTEGER NOT NULL DEFAULT 1;`,
 }
 
 func (s *Store) migrate() error {

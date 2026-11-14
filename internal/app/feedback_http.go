@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func (s *Server) feedbackPreflight(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Vary", "Origin")
 	}
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept, X-Lobby-Project, X-Lobby-Reporter")
 	w.Header().Set("Access-Control-Max-Age", "86400")
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -110,7 +111,8 @@ func (s *Server) publicFeedbackAccess(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	ok := !s.app.ownerSuspended(r.Context(), p.OwnerID) && s.app.ReporterAllowed(r.Context(), p, q.Get("reporter"))
-	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && s.app.FeedbackSettings(r.Context(), p).Screenshots})
+	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && s.app.FeedbackSettings(r.Context(), p).Screenshots,
+		"voice": ok && s.app.VoiceEnabled(r.Context(), p)})
 }
 
 // adminSignupFeedback is the per-person switch on the Signups page:
@@ -437,7 +439,8 @@ func (s *Server) adminFeedback(w http.ResponseWriter, r *http.Request) {
 		"data": list, "waves": waves, "sources": sources,
 		"settings": s.app.FeedbackSettings(r.Context(), p),
 		"api":      plan.Webhooks, "reports": reports, "report_limit": limit,
-		"ai_available": s.app.ai != nil,
+		"ai_available":    s.app.ai != nil,
+		"voice_available": s.app.voice != nil,
 	})
 }
 
@@ -558,12 +561,13 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 		AI       *bool   `json:"ai"`
 		Digest   *bool   `json:"digest"`
 		Shots    *bool   `json:"screenshots"`
+		Voice    *bool   `json:"voice"`
 	}
-	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil && body.Shots == nil) {
-		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool}`)
+	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil && body.Shots == nil && body.Voice == nil) {
+		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool, "voice": bool}`)
 		return
 	}
-	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots} {
+	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots, "voice": body.Voice} {
 		if v != nil {
 			if err := s.app.SetFeedbackFlag(r.Context(), p, col, *v); err != nil {
 				jsonError(w, 500, err.Error())
@@ -726,4 +730,40 @@ func (s *Server) apiIssueShot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeShot(w, im)
+}
+
+// publicVoice turns a reporter's recording (the raw audio body) into English
+// text for the comment box. The project and reporter come in headers so the
+// body can be the audio itself.
+func (s *Server) publicVoice(w http.ResponseWriter, r *http.Request) {
+	p, err := s.app.ProjectByPublicKey(r.Context(), r.Header.Get("X-Lobby-Project"))
+	if err != nil {
+		jsonError(w, 404, "unknown project")
+		return
+	}
+	if !s.cors(w, r, p) {
+		jsonError(w, 403, "this site isn't on the project's allowed origins")
+		return
+	}
+	audio, err := io.ReadAll(io.LimitReader(r.Body, maxVoiceAudio+1))
+	if err != nil {
+		jsonError(w, 400, "couldn't read the recording")
+		return
+	}
+	text, lang, err := s.app.Transcribe(r.Context(), p, r.Header.Get("X-Lobby-Reporter"), audio, r.Header.Get("Content-Type"))
+	var ve *ValidationError
+	switch {
+	case err == nil:
+		writeJSON(w, 200, map[string]any{"ok": true, "text": text, "language": lang})
+	case errors.As(err, &ve):
+		jsonError(w, 400, ve.Msg)
+	case errors.Is(err, ErrNotReporter):
+		jsonError(w, 401, "this reporter token isn't valid for this project")
+	case errors.Is(err, ErrVoiceUnavailable):
+		jsonError(w, 403, err.Error())
+	case errors.Is(err, ErrVoiceLimit):
+		jsonError(w, 429, err.Error())
+	default:
+		jsonError(w, 502, "couldn't transcribe that; please try again or type instead")
+	}
 }

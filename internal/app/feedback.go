@@ -303,13 +303,14 @@ type FeedbackSettings struct {
 	AI          bool   `json:"ai"`          // Claude summarizes issues and suggests duplicates
 	Digest      bool   `json:"digest"`      // weekly email to the notification address
 	Screenshots bool   `json:"screenshots"` // the widget captures the picked area
+	Voice       bool   `json:"voice"`       // reporters can speak instead of typing
 }
 
 func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings {
-	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true, Screenshots: true}
+	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true, Screenshots: true, Voice: true}
 	var hash sql.NullString
-	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots FROM feedback_settings WHERE project_id = ?`, p.ID).
-		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots); err == nil {
+	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots, voice FROM feedback_settings WHERE project_id = ?`, p.ID).
+		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots, &st.Voice); err == nil {
 		st.AgentKeySet = hash.Valid && hash.String != ""
 	}
 	return st

@@ -41,7 +41,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
     }
   }
 
-  async function setFlag(key: "ai" | "digest" | "screenshots", on: boolean, msg: string) {
+  async function setFlag(key: "ai" | "digest" | "screenshots" | "voice", on: boolean, msg: string) {
     try {
       await api(projectPath(slug, "/feedback/settings"), { body: { [key]: on } })
       toast.success(msg)
@@ -133,6 +133,22 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             id="fb-shots"
             checked={data.settings.screenshots}
             onCheckedChange={(on) => setFlag("screenshots", on, on ? "Screenshots on" : "Screenshots off")}
+          />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label htmlFor="fb-voice">Voice</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {data.voice_available
+                ? "People can speak instead of typing, in English or any Indian language. Sarvam AI transcribes it and translates it to English; they check the text before sending, and the audio isn't kept. Your app's Permissions-Policy must allow the microphone, e.g. microphone=(self)."
+                : "Not available on this instance: it needs a Sarvam AI key (SARVAM_API_KEY)."}
+            </p>
+          </div>
+          <Switch
+            id="fb-voice"
+            checked={data.voice_available && data.settings.voice}
+            disabled={!data.voice_available}
+            onCheckedChange={(on) => setFlag("voice", on, on ? "Voice input on" : "Voice input off")}
           />
         </div>
         <div className="flex items-start justify-between gap-3">

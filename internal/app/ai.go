@@ -96,7 +96,7 @@ func (a *App) AIEnabled(ctx context.Context, p *Project) bool {
 }
 
 func (a *App) SetFeedbackFlag(ctx context.Context, p *Project, column string, on bool) error {
-	if column != "ai" && column != "digest" && column != "screenshots" {
+	if column != "ai" && column != "digest" && column != "screenshots" && column != "voice" {
 		return errors.New("unknown setting")
 	}
 	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, `+column+`) VALUES (?, ?)

@@ -49,7 +49,8 @@
     confusing: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14m0 3h.01"/></svg>',
     idea: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.2 1 2V16h5v-.1c0-.8.4-1.6 1-2A6 6 0 0 0 12 3Z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
-    x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+    x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
   };
   var hints = {
     bug: "What happened, and what did you expect?",
@@ -97,6 +98,9 @@
     ".shot img{display:block;width:100%;max-height:150px;object-fit:cover;object-position:top}.shot .wait{padding:14px 10px;font-size:12.5px;color:var(--mut)}" +
     ".shotbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px 5px 10px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}" +
     ".shotbar button{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;color:var(--ink)}.shotbar button:hover{background:var(--line)}" +
+    ".mic{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;background:var(--soft);font-weight:500;font-size:13px}.mic:hover{background:var(--line)}" +
+    ".mic.rec{background:var(--err);color:#fff}.mic.rec svg{animation:pulse 1s ease-in-out infinite}.mic[disabled]{opacity:.6;cursor:default}" +
+    "@keyframes pulse{50%{opacity:.35}}" +
     ".fu{width:100%;text-align:left;margin-top:8px}.fu p{margin:0 0 8px;color:var(--ink);font-weight:500}.fu textarea{min-height:70px}" +
     ".fu .foot{justify-content:flex-end}.fu .foot .n{display:none}" +
     ".done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px 10px}" +
@@ -122,7 +126,7 @@
     '<button type="button" role="radio" data-type="confusing" aria-checked="false">' + icon.confusing + "Confusing</button>" +
     '<button type="button" role="radio" data-type="idea" aria-checked="false">' + icon.idea + "Idea</button></div>" +
     '<textarea name="comment" maxlength="2000" aria-label="Your feedback"></textarea>' +
-    '<div class="foot"><span class="n">0 / 2000</span><button class="send" type="submit" disabled>Send <kbd class="hide-sm">' + (/Mac|iP/.test(navigator.platform) ? "⌘" : "Ctrl") + " ↵</kbd></button></div>" +
+    '<div class="foot"><button class="mic" type="button" hidden aria-label="Speak instead of typing">' + icon.mic + '<span>Speak</span></button><span class="n">0 / 2000</span><button class="send" type="submit" disabled>Send <kbd class="hide-sm">' + (/Mac|iP/.test(navigator.platform) ? "⌘" : "Ctrl") + " ↵</kbd></button></div>" +
     '<p class="msg" role="alert" hidden></p>' +
     '<p class="fine"></p></div>' +
     '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p>' +
@@ -134,6 +138,7 @@
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
     picking = false, picked = null, type = "bug", shots = false, shot = null, shotURL = "", round = 0,
+    mic = $(".mic"), rec = null,
     shotBox = $(".shot"), shotImg = $(".shot img"), fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
   function mount() { if (!host.isConnected) document.documentElement.appendChild(host); }
@@ -144,8 +149,10 @@
     .then(function (j) {
       if (!j.enabled) return;
       shots = !!j.screenshots;
+      var talk = j.voice && micAllowed();
+      mic.hidden = !talk;
       $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area with private parts blanked" : "") +
-        " and recent errors. Never what you typed into the page.";
+        " and recent errors. Never what you typed into the page." + (talk ? " Voice is transcribed by Sarvam AI and not kept." : "");
       mount();
       // Single-page apps sometimes replace the whole document body; stay attached.
       new MutationObserver(mount).observe(document.documentElement, { childList: true });
@@ -209,6 +216,7 @@
     endPick(); picked = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++;
     body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; sync(); fab.focus();
     shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = "";
+    stopMic(true);
   }
   function choose(el) {
     endPick(); picked = el; frame(el);
@@ -386,6 +394,58 @@
       throw new Error("screenshot too large");
     });
   }
+
+  // ---- Voice: speak instead of typing (up to 30 s), transcribed to English ----
+  function micAllowed() {
+    var fp = document.permissionsPolicy || document.featurePolicy; // a Permissions-Policy header can block the mic
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder) &&
+      (!fp || !fp.allowsFeature || fp.allowsFeature("microphone"));
+  }
+  function micLabel(t) { mic.querySelector("span").textContent = t; }
+  function stopMic(discard) {
+    if (!rec) return;
+    rec.discard = discard; clearInterval(rec.tick);
+    if (rec.r.state !== "inactive") rec.r.stop();
+  }
+  mic.onclick = function () {
+    if (rec) return stopMic(false);
+    var types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"], type = "";
+    for (var i = 0; i < types.length; i++) if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) { type = types[i]; break; }
+    mic.disabled = true;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var r = new MediaRecorder(stream, type ? { mimeType: type } : undefined), parts = [], t0 = Date.now(), mine = round;
+      rec = { r: r, discard: false };
+      r.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
+      r.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var discard = rec.discard; rec = null; mic.classList.remove("rec");
+        if (discard || mine !== round || !parts.length) { micLabel("Speak"); mic.disabled = false; return; }
+        var blob = new Blob(parts, { type: (r.mimeType || type || "audio/webm") });
+        mic.disabled = true; micLabel("Transcribing…"); live.textContent = "Transcribing your recording.";
+        of0(api + "/v1/feedback/voice", { method: "POST", headers: { "Content-Type": blob.type, "X-Lobby-Project": d.project, "X-Lobby-Reporter": d.reporter }, body: blob })
+          .then(function (res) { return res.json(); })
+          .then(function (j) {
+            if (mine !== round) return;
+            if (!j.ok) return note(j.error || "Couldn't transcribe that. Please type instead.");
+            if (j.text) { ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + " " : "") + j.text; sync(); }
+            else note("Didn't catch anything. Try again a little closer to the mic.");
+            ta.focus();
+          }, function () { note("Couldn't reach the server. Please type instead."); })
+          .then(function () { mic.disabled = false; micLabel("Speak"); });
+      };
+      r.start(1000);
+      mic.disabled = false; mic.classList.add("rec"); micLabel("0:00 · Stop"); msg.hidden = true;
+      live.textContent = "Recording. Speak now; press the button again to stop.";
+      rec.tick = setInterval(function () {
+        var s = Math.floor((Date.now() - t0) / 1000);
+        micLabel("0:" + (s < 10 ? "0" : "") + s + " · Stop");
+        if (s >= 30) stopMic(false);
+      }, 250);
+    }, function () {
+      mic.disabled = false;
+      note("The microphone is blocked. Allow it in your browser, or type instead.");
+    });
+  };
 
   // ---- One follow-up question from Claude, when the report is vague ----
   function followup(rid, mine) {

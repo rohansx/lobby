@@ -218,6 +218,8 @@ export default function FeedbackIssue() {
             {issue.context && <Field label="On the page">{issue.context}</Field>}
             <Field label="Selector" mono>{issue.selector}</Field>
             {issue.element_text && <Field label="Element text">{issue.element_text}</Field>}
+            {issue.href && <Field label="Links to" mono>{issue.href}</Field>}
+            {issue.outline && <Field label="Outline" mono>{issue.outline}</Field>}
             {release && <Field label="Release" mono>{release}</Field>}
           </CardContent>
         </Card>

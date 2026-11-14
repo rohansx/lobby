@@ -95,8 +95,8 @@ func (a *App) issueShots(ctx context.Context, issueID int64, n int) ([]aiImage, 
 }
 
 type followupTarget struct {
-	id, issueID                                  int64
-	typ, comment, path, context, text, q, answer string
+	id, issueID                                        int64
+	typ, comment, path, context, text, href, q, answer string
 }
 
 // followupFor finds the reporter's own recent report.
@@ -107,9 +107,9 @@ func (a *App) followupFor(ctx context.Context, p *Project, reporter string, repo
 	}
 	t := &followupTarget{id: reportID}
 	var created int64
-	err := a.db.W.QueryRowContext(ctx, `SELECT issue_id, type, comment, path, context, element_text, followup_q, followup_a, created_at
+	err := a.db.W.QueryRowContext(ctx, `SELECT issue_id, type, comment, path, context, element_text, href, followup_q, followup_a, created_at
 		FROM feedback_reports WHERE project_id = ? AND id = ? AND signup_id = ?`, p.ID, reportID, signupID).
-		Scan(&t.issueID, &t.typ, &t.comment, &t.path, &t.context, &t.text, &t.q, &t.answer, &created)
+		Scan(&t.issueID, &t.typ, &t.comment, &t.path, &t.context, &t.text, &t.href, &t.q, &t.answer, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -156,8 +156,8 @@ func (a *App) AskFollowup(ctx context.Context, p *Project, reporter string, repo
 	if im, err := a.ReportShot(ctx, p, reportID); err == nil {
 		images = append(images, *im)
 	}
-	prompt := fmt.Sprintf("<report type=\"%s\">\n<page>%s</page>\n<on_the_page>%s</on_the_page>\n<element_text>%s</element_text>\n<comment>%s</comment>\n</report>",
-		x(t.typ), x(t.path), x(t.context), x(t.text), x(t.comment))
+	prompt := fmt.Sprintf("<report type=\"%s\">\n<page>%s</page>\n<on_the_page>%s</on_the_page>\n<element_text>%s</element_text>\n<links_to>%s</links_to>\n<comment>%s</comment>\n</report>",
+		x(t.typ), x(t.path), x(t.context), x(t.text), x(t.href), x(t.comment))
 	if len(images) > 0 {
 		prompt += "\n\nThe image is a screenshot of the area they picked; grey blocks are parts the app hides on purpose."
 	}

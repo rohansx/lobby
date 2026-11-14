@@ -146,6 +146,8 @@ type ReportInput struct {
 	Tag            string          `json:"tag"`
 	Text           string          `json:"text"`
 	Context        string          `json:"context"` // headings and named regions around the element, outermost first
+	Href           string          `json:"href"`    // where the element links, same-site path only
+	Outline        string          `json:"outline"` // the element's tags and classes, no text: "a.row > span.pill + div + svg"
 	Viewport       string          `json:"viewport"`
 	Browser        string          `json:"browser"`
 	Release        string          `json:"release"`
@@ -224,6 +226,10 @@ func (in *ReportInput) clean(console bool) error {
 	in.Tag = strings.ToLower(clipRunes(in.Tag, 40))
 	in.Text = clipRunes(strings.Join(strings.Fields(in.Text), " "), 200)
 	in.Context = clipRunes(strings.Join(strings.Fields(in.Context), " "), 200)
+	if in.Href = strings.TrimSpace(in.Href); in.Href != "" {
+		in.Href = routeOf(pathOnly(in.Href)) // ids become :id, like page paths
+	}
+	in.Outline = clipRunes(strings.Join(strings.Fields(in.Outline), " "), 300)
 	in.Viewport = clipRunes(in.Viewport, 20)
 	in.Browser = clipRunes(in.Browser, 200)
 	in.Release = clipRunes(in.Release, 64)
@@ -284,6 +290,8 @@ func issueTitle(in *ReportInput) string {
 	what := in.Tag
 	if in.Text != "" {
 		what = fmt.Sprintf("%q %s", clipRunes(in.Text, 40), in.Tag)
+	} else if in.Href != "" {
+		what = "link to " + in.Href // its text is private or empty; where it goes still names it
 	}
 	if in.Context != "" {
 		// The innermost named place: "Checks failing" from "Ledger check › Checks failing".
@@ -356,7 +364,10 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 		return nil, nil, err
 	}
 	if settings.Screenshots && in.Screenshot != "" {
-		in.shot, _ = parseScreenshot(in.Screenshot) // a broken image never costs the report
+		var err error
+		if in.shot, err = parseScreenshot(in.Screenshot); err != nil { // a broken image never costs the report
+			a.log.Warn("feedback screenshot dropped", "project", p.ID, "err", err, "chars", len(in.Screenshot))
+		}
 	}
 	in.Screenshot = ""
 	plan, _ := a.planForOwner(ctx, p.OwnerID)
@@ -405,9 +416,9 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 	reqsJSON, _ := json.Marshal(nonNilReqs(in.FailedRequests))
 	t := now()
 	res, err := tx.ExecContext(ctx, `INSERT INTO feedback_reports (project_id, issue_id, signup_id, type, comment, origin, path,
-		selector, element_tag, element_text, context, viewport, browser, console_errors, failed_requests, release, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		p.ID, issueID, su.ID, in.Type, in.Comment, in.Origin, in.URL, in.Selector, in.Tag, in.Text, in.Context, in.Viewport, in.Browser,
+		selector, element_tag, element_text, context, href, outline, viewport, browser, console_errors, failed_requests, release, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.ID, issueID, su.ID, in.Type, in.Comment, in.Origin, in.URL, in.Selector, in.Tag, in.Text, in.Context, in.Href, in.Outline, in.Viewport, in.Browser,
 		string(errsJSON), string(reqsJSON), in.Release, t)
 	if err != nil {
 		return nil, nil, err
@@ -485,8 +496,8 @@ func (a *App) issueFor(ctx context.Context, tx *sql.Tx, p *Project, in *ReportIn
 	}
 	t := now()
 	res, err := tx.ExecContext(ctx, `INSERT INTO feedback_issues (project_id, title, type, fingerprint, path, selector, element_text,
-		context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		p.ID, issueTitle(in), in.Type, fp, in.URL, in.Selector, in.Text, in.Context, t, t)
+		context, href, outline, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.ID, issueTitle(in), in.Type, fp, in.URL, in.Selector, in.Text, in.Context, in.Href, in.Outline, t, t)
 	if err != nil {
 		return 0, false, err
 	}
@@ -532,17 +543,19 @@ type Issue struct {
 	AISummary   string `json:"ai_summary"` // written by Claude from the reports; empty without AI
 	AIAt        *int64 `json:"ai_at"`
 	Context     string `json:"context"` // e.g. "Ledger check › Checks failing"
+	Href        string `json:"href"`    // where the element links, ids as :id
+	Outline     string `json:"outline"` // tags and classes, no text
 }
 
 const issueCols = `i.id, i.title, i.type, i.state, i.path, i.selector, i.element_text, i.agent_note, i.agent_note_at, i.handoffs,
 	i.handoff_at, i.approved_at, i.fixed_at, i.closed_at, i.created_at, i.updated_at,
 	(SELECT COUNT(DISTINCT signup_id) FROM feedback_reports WHERE issue_id = i.id),
-	(SELECT COUNT(*) FROM feedback_reports WHERE issue_id = i.id), i.ai_summary, i.ai_at, i.context`
+	(SELECT COUNT(*) FROM feedback_reports WHERE issue_id = i.id), i.ai_summary, i.ai_at, i.context, i.href, i.outline`
 
 func scanIssue(row scanner) (*Issue, error) {
 	i := &Issue{}
 	err := row.Scan(&i.ID, &i.Title, &i.Type, &i.State, &i.Path, &i.Selector, &i.ElementText, &i.AgentNote, &i.AgentNoteAt,
-		&i.Handoffs, &i.HandoffAt, &i.ApprovedAt, &i.FixedAt, &i.ClosedAt, &i.CreatedAt, &i.UpdatedAt, &i.Reporters, &i.Reports, &i.AISummary, &i.AIAt, &i.Context)
+		&i.Handoffs, &i.HandoffAt, &i.ApprovedAt, &i.FixedAt, &i.ClosedAt, &i.CreatedAt, &i.UpdatedAt, &i.Reporters, &i.Reports, &i.AISummary, &i.AIAt, &i.Context, &i.Href, &i.Outline)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -832,19 +845,20 @@ func (a *App) SplitIssue(ctx context.Context, p *Project, id int64, reportIDs []
 		return nil, &ValidationError{"Leave at least one report on this issue."}
 	}
 	var first FeedbackReport
-	var context string
-	err = tx.QueryRowContext(ctx, `SELECT type, path, selector, element_tag, element_text, context FROM feedback_reports
-		WHERE issue_id = ? AND id = ?`, id, reportIDs[0]).Scan(&first.Type, &first.Path, &first.Selector, &first.Tag, &first.Text, &context)
+	var context, href, outline string
+	err = tx.QueryRowContext(ctx, `SELECT type, path, selector, element_tag, element_text, context, href, outline FROM feedback_reports
+		WHERE issue_id = ? AND id = ?`, id, reportIDs[0]).Scan(&first.Type, &first.Path, &first.Selector, &first.Tag, &first.Text, &context, &href, &outline)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &ValidationError{"Those reports aren't on this issue."}
 	} else if err != nil {
 		return nil, err
 	}
-	in := ReportInput{Type: first.Type, URL: first.Path, Selector: first.Selector, Tag: first.Tag, Text: first.Text, Context: context}
+	in := ReportInput{Type: first.Type, URL: first.Path, Selector: first.Selector, Tag: first.Tag, Text: first.Text, Context: context,
+		Href: href, Outline: outline}
 	t := now()
 	res, err := tx.ExecContext(ctx, `INSERT INTO feedback_issues (project_id, title, type, fingerprint, path, selector, element_text,
-		context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		p.ID, issueTitle(&in), in.Type, "split:"+randHex(8), in.URL, in.Selector, in.Text, in.Context, t, t)
+		context, href, outline, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.ID, issueTitle(&in), in.Type, "split:"+randHex(8), in.URL, in.Selector, in.Text, in.Context, in.Href, in.Outline, t, t)
 	if err != nil {
 		return nil, err
 	}
@@ -953,6 +967,8 @@ type Packet struct {
 		ElementText string   `json:"element_text"`
 		Context     string   `json:"context"`
 		Screenshot  string   `json:"screenshot,omitempty"` // path on Lobby; fetch with the same key
+		Href        string   `json:"href,omitempty"`
+		Outline     string   `json:"outline,omitempty"`
 		Release     string   `json:"release"`
 		Viewports   []string `json:"viewports"`
 		Browsers    []string `json:"browsers"`
@@ -979,7 +995,7 @@ func (a *App) BuildPacket(ctx context.Context, p *Project, iss *Issue) (*Packet,
 	pk := &Packet{Issue: iss.ID, Title: iss.Title, State: iss.State, Reporters: iss.Reporters, Type: iss.Type,
 		AgentNote: iss.AgentNote, AISummary: iss.AISummary, Instructions: packetInstructions, Comments: []string{}}
 	pk.Location.Path, pk.Location.Selector, pk.Location.ElementText = iss.Path, iss.Selector, iss.ElementText
-	pk.Location.Context = iss.Context
+	pk.Location.Context, pk.Location.Href, pk.Location.Outline = iss.Context, iss.Href, iss.Outline
 	pk.Location.Viewports, pk.Location.Browsers = []string{}, []string{}
 	pk.Evidence.ConsoleErrors, pk.Evidence.FailedRequests = []string{}, []FailedRequest{}
 	seenReq := map[FailedRequest]bool{}
@@ -1036,15 +1052,28 @@ func (pk *Packet) Markdown() string {
 		plural(pk.Reporters, "user"))
 	b.WriteString("## Where\n\n")
 	fmt.Fprintf(&b, "- Path: %s\n", code(pk.Location.Path))
+	whole := pk.Location.Selector == "body"
 	if pk.Location.Context != "" {
 		fmt.Fprintf(&b, "- On the page: %s\n", code(pk.Location.Context))
+	} else if !whole {
+		b.WriteString("- On the page: not known (no headings or labelled sections around it, or the app marks them private)\n")
 	}
 	fmt.Fprintf(&b, "- Selector: %s\n", code(pk.Location.Selector))
 	if pk.Location.ElementText != "" {
 		fmt.Fprintf(&b, "- Element text: %s\n", code(pk.Location.ElementText))
+	} else if !whole {
+		b.WriteString("- Element text: none sent (empty, or the app marks it private)\n")
+	}
+	if pk.Location.Href != "" {
+		fmt.Fprintf(&b, "- Links to: %s\n", code(pk.Location.Href))
+	}
+	if pk.Location.Outline != "" {
+		fmt.Fprintf(&b, "- Element outline (tags and classes, no text): %s\n", code(pk.Location.Outline))
 	}
 	if pk.Location.Screenshot != "" {
-		fmt.Fprintf(&b, "- Screenshot of the area (hidden parts blanked): GET %s with your key\n", code(pk.Location.Screenshot))
+		fmt.Fprintf(&b, "- Screenshot of the area (private text shown as grey bars): GET %s with your key\n", code(pk.Location.Screenshot))
+	} else {
+		b.WriteString("- Screenshot: none (switched off, removed by the reporter, or the browser couldn't capture it)\n")
 	}
 	if pk.Location.Release != "" {
 		fmt.Fprintf(&b, "- Release: %s\n", code(pk.Location.Release))

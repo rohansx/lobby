@@ -382,6 +382,8 @@ export interface Issue {
   selector: string
   element_text: string
   context: string
+  href: string // where the element links, ids as :id
+  outline: string // tags and classes, no text
   agent_note: string
   agent_note_at: number | null
   handoffs: number

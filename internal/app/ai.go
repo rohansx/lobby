@@ -198,8 +198,8 @@ func (a *App) summarizeIssue(ctx context.Context, j aiIssueJob) error {
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "<issue id=\"%d\" type=\"%s\" reporters=\"%d\">\n<page>%s</page>\n<element selector=\"%s\" context=\"%s\">%s</element>\n",
-		iss.ID, x(iss.Type), iss.Reporters, x(iss.Path), x(iss.Selector), x(iss.Context), x(iss.ElementText))
+	fmt.Fprintf(&b, "<issue id=\"%d\" type=\"%s\" reporters=\"%d\">\n<page>%s</page>\n<element selector=\"%s\" context=\"%s\" links_to=\"%s\" outline=\"%s\">%s</element>\n",
+		iss.ID, x(iss.Type), iss.Reporters, x(iss.Path), x(iss.Selector), x(iss.Context), x(iss.Href), x(iss.Outline), x(iss.ElementText))
 	for _, e := range pk.Evidence.ConsoleErrors {
 		fmt.Fprintf(&b, "<console_error>%s</console_error>\n", x(e))
 	}

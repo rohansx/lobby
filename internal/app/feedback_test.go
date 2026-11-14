@@ -203,6 +203,8 @@ func TestIssueTitle(t *testing.T) {
 		// With no text (masked, or an icon), the place on the page names it.
 		{ReportInput{Type: "bug", URL: "/engagements/a72ba3c6bf50/extract", Selector: "main > div", Tag: "div",
 			Context: "Ledger check › Checks failing"}, "Bug: div in Checks failing on /engagements/:id/extract"},
+		// Private text: where it links names it.
+		{ReportInput{Type: "bug", URL: "/", Selector: "a.row", Tag: "a", Href: "/engagements/:id/prepare"}, "Bug: link to /engagements/:id/prepare on /"},
 	} {
 		if got := issueTitle(&c.in); got != c.want {
 			t.Errorf("got %q want %q", got, c.want)
@@ -685,4 +687,32 @@ func errorsAsLimit(err error, target **ErrLimit) bool {
 		*target = e
 	}
 	return ok
+}
+
+func TestFeedbackPrivateElement(t *testing.T) {
+	e := newFBEnv(t)
+	ctx := context.Background()
+	_, rt := e.invited("ana@example.com")
+	out := e.reportWith(rt, map[string]any{"url": "/", "selector": "main > div > a", "tag": "a", "context": "", "text": "",
+		"href": "https://app.example.com/engagements/a72ba3c6bf50/prepare?tab=bank", "outline": "a.row > span.pill + span.name + svg"})
+	iss, _ := e.a.Issue(ctx, e.p, int64(out["issue"].(float64)))
+	if iss.Href != "/engagements/:id/prepare" || iss.Outline != "a.row > span.pill + span.name + svg" {
+		t.Fatalf("href/outline: %q %q", iss.Href, iss.Outline)
+	}
+	if iss.Title != "Bug: link to /engagements/:id/prepare on /" {
+		t.Fatalf("title: %q", iss.Title)
+	}
+	pk, _ := e.a.BuildPacket(ctx, e.p, iss)
+	md := pk.Markdown()
+	for _, want := range []string{
+		"- Links to: `/engagements/:id/prepare`",
+		"- Element outline (tags and classes, no text): `a.row > span.pill + span.name + svg`",
+		"- Element text: none sent",
+		"- On the page: not known",
+		"- Screenshot: none",
+	} {
+		if !strings.Contains(md, want) {
+			t.Errorf("packet lacks %q:\n%s", want, md)
+		}
+	}
 }

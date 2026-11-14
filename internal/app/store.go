@@ -379,8 +379,13 @@ var migrations = []string{
 		data BLOB NOT NULL,
 		created_at INTEGER NOT NULL);`,
 
-	// 13: voice input in the widget, per waitlist.
-	`ALTER TABLE feedback_settings ADD COLUMN voice INTEGER NOT NULL DEFAULT 1;`,
+	// 13: voice input in the widget, per waitlist; and what identifies an element
+	// whose text is private: where it links and its outline (tags and classes, no text).
+	`ALTER TABLE feedback_settings ADD COLUMN voice INTEGER NOT NULL DEFAULT 1;
+	ALTER TABLE feedback_reports ADD COLUMN href TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_reports ADD COLUMN outline TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_issues ADD COLUMN href TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_issues ADD COLUMN outline TEXT NOT NULL DEFAULT '';`,
 }
 
 func (s *Store) migrate() error {

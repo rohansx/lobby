@@ -106,6 +106,8 @@
     ".done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px 10px}" +
     ".done i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--a);color:var(--ai)}.done i svg{width:20px;height:20px;stroke-width:2.5}" +
     ".done b{font-weight:600;font-size:15px}.done p{margin:0;color:var(--mut)}" +
+    ".spin{display:block;width:18px;height:18px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .7s linear infinite}" +
+    "@keyframes rot{to{transform:rotate(360deg)}}" +
     "[hidden]{display:none!important}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}" +
     "@media (max-width:560px){.panel{left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto;max-width:none}.bar kbd,.hide-sm{display:none}}" +
     "@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}";
@@ -137,7 +139,7 @@
   function $(q) { return root.querySelector(q); }
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
-    picking = false, picked = null, type = "bug", shots = false, shot = null, shotURL = "", round = 0,
+    picking = false, picked = null, type = "bug", shots = false, ask = false, sentMsg = "", shot = null, shotURL = "", round = 0,
     mic = $(".mic"), rec = null,
     shotBox = $(".shot"), shotImg = $(".shot img"), fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
@@ -148,7 +150,7 @@
     .then(function (r) { return r.json(); })
     .then(function (j) {
       if (!j.enabled) return;
-      shots = !!j.screenshots;
+      shots = !!j.screenshots; ask = !!j.ask;
       var talk = j.voice && micAllowed();
       mic.hidden = !talk;
       $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area with private parts blanked" : "") +
@@ -161,8 +163,14 @@
   function ours(el) { return el === host || host.contains(el); }
   function label(el) {
     if (el === document.body || el === document.documentElement) return "The whole page";
-    var t = textOf(el), c = t ? "" : contextOf(el).split(" › ").pop();
-    return el.tagName.toLowerCase() + (t ? " · " + t.slice(0, 48) : c ? " in " + c.slice(0, 48) : "");
+    var tag = el.tagName.toLowerCase(), t = textOf(el);
+    var name = { a: "link", button: "button", img: "image", input: "field", select: "dropdown", textarea: "text box", tr: "row", li: "item", td: "cell", th: "column heading" }[tag] || tag;
+    if (t) return name + " · " + t.slice(0, 48);
+    var h = hrefOf(el);
+    if (h) return (name === "link" ? "" : name + " · ") + "link to " + h;
+    if (el.closest("[data-lobby-mask]")) return name + " · private text";
+    var c = contextOf(el).split(" › ").pop();
+    return name + (c ? " in " + c.slice(0, 48) : "");
   }
   function frame(el) {
     if (!el || ours(el) || el === document.body || el === document.documentElement) { box.style.display = "none"; return; }
@@ -277,6 +285,7 @@
       project: d.project, reporter: d.reporter, release: d.release || "",
       type: type, comment: ta.value, url: location.pathname,
       selector: whole ? "body" : selector(picked), tag: whole ? "body" : picked.tagName.toLowerCase(), text: whole ? "" : textOf(picked), context: whole ? "" : contextOf(picked),
+      href: whole ? "" : hrefOf(picked), outline: whole ? "" : outlineOf(picked),
       viewport: innerWidth + "x" + innerHeight, browser: navigator.userAgent,
       console_errors: errs.slice(), failed_requests: reqs.slice(), screenshot: shotURL
     };
@@ -285,8 +294,7 @@
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.ok) { sync(); return note(j.error || "Something went wrong. Please try again."); }
       body.hidden = true; done.hidden = false; box.style.display = "none";
-      done.querySelector("p").textContent = j.message || "Thanks for the feedback.";
-      live.textContent = "Sent. " + (j.message || "");
+      sentMsg = j.message || "Thanks for the feedback.";
       ta.value = ""; sync();
       followup(j.report, mine);
     }).catch(function () { sync(); note("Couldn't reach the server. Check your connection and try again."); });
@@ -295,7 +303,7 @@
   // Measured the moment someone picks, rendered from the DOM (no screen-share
   // prompt), then every data-lobby-mask region and every typed-in field is painted
   // over before the image exists anywhere but this page. They see it and can remove it.
-  var lib = null, fields = "[data-lobby-mask],textarea,select,[contenteditable]:not([contenteditable=false])," +
+  var lib = null, fields = "textarea,select,[contenteditable]:not([contenteditable=false])," +
     "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=hidden]):not([type=range]):not([type=color]):not([type=file]):not([type=image])";
   function loadShot() {
     return lib || (lib = new Promise(function (ok, no) {
@@ -327,13 +335,41 @@
     }
     var field = fieldTags.test(n.tagName) && !/^(checkbox|radio|button|submit|reset|hidden|range|color|file|image)$/i.test(n.getAttribute("type") || "");
     var editable = n.hasAttribute("contenteditable") && n.getAttribute("contenteditable") !== "false";
-    if (!field && !editable && !n.hasAttribute("data-lobby-mask")) return;
+    if (!field && !editable) {
+      if (n.hasAttribute("data-lobby-mask")) bars(n);
+      return;
+    }
     n.style.setProperty("background", "#9ca3af", "important");
     n.style.setProperty("color", "transparent", "important");
+    n.style.setProperty("-webkit-text-fill-color", "transparent", "important");
     n.style.setProperty("text-shadow", "none", "important");
     n.style.setProperty("border-color", "#9ca3af", "important");
     if (field) { n.setAttribute("value", ""); n.removeAttribute("placeholder"); n.textContent = ""; try { n.value = ""; } catch (e) {} }
     [].forEach.call(n.querySelectorAll("*"), function (c) { if (c.style) c.style.setProperty("visibility", "hidden", "important"); });
+  }
+  // Private text becomes grey bars the size of each word, so the layout, colours,
+  // badges and icons still show what the element is; pictures inside are hidden.
+  function bars(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), list = [];
+    while (w.nextNode()) list.push(w.currentNode);
+    list.forEach(function (t) {
+      var p = t.parentNode;
+      if (!p || !/\S/.test(t.nodeValue)) return;
+      if (p.namespaceURI === "http://www.w3.org/2000/svg") { if (p.style) p.style.setProperty("visibility", "hidden", "important"); return; }
+      if (p.hasAttribute && p.hasAttribute("data-lobby-bar")) return; // already a bar (nested masks)
+      var b = document.createElement("span");
+      b.setAttribute("data-lobby-bar", "");
+      b.textContent = t.nodeValue;
+      // -webkit-text-fill-color too: the copy carries each element's computed fill colour, which beats color.
+      b.style.cssText = "background:#c3c7ce!important;color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;" +
+        "border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone";
+      p.replaceChild(b, t);
+    });
+    [root].concat([].slice.call(root.querySelectorAll("*"))).forEach(function (m) {
+      if (!m.style) return;
+      m.style.setProperty("background-image", "none", "important");
+      if (/^(IMG|PICTURE|VIDEO|CANVAS|IFRAME|OBJECT|EMBED)$/.test(m.tagName)) m.style.setProperty("visibility", "hidden", "important");
+    });
   }
   function capture(el) {
     var whole = el === document.body || el === document.documentElement, W = innerWidth, H = innerHeight;
@@ -379,6 +415,7 @@
       var k = Math.min(1, 1400 / w), c = document.createElement("canvas");
       c.width = Math.round(w * k); c.height = Math.round(h * k);
       var g = c.getContext("2d"), s = scale * k;
+      g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); // past the rendered element: page background, not black
       g.drawImage(full, (area.left - rr.left) * scale + dx, (area.top - rr.top) * scale + dy, w, h, 0, 0, c.width, c.height);
       // Second layer: paint over the same parts at their measured places.
       g.fillStyle = "#9ca3af";
@@ -448,21 +485,36 @@
   };
 
   // ---- One follow-up question from Claude, when the report is vague ----
+  // The sent state: a spinner while Claude looks at the report, then either one
+  // question or a single "Thanks, got it".
+  function doneState(wait, title, text) {
+    done.querySelector("i").innerHTML = wait ? '<span class="spin"></span>' : icon.check;
+    done.querySelector("b").textContent = title;
+    var p = done.querySelector("p");
+    p.textContent = text || ""; p.hidden = !text;
+    live.textContent = title + (text ? ". " + text : "");
+  }
   function followup(rid, mine) {
-    function later() { setTimeout(function () { if (mine === round && fu.hidden) reset(); }, 2500); }
-    if (!rid) return later();
+    function thanks() {
+      if (mine !== round) return;
+      doneState(false, "Thanks, got it", sentMsg);
+      setTimeout(function () { if (mine === round && fu.hidden) reset(); }, 2500);
+    }
+    if (!rid || !ask) return thanks();
+    doneState(true, "Sent", "Checking if anything's missing…");
     var body = JSON.stringify({ project: d.project, reporter: d.reporter });
-    of0(api + "/v1/feedback/reports/" + rid + "/question", { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
+    Promise.race([
+      of0(api + "/v1/feedback/reports/" + rid + "/question", { method: "POST", headers: { "Content-Type": "application/json" }, body: body }).then(function (r) { return r.json(); }),
+      new Promise(function (ok) { setTimeout(function () { ok({}); }, 12000); })
+    ]).then(function (j) {
         if (mine !== round) return;
-        if (!j.question) return later();
-        done.querySelector("p").textContent = "One quick question to help fix it:";
+        if (!j.question) return thanks();
+        doneState(false, "Thanks! One quick question", "");
         fu.querySelector("p").textContent = j.question;
         fu.hidden = false; fuText.value = ""; fuSend.disabled = true; fuText.focus();
         live.textContent = "One quick question: " + j.question;
         fu.dataset.rid = rid;
-      }, later);
+      }, thanks);
   }
   function answer() {
     var a = fuText.value.trim(), mine = round;
@@ -473,8 +525,8 @@
       body: JSON.stringify({ project: d.project, reporter: d.reporter, answer: a })
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (mine !== round) return;
-      fu.hidden = true; done.querySelector("p").textContent = j.ok ? j.message : (j.error || "Couldn't send that.");
-      live.textContent = done.querySelector("p").textContent;
+      fu.hidden = true;
+      doneState(false, j.ok ? "Thanks, that helps" : "Couldn't send that", j.ok ? "" : (j.error || "Please try again."));
       setTimeout(function () { if (mine === round) reset(); }, 2500);
     }, function () { fuSend.disabled = false; });
   }
@@ -562,6 +614,22 @@
     var page = h1 && !h1.contains(el) ? textOf(h1).slice(0, 60) : "";
     if (page && out.indexOf(page) < 0) out.unshift(page);
     return out.join(" › ").slice(0, 200);
+  }
+  // Where the element (or the link around it) goes: same-site path only.
+  function hrefOf(el) {
+    var a = el.closest && el.closest("a[href]");
+    if (!a) return "";
+    try { var u = new URL(a.getAttribute("href"), location.href); return u.origin === location.origin ? u.pathname : ""; } catch (e) { return ""; }
+  }
+  // Its shape for a coding agent: tags, roles and class names, never text.
+  function tok(n) {
+    var c = [].filter.call(n.classList || [], function (k) { return !/[:\[\]\/!@]/.test(k) && !generated(k); }).slice(0, 3);
+    var r = n.getAttribute("role");
+    return n.tagName.toLowerCase() + (c.length ? "." + c.join(".") : "") + (r ? "[role=" + r + "]" : "");
+  }
+  function outlineOf(el) {
+    var kids = [].slice.call(el.children, 0, 6).map(tok);
+    return (tok(el) + (kids.length ? " > " + kids.join(" + ") + (el.children.length > 6 ? " + …" : "") : "")).slice(0, 300);
   }
   function esc(v) { return String(v).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
 

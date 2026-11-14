@@ -112,7 +112,7 @@ func (s *Server) publicFeedbackAccess(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	ok := !s.app.ownerSuspended(r.Context(), p.OwnerID) && s.app.ReporterAllowed(r.Context(), p, q.Get("reporter"))
 	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && s.app.FeedbackSettings(r.Context(), p).Screenshots,
-		"voice": ok && s.app.VoiceEnabled(r.Context(), p)})
+		"voice": ok && s.app.VoiceEnabled(r.Context(), p), "ask": ok && s.app.AIEnabled(r.Context(), p)})
 }
 
 // adminSignupFeedback is the per-person switch on the Signups page:

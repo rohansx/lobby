@@ -111,7 +111,8 @@ func (s *Server) publicFeedbackAccess(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	ok := !s.app.ownerSuspended(r.Context(), p.OwnerID) && s.app.ReporterAllowed(r.Context(), p, q.Get("reporter"))
-	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && s.app.FeedbackSettings(r.Context(), p).Screenshots,
+	st := s.app.FeedbackSettings(r.Context(), p)
+	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && st.Screenshots, "masks": st.Masks,
 		"voice": ok && s.app.VoiceEnabled(r.Context(), p), "ask": ok && s.app.AIEnabled(r.Context(), p)})
 }
 
@@ -562,12 +563,14 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 		Digest   *bool   `json:"digest"`
 		Shots    *bool   `json:"screenshots"`
 		Voice    *bool   `json:"voice"`
+		Masks    *bool   `json:"masks"`
 	}
-	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil && body.Shots == nil && body.Voice == nil) {
-		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool, "voice": bool}`)
+	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil &&
+		body.Shots == nil && body.Voice == nil && body.Masks == nil) {
+		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool, "voice": bool, "masks": bool}`)
 		return
 	}
-	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots, "voice": body.Voice} {
+	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots, "voice": body.Voice, "masks": body.Masks} {
 		if v != nil {
 			if err := s.app.SetFeedbackFlag(r.Context(), p, col, *v); err != nil {
 				jsonError(w, 500, err.Error())

@@ -104,7 +104,7 @@ function Screenshot({ src }: { src: string }) {
   return (
     <a href={src} target="_blank" rel="noreferrer" className="block w-fit max-w-full" title="Open full size">
       <img src={src} loading="lazy" alt="Screenshot of the area the reporter picked" className="max-h-64 max-w-full rounded-md border object-contain object-left-top" />
-      <span className="mt-1 block text-xs text-muted-foreground">Screenshot of the picked area. Grey blocks are parts your app hides.</span>
+      <span className="mt-1 block text-xs text-muted-foreground">Screenshot of the picked area. Grey blocks are typed-in fields, or masked text when Privacy masks is on.</span>
     </a>
   )
 }

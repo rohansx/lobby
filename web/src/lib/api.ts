@@ -437,6 +437,7 @@ export interface FeedbackSettings {
   digest: boolean // weekly feedback email
   screenshots: boolean // the widget captures the picked area
   voice: boolean // reporters can speak instead of typing
+  masks: boolean // the widget honours data-lobby-mask (off by default)
 }
 
 export interface FeedbackList {

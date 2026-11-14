@@ -312,13 +312,14 @@ type FeedbackSettings struct {
 	Digest      bool   `json:"digest"`      // weekly email to the notification address
 	Screenshots bool   `json:"screenshots"` // the widget captures the picked area
 	Voice       bool   `json:"voice"`       // reporters can speak instead of typing
+	Masks       bool   `json:"masks"`       // the widget honours data-lobby-mask
 }
 
 func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings {
-	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true, Screenshots: true, Voice: true}
+	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true, Screenshots: true, Voice: true, Masks: false}
 	var hash sql.NullString
-	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots, voice FROM feedback_settings WHERE project_id = ?`, p.ID).
-		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots, &st.Voice); err == nil {
+	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots, voice, masks FROM feedback_settings WHERE project_id = ?`, p.ID).
+		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots, &st.Voice, &st.Masks); err == nil {
 		st.AgentKeySet = hash.Valid && hash.String != ""
 	}
 	return st
@@ -1071,7 +1072,7 @@ func (pk *Packet) Markdown() string {
 		fmt.Fprintf(&b, "- Element outline (tags and classes, no text): %s\n", code(pk.Location.Outline))
 	}
 	if pk.Location.Screenshot != "" {
-		fmt.Fprintf(&b, "- Screenshot of the area, picked element outlined, private text shown as grey bars (link valid 7 days): %s\n", pk.Location.Screenshot)
+		fmt.Fprintf(&b, "- Screenshot of the area, picked element outlined; grey blocks are typed-in fields or masked text (link valid 7 days): %s\n", pk.Location.Screenshot)
 	} else {
 		b.WriteString("- Screenshot: none (switched off, removed by the reporter, or the browser couldn't capture it)\n")
 	}

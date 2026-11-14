@@ -386,6 +386,10 @@ var migrations = []string{
 	ALTER TABLE feedback_reports ADD COLUMN outline TEXT NOT NULL DEFAULT '';
 	ALTER TABLE feedback_issues ADD COLUMN href TEXT NOT NULL DEFAULT '';
 	ALTER TABLE feedback_issues ADD COLUMN outline TEXT NOT NULL DEFAULT '';`,
+
+	// 14: whether the widget honours data-lobby-mask. Off by default, so early
+	// reports carry everything; a founder turns it on when real users arrive.
+	`ALTER TABLE feedback_settings ADD COLUMN masks INTEGER NOT NULL DEFAULT 0;`,
 }
 
 func (s *Store) migrate() error {

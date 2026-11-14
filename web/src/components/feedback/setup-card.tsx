@@ -41,7 +41,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
     }
   }
 
-  async function setFlag(key: "ai" | "digest" | "screenshots" | "voice", on: boolean, msg: string) {
+  async function setFlag(key: "ai" | "digest" | "screenshots" | "voice" | "masks", on: boolean, msg: string) {
     try {
       await api(projectPath(slug, "/feedback/settings"), { body: { [key]: on } })
       toast.success(msg)
@@ -88,7 +88,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             Your app's server asks for each logged-in user's reporter token by their email: <code className={code}>POST /v1/reporters {"{\"email\"}"}</code> with the secret key. It also comes back as <code className={code}>reporter_token</code> from <code className={code}>POST /v1/invites/redeem</code>. Tokens last 90 days.
           </p>
           <p>
-            Add <code className={code}>data-lobby-id</code> to elements whose markup changes so reports keep grouping. Add <code className={code}>data-lobby-mask</code> to anything whose text must never be captured.
+            Add <code className={code}>data-lobby-id</code> to elements whose markup changes so reports keep grouping. Add <code className={code}>data-lobby-mask</code> to anything whose text must never be captured, and turn on Privacy masks below.
           </p>
           <p>
             Match your brand with <code className={code}>data-accent="#ff5a1f"</code> and <code className={code}>data-accent-ink="#fff"</code>.{" "}
@@ -126,13 +126,26 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
           <div>
             <Label htmlFor="fb-shots">Screenshots</Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              The widget captures the area someone picks. Anything marked <code className={code}>data-lobby-mask</code> and every input field is blanked before the image leaves their browser, and they can remove it before sending.
+              The widget captures the area someone picks, with what's typed in input fields blanked. They see it and can remove it before sending.
             </p>
           </div>
           <Switch
             id="fb-shots"
             checked={data.settings.screenshots}
             onCheckedChange={(on) => setFlag("screenshots", on, on ? "Screenshots on" : "Screenshots off")}
+          />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label htmlFor="fb-masks">Privacy masks</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Off: reports include all the text around what was picked, for the clearest reports while you test with people you know. On: anything your app marks <code className={code}>data-lobby-mask</code> is left out of reports and shown as grey bars in screenshots. Turn it on before real customers' data is on screen.
+            </p>
+          </div>
+          <Switch
+            id="fb-masks"
+            checked={data.settings.masks}
+            onCheckedChange={(on) => setFlag("masks", on, on ? "Privacy masks on" : "Privacy masks off")}
           />
         </div>
         <div className="flex items-start justify-between gap-3">

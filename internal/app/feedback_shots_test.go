@@ -90,7 +90,7 @@ func TestFeedbackScreenshots(t *testing.T) {
 	rec := e.req("GET", "/v1/feedback/access?project="+e.p.PublicKey+"&reporter="+rt, "", "Origin", "https://app.example.com")
 	var access map[string]any
 	json.Unmarshal(rec.Body.Bytes(), &access)
-	if access["enabled"] != true || access["screenshots"] != false {
+	if access["enabled"] != true || access["screenshots"] != false || access["masks"] != false {
 		t.Fatalf("access: %s", rec.Body.String())
 	}
 	out = e.reportWith(rt, map[string]any{"screenshot": png, "url": "/off"})
@@ -160,5 +160,29 @@ func TestFeedbackFollowup(t *testing.T) {
 	before := len(fc.prompts)
 	if _, m := call("question", rt, ""); m["question"] != "" || len(fc.prompts) != before {
 		t.Fatal("Claude was called with AI off")
+	}
+}
+
+func TestFeedbackMasksSwitch(t *testing.T) {
+	e := newFBEnv(t)
+	ctx := context.Background()
+	if e.a.FeedbackSettings(ctx, e.p).Masks {
+		t.Fatal("privacy masks should be off by default")
+	}
+	_, rt := e.invited("ana@example.com")
+	access := func() map[string]any {
+		rec := e.req("GET", "/v1/feedback/access?project="+e.p.PublicKey+"&reporter="+rt, "", "Origin", "https://app.example.com")
+		var m map[string]any
+		json.Unmarshal(rec.Body.Bytes(), &m)
+		return m
+	}
+	if access()["masks"] != false {
+		t.Fatal("access should tell the widget masks are off")
+	}
+	if err := e.a.SetFeedbackFlag(ctx, e.p, "masks", true); err != nil {
+		t.Fatal(err)
+	}
+	if access()["masks"] != true || !e.a.FeedbackSettings(ctx, e.p).Masks {
+		t.Fatal("masks switch didn't stick")
 	}
 }

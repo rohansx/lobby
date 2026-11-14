@@ -122,7 +122,7 @@
     '<div class="body"><div class="head"><b>Send feedback</b><button class="icon" type="button" data-cancel aria-label="Close">' + icon.x + "</button></div>" +
     '<div class="chip"><code></code><button type="button" data-repick>Change</button></div>' +
     '<div class="shot" hidden><div class="wait">Taking a screenshot of this area…</div><img alt="Screenshot of the area you picked" hidden>' +
-    '<div class="shotbar"><span>Screenshot · private parts blanked</span><button type="button" data-noshot>Remove</button></div></div>' +
+    '<div class="shotbar"><span>Screenshot of this area</span><button type="button" data-noshot>Remove</button></div></div>' +
     '<div class="types" role="radiogroup" aria-label="What kind of feedback">' +
     '<button type="button" role="radio" data-type="bug" aria-checked="true">' + icon.bug + "Bug</button>" +
     '<button type="button" role="radio" data-type="confusing" aria-checked="false">' + icon.confusing + "Confusing</button>" +
@@ -139,7 +139,7 @@
   function $(q) { return root.querySelector(q); }
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
-    picking = false, picked = null, type = "bug", shots = false, ask = false, sentMsg = "", shot = null, shotURL = "", round = 0,
+    picking = false, picked = null, type = "bug", shots = false, ask = false, masks = false, sentMsg = "", shot = null, shotURL = "", round = 0,
     mic = $(".mic"), rec = null,
     shotBox = $(".shot"), shotImg = $(".shot img"), fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
@@ -150,10 +150,10 @@
     .then(function (r) { return r.json(); })
     .then(function (j) {
       if (!j.enabled) return;
-      shots = !!j.screenshots; ask = !!j.ask;
+      shots = !!j.screenshots; ask = !!j.ask; masks = !!j.masks;
       var talk = j.voice && micAllowed();
       mic.hidden = !talk;
-      $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area with private parts blanked" : "") +
+      $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area" + (masks ? " with private parts blanked" : "") : "") +
         " and recent errors. Never what you typed into the page." + (talk ? " Voice is transcribed by Sarvam AI and not kept." : "");
       mount();
       // Single-page apps sometimes replace the whole document body; stay attached.
@@ -168,7 +168,7 @@
     if (t) return name + " · " + t.slice(0, 48);
     var h = hrefOf(el);
     if (h) return (name === "link" ? "" : name + " · ") + "link to " + h;
-    if (el.closest("[data-lobby-mask]")) return name + " · private text";
+    if (hidden(el)) return name + " · private text";
     var c = contextOf(el).split(" › ").pop();
     return name + (c ? " in " + c.slice(0, 48) : "");
   }
@@ -336,7 +336,7 @@
     var field = fieldTags.test(n.tagName) && !/^(checkbox|radio|button|submit|reset|hidden|range|color|file|image)$/i.test(n.getAttribute("type") || "");
     var editable = n.hasAttribute("contenteditable") && n.getAttribute("contenteditable") !== "false";
     if (!field && !editable) {
-      if (n.hasAttribute("data-lobby-mask")) bars(n);
+      if (masks && n.hasAttribute("data-lobby-mask")) bars(n);
       return;
     }
     n.style.setProperty("background", "#9ca3af", "important");
@@ -590,16 +590,19 @@
     }
     return parts.join(" > ");
   }
-  // Visible text only: never input values, and nothing inside data-lobby-mask.
+  // Privacy masks are the founder's choice (off by default): with them on, nothing
+  // inside data-lobby-mask is read, and screenshots show it as grey bars.
+  function hidden(el) { return masks && !!el.closest("[data-lobby-mask]"); }
+  // Visible text only: never input values, and nothing masked.
   var skip = /^(INPUT|TEXTAREA|SELECT|OPTION|SCRIPT|STYLE|NOSCRIPT|SVG)$/;
   function textOf(el) {
-    if (el.closest("[data-lobby-mask],[contenteditable]")) return "";
+    if (hidden(el) || el.closest("[contenteditable]")) return "";
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return (el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.getAttribute("name") || "").slice(0, 200);
     var out = "";
     (function walk(n) {
       for (var c = n.firstChild; c && out.length < 200; c = c.nextSibling) {
         if (c.nodeType === 3) out += " " + c.nodeValue;
-        else if (c.nodeType === 1 && !skip.test(c.tagName.toUpperCase()) && !c.hasAttribute("data-lobby-mask") && !c.isContentEditable) walk(c);
+        else if (c.nodeType === 1 && !skip.test(c.tagName.toUpperCase()) && !(masks && c.hasAttribute("data-lobby-mask")) && !c.isContentEditable) walk(c);
       }
     })(el);
     out = out.replace(/\s+/g, " ").trim();
@@ -613,7 +616,7 @@
     return ids.split(/\s+/).map(function (id) { var x = document.getElementById(id); return x ? textOf(x) : ""; }).join(" ").trim();
   }
   function nameOf(n, from) {
-    if (n.closest("[data-lobby-mask]")) return "";
+    if (hidden(n)) return "";
     var role = n.getAttribute("role") || "", lb = n.getAttribute("aria-labelledby");
     if (named.test(n.tagName) || /^(dialog|alertdialog|tabpanel|region|group|form|navigation|complementary)$/.test(role)) {
       var al = n.getAttribute("aria-label");

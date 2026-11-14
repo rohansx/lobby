@@ -41,7 +41,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
     }
   }
 
-  async function setFlag(key: "ai" | "digest", on: boolean, msg: string) {
+  async function setFlag(key: "ai" | "digest" | "screenshots", on: boolean, msg: string) {
     try {
       await api(projectPath(slug, "/feedback/settings"), { body: { [key]: on } })
       toast.success(msg)
@@ -111,7 +111,7 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             <Label htmlFor="fb-ai">Summaries and duplicates</Label>
             <p className="mt-1 text-xs text-muted-foreground">
               {data.ai_available
-                ? "Claude reads each issue's reports, writes a clear title and summary, and points out issues that look like the same problem. You decide what to merge. Reports are sent to Anthropic to do this."
+                ? "Claude reads each issue's reports and screenshots, writes a clear title and summary, and points out issues that look like the same problem. When a report is vague, it asks the reporter one short question in the widget. You decide what to merge. Reports and screenshots are sent to Anthropic to do this."
                 : "Not available on this instance: it needs an Anthropic API key (ANTHROPIC_API_KEY)."}
             </p>
           </div>
@@ -120,6 +120,19 @@ export function FeedbackSetup({ slug, baseUrl, publicKey, data, onChange }: Prop
             checked={data.ai_available && data.settings.ai}
             disabled={!data.ai_available}
             onCheckedChange={(on) => setFlag("ai", on, on ? "Claude will summarize new reports" : "AI summaries are off")}
+          />
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label htmlFor="fb-shots">Screenshots</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The widget captures the area someone picks. Anything marked <code className={code}>data-lobby-mask</code> and every input field is blanked before the image leaves their browser, and they can remove it before sending.
+            </p>
+          </div>
+          <Switch
+            id="fb-shots"
+            checked={data.settings.screenshots}
+            onCheckedChange={(on) => setFlag("screenshots", on, on ? "Screenshots on" : "Screenshots off")}
           />
         </div>
         <div className="flex items-start justify-between gap-3">

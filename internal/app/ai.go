@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,13 @@ const (
 
 // aiJSON asks Claude for a JSON object matching schema and decodes it into out.
 // It is a field so tests can swap in a fake.
-type aiJSON func(ctx context.Context, system, user string, schema json.RawMessage, out any) error
+type aiJSON func(ctx context.Context, system, user string, images []aiImage, schema json.RawMessage, out any) error
+
+// aiImage is a screenshot sent alongside the prompt.
+type aiImage struct {
+	Mime string
+	Data []byte
+}
 
 func newClaude(cfg Config) aiJSON {
 	if cfg.AnthropicKey == "" {
@@ -37,12 +44,18 @@ func newClaude(cfg Config) aiJSON {
 	}
 	client := anthropic.NewClient(option.WithAPIKey(cfg.AnthropicKey), option.WithRequestTimeout(90*time.Second))
 	model := cfg.AIModel
-	return func(ctx context.Context, system, user string, schema json.RawMessage, out any) error {
+	return func(ctx context.Context, system, user string, images []aiImage, schema json.RawMessage, out any) error {
+		var content []anthropic.BetaContentBlockParamUnion
+		for _, im := range images {
+			content = append(content, anthropic.NewBetaImageBlock(anthropic.BetaBase64ImageSourceParam{
+				Data: base64.StdEncoding.EncodeToString(im.Data), MediaType: anthropic.BetaBase64ImageSourceMediaType(im.Mime)}))
+		}
+		content = append(content, anthropic.NewBetaTextBlock(user))
 		params := anthropic.BetaMessageNewParams{
 			Model:     anthropic.Model(model),
 			MaxTokens: 16000,
 			System:    []anthropic.BetaTextBlockParam{{Text: system, CacheControl: anthropic.NewBetaCacheControlEphemeralParam()}},
-			Messages:  []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(anthropic.NewBetaTextBlock(user))},
+			Messages:  []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(content...)},
 			OutputConfig: anthropic.BetaOutputConfigParam{
 				Effort: anthropic.BetaOutputConfigEffortLow, // short, well-specified summaries
 				Format: anthropic.BetaJSONOutputFormatParam{Schema: schema},
@@ -83,7 +96,7 @@ func (a *App) AIEnabled(ctx context.Context, p *Project) bool {
 }
 
 func (a *App) SetFeedbackFlag(ctx context.Context, p *Project, column string, on bool) error {
-	if column != "ai" && column != "digest" {
+	if column != "ai" && column != "digest" && column != "screenshots" {
 		return errors.New("unknown setting")
 	}
 	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, `+column+`) VALUES (?, ?)
@@ -185,8 +198,8 @@ func (a *App) summarizeIssue(ctx context.Context, j aiIssueJob) error {
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "<issue id=\"%d\" type=\"%s\" reporters=\"%d\">\n<page>%s</page>\n<element selector=\"%s\">%s</element>\n",
-		iss.ID, x(iss.Type), iss.Reporters, x(iss.Path), x(iss.Selector), x(iss.ElementText))
+	fmt.Fprintf(&b, "<issue id=\"%d\" type=\"%s\" reporters=\"%d\">\n<page>%s</page>\n<element selector=\"%s\" context=\"%s\">%s</element>\n",
+		iss.ID, x(iss.Type), iss.Reporters, x(iss.Path), x(iss.Selector), x(iss.Context), x(iss.ElementText))
 	for _, e := range pk.Evidence.ConsoleErrors {
 		fmt.Fprintf(&b, "<console_error>%s</console_error>\n", x(e))
 	}
@@ -212,7 +225,12 @@ func (a *App) summarizeIssue(ctx context.Context, j aiIssueJob) error {
 	b.WriteString("</other_issues>\n\nWrite the title and summary for the issue above, and list any other issues that are the same problem.")
 
 	var out issueAI
-	if err := a.ai(ctx, aiSystem, b.String(), issueAISchema, &out); err != nil {
+	b.WriteString("\n\nAny images are screenshots reporters took of the area they picked; grey blocks are parts the app hides on purpose.")
+	shots, err := a.issueShots(ctx, iss.ID, 3)
+	if err != nil {
+		return err
+	}
+	if err := a.ai(ctx, aiSystem, b.String(), shots, issueAISchema, &out); err != nil {
 		return err
 	}
 	title, summary := clipRunes(out.Title, 120), clipRunes(out.Summary, 600)

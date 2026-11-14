@@ -363,6 +363,21 @@ var migrations = []string{
 		dismissed_at INTEGER,
 		PRIMARY KEY (issue_id, other_id));
 	CREATE INDEX feedback_suggestions_other ON feedback_suggestions(other_id);`,
+
+	// 12: where on the page the element sits ("Ledger check › Checks failing"),
+	// so a report is readable when the selector isn't.
+	// Also: a screenshot of the picked area (hidden parts blanked in the browser),
+	// and the one follow-up question Claude may ask the reporter, with their answer.
+	`ALTER TABLE feedback_reports ADD COLUMN context TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_issues ADD COLUMN context TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_reports ADD COLUMN followup_q TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_reports ADD COLUMN followup_a TEXT NOT NULL DEFAULT '';
+	ALTER TABLE feedback_settings ADD COLUMN screenshots INTEGER NOT NULL DEFAULT 1;
+	CREATE TABLE feedback_shots (
+		report_id INTEGER PRIMARY KEY REFERENCES feedback_reports(id) ON DELETE CASCADE,
+		mime TEXT NOT NULL,
+		data BLOB NOT NULL,
+		created_at INTEGER NOT NULL);`,
 }
 
 func (s *Store) migrate() error {

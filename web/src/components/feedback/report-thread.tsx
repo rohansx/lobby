@@ -4,17 +4,18 @@ import { TypeBadge } from "@/components/feedback/issue-badges"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { FeedbackReport } from "@/lib/api"
+import { projectPath, type FeedbackReport } from "@/lib/api"
 import { dateTime, num } from "@/lib/format"
 
 interface Props {
+  slug: string
   reports: FeedbackReport[]
   blocked: number[]
   onBlock: (signupId: number, block: boolean) => void
   onSplit: (reportIds: number[]) => void
 }
 
-export function ReportThread({ reports, blocked, onBlock, onSplit }: Props) {
+export function ReportThread({ slug, reports, blocked, onBlock, onSplit }: Props) {
   const [selected, setSelected] = useState<number[]>([])
   // Splitting every report would leave this issue empty.
   const canSplit = selected.length > 0 && selected.length < reports.length
@@ -56,6 +57,13 @@ export function ReportThread({ reports, blocked, onBlock, onSplit }: Props) {
                 </div>
                 {/* Rendered as text: comments are untrusted user input. */}
                 <p className="text-sm whitespace-pre-wrap">{r.comment}</p>
+                {r.followup_question && (
+                  <div className="grid gap-1 rounded-md border-l-2 border-muted-foreground/30 pl-3 text-sm">
+                    <span className="text-xs text-muted-foreground">Claude asked: {r.followup_question}</span>
+                    <p className="whitespace-pre-wrap">{r.followup_answer || <span className="text-muted-foreground">No answer.</span>}</p>
+                  </div>
+                )}
+                {r.has_screenshot && <Screenshot src={`/api/admin${projectPath(slug, `/feedback/reports/${r.id}/screenshot`)}`} />}
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer select-none">
                     Details{errors.length + failed.length > 0 && `, ${errors.length} console errors, ${failed.length} failed requests`}
@@ -89,5 +97,14 @@ export function ReportThread({ reports, blocked, onBlock, onSplit }: Props) {
         })}
       </div>
     </section>
+  )
+}
+
+function Screenshot({ src }: { src: string }) {
+  return (
+    <a href={src} target="_blank" rel="noreferrer" className="block w-fit max-w-full" title="Open full size">
+      <img src={src} loading="lazy" alt="Screenshot of the area the reporter picked" className="max-h-64 max-w-full rounded-md border object-contain object-left-top" />
+      <span className="mt-1 block text-xs text-muted-foreground">Screenshot of the picked area. Grey blocks are parts your app hides.</span>
+    </a>
   )
 }

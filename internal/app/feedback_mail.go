@@ -18,7 +18,11 @@ func (a *App) composeFeedbackNotify(ctx context.Context, p *Project, s *Signup, 
 	}
 	var comment string
 	a.db.R.QueryRowContext(ctx, `SELECT comment FROM feedback_reports WHERE issue_id = ? ORDER BY id LIMIT 1`, issueID).Scan(&comment)
-	rows := [][2]string{{"From", s.Email}, {"Type", iss.Type}, {"Page", iss.Path}, {"Element", iss.Selector}}
+	rows := [][2]string{{"From", s.Email}, {"Type", iss.Type}, {"Page", iss.Path}}
+	if iss.Context != "" {
+		rows = append(rows, [2]string{"On the page", iss.Context})
+	}
+	rows = append(rows, [2]string{"Element", iss.Selector})
 	if iss.ElementText != "" {
 		rows = append(rows, [2]string{"Element text", iss.ElementText})
 	}

@@ -130,7 +130,7 @@ func (a *App) sendDigest(ctx context.Context, projectID int64) error {
 		}
 		b.WriteString("</other_issues>\n\nWrite this week's overview of the feedback for the founder, and what to look at first.")
 		var out digestAI
-		if err := a.ai(ctx, aiSystem, b.String(), digestSchema, &out); err == nil {
+		if err := a.ai(ctx, aiSystem, b.String(), nil, digestSchema, &out); err == nil {
 			ai = &out
 		} else {
 			a.log.Warn("digest: no AI overview", "project", p.ID, "err", err) // the numbers still go out

@@ -12,11 +12,13 @@ import (
 // fakeClaude records prompts and answers with whatever reply returns.
 type fakeClaude struct {
 	prompts []string
+	images  []int // images sent with each call
 	reply   func(user string) (any, error)
 }
 
-func (f *fakeClaude) call(_ context.Context, system, user string, _ json.RawMessage, out any) error {
+func (f *fakeClaude) call(_ context.Context, system, user string, images []aiImage, _ json.RawMessage, out any) error {
 	f.prompts = append(f.prompts, system+"\n---\n"+user)
+	f.images = append(f.images, len(images))
 	v, err := f.reply(user)
 	if err != nil {
 		return err

@@ -381,6 +381,7 @@ export interface Issue {
   path: string
   selector: string
   element_text: string
+  context: string
   agent_note: string
   agent_note_at: number | null
   handoffs: number
@@ -418,6 +419,9 @@ export interface FeedbackReport {
   failed_requests: { path: string; status: number }[] | null
   release: string
   created_at: number
+  has_screenshot: boolean
+  followup_question?: string // asked by Claude when the report was vague
+  followup_answer?: string // the reporter's words: untrusted
   email?: string
   source?: string
   wave?: string
@@ -429,6 +433,7 @@ export interface FeedbackSettings {
   audience: "invited" | "selected"
   ai: boolean // Claude summaries and duplicate suggestions
   digest: boolean // weekly feedback email
+  screenshots: boolean // the widget captures the picked area
 }
 
 export interface FeedbackList {

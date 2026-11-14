@@ -200,10 +200,48 @@ func TestIssueTitle(t *testing.T) {
 		{ReportInput{Type: "bug", URL: "/teams/42", Selector: "body", Tag: "body"}, "Bug on /teams/:id"},
 		{ReportInput{Type: "idea", URL: "/", Selector: "button", Tag: "button", Text: "Save"}, `Idea: "Save" button on /`},
 		{ReportInput{Type: "confusing", URL: "/x", Selector: "div > span", Tag: "span"}, "Confusing: span on /x"},
+		// With no text (masked, or an icon), the place on the page names it.
+		{ReportInput{Type: "bug", URL: "/engagements/a72ba3c6bf50/extract", Selector: "main > div", Tag: "div",
+			Context: "Ledger check › Checks failing"}, "Bug: div in Checks failing on /engagements/:id/extract"},
 	} {
 		if got := issueTitle(&c.in); got != c.want {
 			t.Errorf("got %q want %q", got, c.want)
 		}
+	}
+}
+
+func TestRouteOf(t *testing.T) {
+	for in, want := range map[string]string{
+		"/teams/42/settings":                      "/teams/:id/settings",
+		"/engagements/a72ba3c6bf50/extract":       "/engagements/:id/extract", // 12-hex id
+		"/u/0f8fad5b-d9cb-469f-a165-70867728950e": "/u/:id",
+		"/docs/01HZX3K9V7Q2M8N4P6R5T0W1YB":        "/docs/:id", // ULID
+		"/settings/dashboard":                     "/settings/dashboard",
+		"/feed/decade":                            "/feed/decade", // hex letters, no digit: a word
+		"/":                                       "/",
+	} {
+		if got := routeOf(in); got != want {
+			t.Errorf("routeOf(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestFeedbackContext(t *testing.T) {
+	e := newFBEnv(t)
+	_, rt := e.invited("ana@example.com")
+	b, _ := json.Marshal(map[string]any{"project": e.p.PublicKey, "reporter": rt, "type": "bug", "comment": "Wrong total",
+		"url": "/engagements/a72ba3c6bf50/extract", "selector": "main > div:nth-of-type(1)", "tag": "div",
+		"context": "  Ledger check \n›  Checks failing "})
+	if rec := e.req("POST", "/v1/feedback", string(b), "Origin", "https://app.example.com"); rec.Code != 201 {
+		t.Fatalf("report: %d %s", rec.Code, rec.Body.String())
+	}
+	list, _ := e.a.Issues(context.Background(), e.p, IssueFilter{})
+	if len(list) != 1 || list[0].Context != "Ledger check › Checks failing" {
+		t.Fatalf("context not stored cleanly: %+v", list)
+	}
+	pk, err := e.a.BuildPacket(context.Background(), e.p, list[0])
+	if err != nil || !strings.Contains(pk.Markdown(), "- On the page: `Ledger check › Checks failing`") {
+		t.Fatalf("packet lacks the context: %v\n%s", err, pk.Markdown())
 	}
 }
 

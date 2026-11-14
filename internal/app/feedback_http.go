@@ -12,7 +12,16 @@ import (
 // ---- public: the widget ----
 
 func (s *Server) feedbackJS(w http.ResponseWriter, r *http.Request) {
-	b, err := staticFS.ReadFile("web/static/fb.js")
+	s.widgetScript(w, r, "web/static/fb.js")
+}
+
+// feedbackShotJS is the screenshot code, loaded only when someone picks an element.
+func (s *Server) feedbackShotJS(w http.ResponseWriter, r *http.Request) {
+	s.widgetScript(w, r, "web/static/fb-shot.js")
+}
+
+func (s *Server) widgetScript(w http.ResponseWriter, r *http.Request, name string) {
+	b, err := staticFS.ReadFile(name)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -69,7 +78,7 @@ func (s *Server) publicFeedback(w http.ResponseWriter, r *http.Request) {
 	var le *ErrLimit
 	switch {
 	case err == nil:
-		writeJSON(w, 201, map[string]any{"ok": true, "issue": iss.ID, "message": wordsFor(rep.Type).Ack})
+		writeJSON(w, 201, map[string]any{"ok": true, "issue": iss.ID, "report": rep.ID, "message": wordsFor(rep.Type).Ack})
 	case errors.As(err, &ve):
 		jsonError(w, 400, ve.Msg)
 	case errors.As(err, &le):
@@ -101,7 +110,7 @@ func (s *Server) publicFeedbackAccess(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	ok := !s.app.ownerSuspended(r.Context(), p.OwnerID) && s.app.ReporterAllowed(r.Context(), p, q.Get("reporter"))
-	writeJSON(w, 200, map[string]any{"enabled": ok})
+	writeJSON(w, 200, map[string]any{"enabled": ok, "screenshots": ok && s.app.FeedbackSettings(r.Context(), p).Screenshots})
 }
 
 // adminSignupFeedback is the per-person switch on the Signups page:
@@ -548,12 +557,13 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 		Audience *string `json:"audience"`
 		AI       *bool   `json:"ai"`
 		Digest   *bool   `json:"digest"`
+		Shots    *bool   `json:"screenshots"`
 	}
-	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil) {
-		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool}`)
+	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil && body.Shots == nil) {
+		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool}`)
 		return
 	}
-	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest} {
+	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots} {
 		if v != nil {
 			if err := s.app.SetFeedbackFlag(r.Context(), p, col, *v); err != nil {
 				jsonError(w, 500, err.Error())
@@ -624,4 +634,96 @@ func (s *Server) adminReporter(w http.ResponseWriter, r *http.Request) {
 	default:
 		jsonError(w, 404, "unknown action")
 	}
+}
+
+// publicFollowup is the widget asking for Claude's one question about a report
+// it just sent ({id}/question), or sending the reporter's answer ({id}/answer).
+func (s *Server) publicFollowup(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Project  string `json:"project"`
+		Reporter string `json:"reporter"`
+		Answer   string `json:"answer"`
+	}
+	if err := decodeJSON(r, &body); err != nil {
+		jsonError(w, 400, "invalid JSON body")
+		return
+	}
+	p, err := s.app.ProjectByPublicKey(r.Context(), body.Project)
+	if err != nil {
+		jsonError(w, 404, "unknown project")
+		return
+	}
+	if !s.cors(w, r, p) {
+		jsonError(w, 403, "this site isn't on the project's allowed origins")
+		return
+	}
+	id, ok := pathID(r)
+	if !ok {
+		jsonError(w, 404, "report not found")
+		return
+	}
+	var q string
+	switch r.PathValue("action") {
+	case "question":
+		q, err = s.app.AskFollowup(r.Context(), p, body.Reporter, id)
+	case "answer":
+		err = s.app.AnswerFollowup(r.Context(), p, body.Reporter, id, body.Answer)
+	default:
+		jsonError(w, 404, "not found")
+		return
+	}
+	var ve *ValidationError
+	switch {
+	case err == nil && r.PathValue("action") == "question":
+		writeJSON(w, 200, map[string]any{"ok": true, "question": q})
+	case err == nil:
+		writeJSON(w, 200, map[string]any{"ok": true, "message": "Thanks, that helps."})
+	case errors.As(err, &ve):
+		jsonError(w, 400, ve.Msg)
+	case errors.Is(err, ErrNotReporter):
+		jsonError(w, 401, err.Error())
+	case errors.Is(err, ErrNotFound):
+		jsonError(w, 404, "report not found")
+	case errors.Is(err, ErrNoFollowup):
+		jsonError(w, 409, err.Error())
+	default:
+		s.app.log.Error("feedback follow-up", "err", err)
+		jsonError(w, 500, "something went wrong")
+	}
+}
+
+func writeShot(w http.ResponseWriter, im *aiImage) {
+	w.Header().Set("Content-Type", im.Mime)
+	w.Header().Set("Cache-Control", "private, max-age=3600")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Write(im.Data)
+}
+
+// adminReportShot shows one report's screenshot on the issue page.
+func (s *Server) adminReportShot(w http.ResponseWriter, r *http.Request) {
+	p := s.adminProject(w, r)
+	if p == nil {
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("rid"), 10, 64)
+	im, err2 := s.app.ReportShot(r.Context(), p, id)
+	if err != nil || err2 != nil {
+		http.NotFound(w, r)
+		return
+	}
+	writeShot(w, im)
+}
+
+// apiIssueShot is the issue's latest screenshot, for agents and scripts.
+func (s *Server) apiIssueShot(w http.ResponseWriter, r *http.Request) {
+	iss := s.apiIssue(w, r)
+	if iss == nil {
+		return
+	}
+	im, err := s.app.IssueShot(r.Context(), apiProject(r), iss.ID)
+	if err != nil {
+		jsonError(w, 404, "this issue has no screenshot")
+		return
+	}
+	writeShot(w, im)
 }

@@ -160,37 +160,52 @@ export default function Overview() {
           <CardTitle>Keys</CardTitle>
           <CardDescription>The public key is safe in a browser. The secret key is for your server and the CLI.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-          <CopyField value={p.public_key} />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline">
-                <KeyRoundIcon />
-                Rotate secret key
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Rotate the secret key?</AlertDialogTitle>
-                <AlertDialogDescription>The current key stops working immediately. Anything using it, like your backend or CLI, needs the new one.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={async () => {
-                    try {
-                      const r = await api<{ secret_key: string }>(projectPath(slug, "/rotate"), { method: "POST" })
-                      setSecret(r.secret_key)
-                    } catch (err) {
-                      toastError(err)
-                    }
-                  }}
-                >
-                  Rotate
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <CardContent className="grid gap-5">
+          <div className="grid gap-1.5">
+            <div className="text-sm font-medium">Public key</div>
+            <CopyField value={p.public_key} />
+            <p className="text-xs text-muted-foreground">Goes in your site's HTML: the waitlist form and the feedback widget.</p>
+          </div>
+          <div className="grid gap-1.5">
+            <div className="text-sm font-medium">Secret key</div>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground" aria-label="Secret key, hidden">
+                sk_••••••••••••••••••••••••
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">
+                    <KeyRoundIcon />
+                    Rotate secret key
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Rotate the secret key?</AlertDialogTitle>
+                    <AlertDialogDescription>The current key stops working immediately. Anything using it, like your backend or CLI, needs the new one. The new key is shown once, so copy it straight into your server's environment.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        try {
+                          const r = await api<{ secret_key: string }>(projectPath(slug, "/rotate"), { method: "POST" })
+                          setSecret(r.secret_key)
+                        } catch (err) {
+                          toastError(err)
+                        }
+                      }}
+                    >
+                      Rotate
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              For your server and the CLI only: inviting people, feedback reporter tokens, the REST API. Lobby keeps only a fingerprint of it, so it's shown once, when made. Lost it? Rotate to get a new one.
+            </p>
+          </div>
         </CardContent>
       </Card>
       <SecretKeyDialog secret={secret} onClose={() => setSecret(null)} />

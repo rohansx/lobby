@@ -13,7 +13,9 @@
   console.error = function () { push(errs, [].map.call(arguments, str).join(" ").slice(0, 300), 20); return oe.apply(console, arguments); };
   addEventListener("error", function (e) { if (e.message) push(errs, (e.message + (e.filename ? " (" + e.filename.split("?")[0] + ":" + e.lineno + ")" : "")).slice(0, 300), 20); });
   addEventListener("unhandledrejection", function (e) { push(errs, ("Unhandled rejection: " + str(e.reason)).slice(0, 300), 20); });
+  var capturing = 0;
   function failed(u, status) {
+    if (capturing) return; // the screenshot's own font and image fetches aren't the app's
     try { var x = new URL(u, location.href); if (x.origin !== api) push(reqs, { path: x.pathname, status: status }, 10); } catch (e) {}
   }
   if (window.fetch) {
@@ -91,6 +93,12 @@
     ".send{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;background:var(--a);color:var(--ai);font-weight:600}.send[disabled]{opacity:.55;cursor:default}" +
     ".send kbd{font:11px/1 system-ui;opacity:.7}.fine{margin:10px 0 0;font-size:12px;color:var(--mut)}" +
     ".msg{margin:10px 0 0;font-size:13px;color:var(--err)}" +
+    ".shot{margin-bottom:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}" +
+    ".shot img{display:block;width:100%;max-height:150px;object-fit:cover;object-position:top}.shot .wait{padding:14px 10px;font-size:12.5px;color:var(--mut)}" +
+    ".shotbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px 5px 10px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}" +
+    ".shotbar button{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;color:var(--ink)}.shotbar button:hover{background:var(--line)}" +
+    ".fu{width:100%;text-align:left;margin-top:8px}.fu p{margin:0 0 8px;color:var(--ink);font-weight:500}.fu textarea{min-height:70px}" +
+    ".fu .foot{justify-content:flex-end}.fu .foot .n{display:none}" +
     ".done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px 10px}" +
     ".done i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--a);color:var(--ai)}.done i svg{width:20px;height:20px;stroke-width:2.5}" +
     ".done b{font-weight:600;font-size:15px}.done p{margin:0;color:var(--mut)}" +
@@ -107,6 +115,8 @@
     '<form class="panel" role="dialog" aria-label="Send feedback" hidden novalidate>' +
     '<div class="body"><div class="head"><b>Send feedback</b><button class="icon" type="button" data-cancel aria-label="Close">' + icon.x + "</button></div>" +
     '<div class="chip"><code></code><button type="button" data-repick>Change</button></div>' +
+    '<div class="shot" hidden><div class="wait">Taking a screenshot of this area…</div><img alt="Screenshot of the area you picked" hidden>' +
+    '<div class="shotbar"><span>Screenshot · private parts blanked</span><button type="button" data-noshot>Remove</button></div></div>' +
     '<div class="types" role="radiogroup" aria-label="What kind of feedback">' +
     '<button type="button" role="radio" data-type="bug" aria-checked="true">' + icon.bug + "Bug</button>" +
     '<button type="button" role="radio" data-type="confusing" aria-checked="false">' + icon.confusing + "Confusing</button>" +
@@ -114,14 +124,17 @@
     '<textarea name="comment" maxlength="2000" aria-label="Your feedback"></textarea>' +
     '<div class="foot"><span class="n">0 / 2000</span><button class="send" type="submit" disabled>Send <kbd class="hide-sm">' + (/Mac|iP/.test(navigator.platform) ? "⌘" : "Ctrl") + " ↵</kbd></button></div>" +
     '<p class="msg" role="alert" hidden></p>' +
-    '<p class="fine">Sends the page path, this element and recent errors. Never what you typed into the page.</p></div>' +
-    '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p></div></form>' +
+    '<p class="fine"></p></div>' +
+    '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p>' +
+    '<div class="fu" hidden><p></p><textarea name="answer" maxlength="1000" aria-label="Your answer"></textarea>' +
+    '<div class="foot"><button class="pill" type="button" data-skip>Skip</button><button class="send" type="button" data-answer disabled>Send</button></div></div></div></form>' +
     '<span class="sr" aria-live="polite"></span>';
 
   function $(q) { return root.querySelector(q); }
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
-    picking = false, picked = null, type = "bug";
+    picking = false, picked = null, type = "bug", shots = false, shot = null, shotURL = "", round = 0,
+    shotBox = $(".shot"), shotImg = $(".shot img"), fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
   function mount() { if (!host.isConnected) document.documentElement.appendChild(host); }
   // Ask Lobby first: the founder can switch the widget off for someone at any
@@ -130,6 +143,9 @@
     .then(function (r) { return r.json(); })
     .then(function (j) {
       if (!j.enabled) return;
+      shots = !!j.screenshots;
+      $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area with private parts blanked" : "") +
+        " and recent errors. Never what you typed into the page.";
       mount();
       // Single-page apps sometimes replace the whole document body; stay attached.
       new MutationObserver(mount).observe(document.documentElement, { childList: true });
@@ -138,8 +154,8 @@
   function ours(el) { return el === host || host.contains(el); }
   function label(el) {
     if (el === document.body || el === document.documentElement) return "The whole page";
-    var t = textOf(el);
-    return el.tagName.toLowerCase() + (t ? " · " + t.slice(0, 48) : "");
+    var t = textOf(el), c = t ? "" : contextOf(el).split(" › ").pop();
+    return el.tagName.toLowerCase() + (t ? " · " + t.slice(0, 48) : c ? " in " + c.slice(0, 48) : "");
   }
   function frame(el) {
     if (!el || ours(el) || el === document.body || el === document.documentElement) { box.style.display = "none"; return; }
@@ -190,11 +206,13 @@
     document.removeEventListener("focusin", over, true);
   }
   function reset() {
-    endPick(); picked = null; form.hidden = true; fab.hidden = false; box.style.display = "none";
+    endPick(); picked = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++;
     body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; sync(); fab.focus();
+    shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = "";
   }
   function choose(el) {
     endPick(); picked = el; frame(el);
+    snap(el);
     tag.style.display = "none"; // the panel's chip says the same
     $(".chip code").textContent = label(el);
     body.hidden = false; done.hidden = true; msg.hidden = true;
@@ -242,13 +260,17 @@
     e.preventDefault();
     if (!picked || !ta.value.trim() || send.disabled) return;
     send.disabled = true;
-    var whole = picked === document.body || picked === document.documentElement;
+    var pending = shot ? Promise.race([shot, new Promise(function (ok) { setTimeout(function () { ok(""); }, 5000); })]) : Promise.resolve("");
+    pending.then(function () { submit(); });
+  };
+  function submit() {
+    var whole = picked === document.body || picked === document.documentElement, mine = round;
     var payload = {
       project: d.project, reporter: d.reporter, release: d.release || "",
       type: type, comment: ta.value, url: location.pathname,
-      selector: whole ? "body" : selector(picked), tag: whole ? "body" : picked.tagName.toLowerCase(), text: whole ? "" : textOf(picked),
+      selector: whole ? "body" : selector(picked), tag: whole ? "body" : picked.tagName.toLowerCase(), text: whole ? "" : textOf(picked), context: whole ? "" : contextOf(picked),
       viewport: innerWidth + "x" + innerHeight, browser: navigator.userAgent,
-      console_errors: errs.slice(), failed_requests: reqs.slice()
+      console_errors: errs.slice(), failed_requests: reqs.slice(), screenshot: shotURL
     };
     of0(api + "/v1/feedback", {
       method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload)
@@ -258,20 +280,171 @@
       done.querySelector("p").textContent = j.message || "Thanks for the feedback.";
       live.textContent = "Sent. " + (j.message || "");
       ta.value = ""; sync();
-      setTimeout(function () { if (!done.hidden) reset(); }, 4000);
+      followup(j.report, mine);
     }).catch(function () { sync(); note("Couldn't reach the server. Check your connection and try again."); });
-  };
+  }
+  // ---- Screenshot of the picked area ----
+  // Measured the moment someone picks, rendered from the DOM (no screen-share
+  // prompt), then every data-lobby-mask region and every typed-in field is painted
+  // over before the image exists anywhere but this page. They see it and can remove it.
+  var lib = null, fields = "[data-lobby-mask],textarea,select,[contenteditable]:not([contenteditable=false])," +
+    "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=hidden]):not([type=range]):not([type=color]):not([type=file]):not([type=image])";
+  function loadShot() {
+    return lib || (lib = new Promise(function (ok, no) {
+      if (window.__lobbyShot) return ok(window.__lobbyShot);
+      var sc = document.createElement("script");
+      sc.src = api + "/v1/fb-shot.js"; sc.async = true;
+      sc.onload = function () { window.__lobbyShot ? ok(window.__lobbyShot) : no(); };
+      sc.onerror = function () { lib = null; no(); };
+      document.head.appendChild(sc);
+    }));
+  }
+  function snap(el) {
+    shot = null; shotURL = ""; shotImg.hidden = true; $(".shot .wait").hidden = false;
+    shotBox.hidden = !shots;
+    if (!shots) return;
+    var mine = ++round, take = capture(el); // a newer pick or Remove makes this one stale
+    shot = take.then(function (url) { if (mine === round) { shotURL = url; shotImg.src = url; shotImg.hidden = false; $(".shot .wait").hidden = true; } return url; },
+      function () { if (mine === round) shotBox.hidden = true; return ""; });
+  }
+  // In the copy that gets rendered: hidden parts and fields become solid blocks
+  // (exactly where they are, whatever the layout), and the picked element gets a marker.
+  var fieldTags = /^(INPUT|TEXTAREA|SELECT)$/;
+  function blank(n) {
+    if (n.nodeType !== 1) return;
+    if (n.hasAttribute("data-lobby-picked")) {
+      n.removeAttribute("data-lobby-picked");
+      n.style.setProperty("outline", "2px solid rgb(255, 0, 255)", "important");
+      n.style.setProperty("outline-offset", "3px", "important");
+    }
+    var field = fieldTags.test(n.tagName) && !/^(checkbox|radio|button|submit|reset|hidden|range|color|file|image)$/i.test(n.getAttribute("type") || "");
+    var editable = n.hasAttribute("contenteditable") && n.getAttribute("contenteditable") !== "false";
+    if (!field && !editable && !n.hasAttribute("data-lobby-mask")) return;
+    n.style.setProperty("background", "#9ca3af", "important");
+    n.style.setProperty("color", "transparent", "important");
+    n.style.setProperty("text-shadow", "none", "important");
+    n.style.setProperty("border-color", "#9ca3af", "important");
+    if (field) { n.setAttribute("value", ""); n.removeAttribute("placeholder"); n.textContent = ""; try { n.value = ""; } catch (e) {} }
+    [].forEach.call(n.querySelectorAll("*"), function (c) { if (c.style) c.style.setProperty("visibility", "hidden", "important"); });
+  }
+  function capture(el) {
+    var whole = el === document.body || el === document.documentElement, W = innerWidth, H = innerHeight;
+    var r = whole ? { left: 0, top: 0, right: W, bottom: H, width: W, height: H } : el.getBoundingClientRect(), pad = whole ? 0 : 56;
+    var area = { left: Math.max(0, r.left - pad), top: Math.max(0, r.top - pad), right: Math.min(W, r.right + pad), bottom: Math.min(H, r.bottom + pad) };
+    if (area.right - area.left < 4 || area.bottom - area.top < 4) return Promise.reject();
+    // Render the smallest ancestor that holds the whole area, not the whole page.
+    var root = whole ? document.body : el;
+    while (root !== document.body && root.parentElement) {
+      var b = root.getBoundingClientRect();
+      if (b.left <= area.left && b.top <= area.top && b.right >= area.right && b.bottom >= area.bottom) break;
+      root = root.parentElement;
+    }
+    var rr = root.getBoundingClientRect(), scale = Math.min(window.devicePixelRatio || 1, 2), masks = [];
+    [].forEach.call(document.querySelectorAll(fields), function (n) {
+      if (ours(n)) return;
+      var b = n.getBoundingClientRect();
+      if (b.width && b.height && b.right > area.left && b.left < area.right && b.bottom > area.top && b.top < area.bottom) masks.push(b);
+    });
+    var bg = getComputedStyle(document.body).backgroundColor;
+    if (/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bg = getComputedStyle(document.documentElement).backgroundColor;
+    if (/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bg = "#ffffff";
+    var mark = getComputedStyle(host).getPropertyValue("--wl-accent").trim() || "#e11d48";
+    if (!whole) el.setAttribute("data-lobby-picked", ""); // invisible; lets the copy find it
+    return loadShot().then(function (m) {
+      capturing++;
+      return m.domToCanvas(root, { scale: scale, backgroundColor: bg, timeout: 4000, filter: function (n) { return n !== host; }, onCloneEachNode: blank })
+        .finally(function () { capturing--; el.removeAttribute("data-lobby-picked"); });
+    }, function (e) { el.removeAttribute("data-lobby-picked"); throw e; }).then(function (full) {
+      // The copy can lay out a few pixels off the page (margins, defaults); find the
+      // picked element's marker in the render to learn the shift.
+      var dx = 0, dy = 0;
+      if (!whole && r.top >= area.top && r.left >= area.left) {
+        var ex = Math.round((r.left - rr.left - 5) * scale), ey = Math.round((r.top - rr.top - 5) * scale), R = Math.round(48 * scale);
+        var x0 = Math.max(0, ex - R), y0 = Math.max(0, ey - R), ww = Math.min(full.width - x0, 2 * R), hh = Math.min(full.height - y0, 2 * R);
+        if (ww > 0 && hh > 0) {
+          var px = full.getContext("2d").getImageData(x0, y0, ww, hh).data, mx = 1e9, my = 1e9;
+          for (var i = 0; i < px.length; i += 4) if (px[i] > 250 && px[i + 1] < 6 && px[i + 2] > 249) { var j = i / 4; mx = Math.min(mx, j % ww); my = Math.min(my, Math.floor(j / ww)); }
+          if (mx < 1e9) { dx = x0 + mx - ex; dy = y0 + my - ey; }
+        }
+      }
+      var w = Math.round((area.right - area.left) * scale), h = Math.round((area.bottom - area.top) * scale);
+      var k = Math.min(1, 1400 / w), c = document.createElement("canvas");
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      var g = c.getContext("2d"), s = scale * k;
+      g.drawImage(full, (area.left - rr.left) * scale + dx, (area.top - rr.top) * scale + dy, w, h, 0, 0, c.width, c.height);
+      // Second layer: paint over the same parts at their measured places.
+      g.fillStyle = "#9ca3af";
+      masks.forEach(function (b) { g.fillRect((b.left - area.left) * s, (b.top - area.top) * s, b.width * s, b.height * s); });
+      if (!whole) { // outline what they picked, over the marker
+        g.strokeStyle = mark; g.lineWidth = Math.max(4, 4 * s);
+        g.strokeRect((r.left - area.left - 4) * s, (r.top - area.top - 4) * s, (r.width + 8) * s, (r.height + 8) * s);
+      }
+      for (var q = 0.82, url = ""; q > 0.3; q -= 0.2) {
+        url = c.toDataURL("image/jpeg", q);
+        if (url.length < 760000) return url;
+      }
+      throw new Error("screenshot too large");
+    });
+  }
+
+  // ---- One follow-up question from Claude, when the report is vague ----
+  function followup(rid, mine) {
+    function later() { setTimeout(function () { if (mine === round && fu.hidden) reset(); }, 2500); }
+    if (!rid) return later();
+    var body = JSON.stringify({ project: d.project, reporter: d.reporter });
+    of0(api + "/v1/feedback/reports/" + rid + "/question", { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (mine !== round) return;
+        if (!j.question) return later();
+        done.querySelector("p").textContent = "One quick question to help fix it:";
+        fu.querySelector("p").textContent = j.question;
+        fu.hidden = false; fuText.value = ""; fuSend.disabled = true; fuText.focus();
+        live.textContent = "One quick question: " + j.question;
+        fu.dataset.rid = rid;
+      }, later);
+  }
+  function answer() {
+    var a = fuText.value.trim(), mine = round;
+    if (!a) return;
+    fuSend.disabled = true;
+    of0(api + "/v1/feedback/reports/" + fu.dataset.rid + "/answer", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project: d.project, reporter: d.reporter, answer: a })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (mine !== round) return;
+      fu.hidden = true; done.querySelector("p").textContent = j.ok ? j.message : (j.error || "Couldn't send that.");
+      live.textContent = done.querySelector("p").textContent;
+      setTimeout(function () { if (mine === round) reset(); }, 2500);
+    }, function () { fuSend.disabled = false; });
+  }
+  fuText.oninput = function () { fuSend.disabled = !fuText.value.trim(); };
+  fuText.onkeydown = function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); answer(); } };
+  fuSend.onclick = answer;
+  $("[data-skip]").onclick = reset;
+  $("[data-noshot]").onclick = function () { round++; shot = null; shotURL = ""; shotBox.hidden = true; ta.focus(); };
+
   // The widget's own request bypasses the failed-request recorder.
   function of0() { return (of || window.fetch).apply(window, arguments); }
   function note(t) { msg.hidden = false; msg.textContent = t; live.textContent = t; }
 
-  // A selector that prefers founder-set anchors, then stable ids, then the tag path.
+  // Ids that frameworks make up at runtime (React useId, Base UI, Radix, Headless UI,
+  // hashes): they change between page loads, so a selector built on one finds nothing.
+  function generated(v) {
+    return /^(:r|_r_|r:)|[«»:]|_r_|\d{3,}|^\d/.test(v) ||
+      /^(base-ui|radix|headlessui|mui|rc|react-aria|ember|chakra|mantine|downshift|reach|floating-ui|tippy|popper)[-_:]/i.test(v) ||
+      /(^|[^a-z])(?=[a-z]*\d)[a-z\d]{6,}/i.test(v); // a hash-like run mixing letters and digits
+  }
+  var anchors = ["data-lobby-id", "data-testid", "data-test-id", "data-test", "data-cy", "data-qa"];
+  // A selector that prefers founder-set anchors, then test ids, then stable ids, then the tag path.
   function selector(el) {
     var parts = [], q = window.CSS && CSS.escape ? CSS.escape : function (v) { return v.replace(/["\\]/g, "\\$&"); };
-    for (var n = el; n && n.nodeType === 1 && n !== document.documentElement && parts.length < 6; n = n.parentElement) {
-      var lid = n.getAttribute("data-lobby-id");
-      if (lid) { parts.unshift('[data-lobby-id="' + lid.replace(/["\\]/g, "\\$&") + '"]'); break; }
-      if (n.id && !/[0-9]{3,}|^[0-9]|:/.test(n.id)) { parts.unshift("#" + q(n.id)); break; }
+    outer: for (var n = el; n && n.nodeType === 1 && n !== document.documentElement && parts.length < 8; n = n.parentElement) {
+      for (var i = 0; i < anchors.length; i++) {
+        var v = n.getAttribute(anchors[i]);
+        if (v && (i === 0 || !generated(v))) { parts.unshift("[" + anchors[i] + '="' + v.replace(/["\\]/g, "\\$&") + '"]'); break outer; }
+      }
+      if (n.id && !generated(n.id)) { parts.unshift("#" + q(n.id)); break; }
       var t = n.tagName.toLowerCase(), p = n.parentElement;
       if (p) {
         var same = [].filter.call(p.children, function (c) { return c.tagName === n.tagName; });
@@ -295,6 +468,40 @@
     })(el);
     out = out.replace(/\s+/g, " ").trim();
     return (out || el.getAttribute("aria-label") || el.getAttribute("title") || "").slice(0, 200);
+  }
+  // Where the element sits, outermost first: "Ledger check › Checks failing".
+  // Built from headings and named regions (dialogs, tabs, sections, forms, tables),
+  // which most apps and component libraries already mark up. Masked text stays out.
+  var named = /^(SECTION|FORM|NAV|ASIDE|DIALOG|FIELDSET|TABLE|ARTICLE|MAIN)$/, heads = "h1,h2,h3,h4,h5,h6,[role=heading],legend,caption,summary";
+  function byIds(ids) {
+    return ids.split(/\s+/).map(function (id) { var x = document.getElementById(id); return x ? textOf(x) : ""; }).join(" ").trim();
+  }
+  function nameOf(n, from) {
+    if (n.closest("[data-lobby-mask]")) return "";
+    var role = n.getAttribute("role") || "", lb = n.getAttribute("aria-labelledby");
+    if (named.test(n.tagName) || /^(dialog|alertdialog|tabpanel|region|group|form|navigation|complementary)$/.test(role)) {
+      var al = n.getAttribute("aria-label");
+      if (al) return al;
+      if (lb) { var t = byIds(lb); if (t) return t; }
+    }
+    // A heading among the direct children, ahead of the branch the click came from: a card's or section's title.
+    for (var c = n.firstElementChild; c && c !== from; c = c.nextElementSibling) {
+      if (c.matches(heads)) return textOf(c);
+      var h = c.matches("header,hgroup") ? c.querySelector(heads) : null;
+      if (h) return textOf(h);
+    }
+    return "";
+  }
+  function contextOf(el) {
+    var out = [], from = el, own = textOf(el);
+    for (var n = el.parentElement; n && n !== document.documentElement && out.length < 4; from = n, n = n.parentElement) {
+      var t = nameOf(n, from).slice(0, 60);
+      if (t && out[0] !== t && t !== own) out.unshift(t);
+    }
+    var h1 = document.querySelector("main h1, h1");
+    var page = h1 && !h1.contains(el) ? textOf(h1).slice(0, 60) : "";
+    if (page && out.indexOf(page) < 0) out.unshift(page);
+    return out.join(" › ").slice(0, 200);
   }
   function esc(v) { return String(v).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
 

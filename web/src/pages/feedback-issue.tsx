@@ -215,6 +215,7 @@ export default function FeedbackIssue() {
           </CardHeader>
           <CardContent className="grid gap-2 text-sm">
             <Field label="Page" mono>{issue.path}</Field>
+            {issue.context && <Field label="On the page">{issue.context}</Field>}
             <Field label="Selector" mono>{issue.selector}</Field>
             {issue.element_text && <Field label="Element text">{issue.element_text}</Field>}
             {release && <Field label="Release" mono>{release}</Field>}
@@ -248,6 +249,7 @@ export default function FeedbackIssue() {
 
       <ReportThread
         key={issue.id}
+        slug={slug!}
         reports={reports}
         blocked={data.blocked ?? []}
         onBlock={block}

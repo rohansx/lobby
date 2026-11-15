@@ -62,7 +62,7 @@ export default function Feedback() {
             <Card className="border-dashed">
               <CardHeader className="text-center">
                 <CardTitle>No feedback yet</CardTitle>
-                <CardDescription>Add the script from Set up to your app, only for invited users, with each user's reporter token. Their reports show up here, grouped into issues.</CardDescription>
+                <CardDescription>Add the script from Install to your app, only for invited users, with each user's reporter token. Their reports show up here, grouped into issues.</CardDescription>
               </CardHeader>
             </Card>
           ) : (

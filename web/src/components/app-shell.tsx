@@ -1,4 +1,4 @@
-import { ChevronsUpDownIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, MessageSquareWarningIcon, PlusIcon, RocketIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
+import { ChevronsUpDownIcon, KeyRoundIcon, CreditCardIcon, LayoutDashboardIcon, LogOutIcon, MegaphoneIcon, MessageSquareWarningIcon, PlusIcon, RocketIcon, SettingsIcon, ShieldIcon, UsersIcon, WebhookIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useRoute } from "wouter"
 import { NewProjectDialog } from "@/components/new-project-dialog"
@@ -31,6 +31,7 @@ const sections = [
   { path: "", label: "Overview", icon: LayoutDashboardIcon },
   { path: "/signups", label: "Signups", icon: UsersIcon },
   { path: "/feedback", label: "Feedback", icon: MessageSquareWarningIcon },
+  { path: "/claims", label: "Claims", icon: KeyRoundIcon },
   { path: "/webhooks", label: "Webhooks", icon: WebhookIcon },
   { path: "/broadcast", label: "Broadcast", icon: MegaphoneIcon },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
@@ -86,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
           {me.cloud && (
             <SidebarGroup>
-              <SidebarGroupLabel>Launch Pack</SidebarGroupLabel>
+              <SidebarGroupLabel>Lobby Pro</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
@@ -202,7 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name ?? (slug ? "" : location === "/billing" ? "Billing" : location.startsWith("/campaigns") ? "Launch" : location.startsWith("/ops") ? "Operator" : "Projects")}</div>
           {me.cloud && me.plan?.id === "free" && (
             <Link href="/campaigns" className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
-              Launch Pack
+              Lobby Pro
             </Link>
           )}
           <ThemeToggle />

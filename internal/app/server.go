@@ -105,6 +105,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /fu/{token}", s.feedbackUnsubPage)
 	mux.HandleFunc("POST /fu/{token}", s.feedbackUnsubPost)
 	mux.HandleFunc("POST /v1/reporters", s.apiReporter)
+	mux.HandleFunc("GET /c/{token}", s.claimPage)
+	mux.HandleFunc("POST /c/{token}", s.claimPost)
+	mux.HandleFunc("GET /c/{token}/confirm/{sig}", s.claimConfirmPage)
+	mux.HandleFunc("POST /c/{token}/confirm/{sig}", s.claimConfirm)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheFor(http.FileServerFS(static), 3600)))
 	mux.HandleFunc("OPTIONS /v1/w/{pk}/signup", s.preflight)
 	mux.HandleFunc("POST /v1/w/{pk}/signup", s.publicSignup)
@@ -142,8 +146,12 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /v1/deliveries", s.apiDeliveries)
 	api.HandleFunc("POST /v1/deliveries/{id}/redeliver", s.apiRedeliver)
 	api.HandleFunc("POST /v1/broadcasts", s.apiBroadcast)
+	api.HandleFunc("GET /v1/claims", s.apiListClaims)
+	api.HandleFunc("POST /v1/claims", s.apiCreateClaim)
+	api.HandleFunc("DELETE /v1/claims/{id}", s.apiRevokeClaim)
+	api.HandleFunc("POST /v1/claims/redeem", s.apiRedeemClaim)
 	for _, p := range []string{"/v1/project", "/v1/stats", "/v1/signups", "/v1/signups/", "/v1/invites", "/v1/invites/",
-		"/v1/export.csv", "/v1/export.ndjson", "/v1/webhooks", "/v1/webhooks/", "/v1/deliveries", "/v1/deliveries/", "/v1/broadcasts"} {
+		"/v1/export.csv", "/v1/export.ndjson", "/v1/webhooks", "/v1/webhooks/", "/v1/deliveries", "/v1/deliveries/", "/v1/broadcasts", "/v1/claims", "/v1/claims/"} {
 		mux.Handle(p, s.requireKey(api))
 	}
 
@@ -200,6 +208,9 @@ func (s *Server) Handler() http.Handler {
 	authed.HandleFunc("POST /api/admin/projects/{slug}/reporters/{id}/{action}", s.adminReporter)
 	authed.HandleFunc("PUT /api/admin/projects/{slug}/signups/{id}/feedback", s.adminSignupFeedback)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/testers", s.adminAddTesters)
+	authed.HandleFunc("GET /api/admin/projects/{slug}/claims", s.adminClaims)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/claims", s.adminCreateClaim)
+	authed.HandleFunc("POST /api/admin/projects/{slug}/claims/{id}/revoke", s.adminRevokeClaim)
 	authed.HandleFunc("GET /api/admin/projects/{slug}/broadcasts", s.adminBroadcasts)
 	authed.HandleFunc("POST /api/admin/projects/{slug}/broadcasts", s.adminBroadcast)
 	admin.Handle("/api/admin/", s.requireSession(authed))

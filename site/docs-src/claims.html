@@ -1,0 +1,54 @@
+<!-- {"title": "Claimable accounts", "description": "Set up an account in your product for a prospect, send one link, and let Lobby verify their email before your app hands the account over.", "lede": "Build a prospect's account before the call, then let them take it over with one link."} -->
+
+<h2>How it works</h2>
+<ol>
+  <li>You build the account in your own product, with their data already in it, under a placeholder email.</li>
+  <li>You create a <strong>claim</strong> in Lobby with your product's id for that account. Lobby gives you a link.</li>
+  <li>The prospect opens the link and enters their email. Lobby sends one confirmation email.</li>
+  <li>The confirmation link sends them to your waitlist's <strong>Invite URL</strong> (or its Site URL) with <code>?claim=&lt;code&gt;</code> added.</li>
+  <li>Your app redeems the code from its server. Lobby answers with your account id and the verified email. Your app swaps in the email and logs them in.</li>
+</ol>
+<p>Lobby never sees your product's passwords or sessions. It only proves that this email may take this account.</p>
+
+<h2>Creating a claim</h2>
+<p>On the project's <strong>Claims</strong> page, choose <strong>New claim</strong>. Or from code or the CLI:</p>
+<pre><code>curl -X POST https://trylobby.app/v1/claims \
+  -H <span class="s">"Authorization: Bearer sk_…"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"account_ref": "acct_123", "label": "Priya at Acme", "email": "priya@acme.com"}'</span>
+
+lobby claim create --ref acct_123 --label <span class="s">"Priya at Acme"</span></code></pre>
+<ul>
+  <li><code>account_ref</code> is required: your product's id for the account, up to 200 characters.</li>
+  <li><code>email</code> is optional. With it, only that address can claim the account. Without it, whoever has the link claims it with their own address. Either way the email is confirmed first.</li>
+  <li><code>label</code> is optional and shows on the claim page: "Acme set up an account for Priya at Acme".</li>
+  <li><code>expires_in</code> is optional, in seconds. Links last 30 days by default.</li>
+</ul>
+<p>A new claim for the same <code>account_ref</code> revokes the open one, so only the newest link works.</p>
+
+<h2>Redeeming in your app</h2>
+<p>On the page at your Invite URL, when <code>?claim=</code> is present, redeem it from your server with the secret key:</p>
+<pre data-title="server.ts"><code><span class="k">const</span> res = <span class="k">await</span> fetch(<span class="s">"https://trylobby.app/v1/claims/redeem"</span>, {
+  method: <span class="s">"POST"</span>,
+  headers: { Authorization: <span class="s">`Bearer ${process.env.LOBBY_SECRET_KEY}`</span>, <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> },
+  body: JSON.stringify({ code: req.query.claim }),
+})
+<span class="k">if</span> (!res.ok) <span class="k">return</span> showLinkExpired()
+<span class="k">const</span> { account_ref, email } = <span class="k">await</span> res.json()
+<span class="k">await</span> db.accounts.update(account_ref, { email })
+<span class="k">await</span> startSession(account_ref)   <span class="c">// then ask them to set a password</span></code></pre>
+<p>Codes work once and last 15 minutes. A <code>404</code> means the code is invalid, used or expired. The response also has <code>label</code>, <code>claim_id</code>, <code>signup_id</code> and a <code>reporter_token</code> for the <a href="https://github.com/rohansx/lobby/blob/main/docs/feedback-integration.md">feedback widget</a>.</p>
+
+<h2>Tracking claims</h2>
+<p>The Claims page and <code>GET /v1/claims</code> show each claim's state:</p>
+<div class="table"><table>
+  <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>open</code></td><td>Created. Shown as "Sent" in the dashboard.</td></tr>
+    <tr><td><code>opened</code></td><td>The prospect has visited the link.</td></tr>
+    <tr><td><code>verified</code></td><td>They confirmed their email but your app hasn't redeemed the code yet.</td></tr>
+    <tr><td><code>claimed</code></td><td>Your app redeemed the code.</td></tr>
+    <tr><td><code>revoked</code>, <code>expired</code></td><td>The link no longer works.</td></tr>
+  </tbody>
+</table></div>
+<p>Revoke from the dashboard, with <code>DELETE /v1/claims/{id}</code> or <code>lobby claim revoke ID</code>. The <code>claim.opened</code> and <code>claim.claimed</code> <a href="/docs/webhooks">webhooks</a> tell your CRM or Slack when it happens.</p>
+<p>A claimed prospect joins your waitlist as <code>joined</code>, with source <code>claim</code>. They never get waitlist or launch emails, and you can give them the feedback widget.</p>

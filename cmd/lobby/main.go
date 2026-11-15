@@ -64,6 +64,8 @@ CLI (needs LOBBY_URL and LOBBY_KEY=sk_... for the project):
   lobby feedback approve|fix ID      approve for the agent, or mark fixed and email reporters
   lobby feedback next [--format md]  the next approved issue as a work packet (agent key works)
   lobby feedback note ID "text"      record what changed (agent key works)
+  lobby claim create --ref ID [--email E] [--label L]  a claim link for an account you built
+  lobby claim list | revoke ID       claims and their state
   lobby version
 
 Server environment:

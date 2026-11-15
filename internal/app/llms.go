@@ -53,13 +53,22 @@ Agent hand-off (Authorization: Bearer ak_... the agent key from the Feedback pag
 - POST /v1/issues/{id}/note {"note": "what changed"}: record what you changed. Don't mark it fixed; the founder does that after deploying.
 - POST /v1/issues/{id}/state {"state":"approved|dismissed|fixed|open"}: secret key only. fixed emails the reporters.
 
+## Claimable accounts
+
+Build an account in your product for a prospect, then let them take it over. Lobby verifies their email and gives your product a one-time code; your product swaps in the email. Prospects land on the waitlist's Invite URL (else its Site URL) with ?claim=<code>.
+
+- POST /v1/claims {"account_ref": "your account id", "email": "optional: only this address can claim", "label": "optional: who it's for", "expires_in": seconds (default 30 days)} → {"id","claim_url","state",...}. Send claim_url to the prospect. A new claim for the same account_ref revokes the open one.
+- GET /v1/claims: newest first, with state open|opened|verified|claimed|revoked|expired. DELETE /v1/claims/{id}: revoke.
+- POST /v1/claims/redeem {"code": "<?claim= value>"} → {"account_ref","email","label","claim_id","signup_id","reporter_token"}. Server side only, with the secret key. Codes are single use and last 15 minutes; 404 means invalid, used or expired. Then set the verified email on that account and start a session.
+- The claimed person joins the waitlist as joined (source "claim"), never subscribed to waitlist mail, so they can be given the feedback widget.
+
 ## Webhooks
 
-Events: signup.created, signup.confirmed, signup.referred, signup.invited, signup.joined, signup.removed, feedback.reported, feedback.issue_opened, feedback.issue_fixed. Body: {"type","timestamp","data"}. Signed per Standard Webhooks: headers webhook-id, webhook-timestamp, webhook-signature = "v1," + base64(HMAC-SHA256(base64-decoded secret after "whsec_", id + "." + timestamp + "." + body)).
+Events: signup.created, signup.confirmed, signup.referred, signup.invited, signup.joined, signup.removed, feedback.reported, feedback.issue_opened, feedback.issue_fixed, claim.opened, claim.claimed. Body: {"type","timestamp","data"}. Signed per Standard Webhooks: headers webhook-id, webhook-timestamp, webhook-signature = "v1," + base64(HMAC-SHA256(base64-decoded secret after "whsec_", id + "." + timestamp + "." + body)).
 
 ## CLI
 
-The same binary is the CLI: LOBBY_URL={{BASE}} LOBBY_KEY=sk_... lobby stats | signups | invite --next 50 | joined ID | export | remove ID. Feedback: lobby feedback list | approve ID | next [--format md|json] | note ID "text" | fix ID (LOBBY_KEY may be the ak_ agent key for next and note). Symlink it as "wl" to type less.
+The same binary is the CLI: LOBBY_URL={{BASE}} LOBBY_KEY=sk_... lobby stats | signups | invite --next 50 | joined ID | export | remove ID. Claims: lobby claim create --ref ID [--email E] [--label L] | claim list | claim revoke ID. Feedback: lobby feedback list | approve ID | next [--format md|json] | note ID "text" | fix ID (LOBBY_KEY may be the ak_ agent key for next and note). Symlink it as "wl" to type less.
 `
 
 func (s *Server) llms(w http.ResponseWriter, r *http.Request) {

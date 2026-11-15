@@ -90,7 +90,7 @@ export default function Settings() {
           <Field label="Redirect after signup" id="redirect_url" hint="For the plain HTML form. Leave empty to show the status page.">
             <Input id="redirect_url" type="url" {...text("redirect_url")} />
           </Field>
-          <Field label="Invite URL" id="invite_url" hint="Where invite links land, with ?wl=<token>. Your app redeems it through the API.">
+          <Field label="Invite URL" id="invite_url" hint="Where invite links land, with ?wl=<token>, and where claimed accounts land, with ?claim=<code>. Your app redeems either through the API.">
             <Input id="invite_url" type="url" placeholder="https://app.convox.ai/signup" {...text("invite_url")} />
           </Field>
         </Section>

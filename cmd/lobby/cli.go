@@ -228,6 +228,8 @@ func runCLI(cmd string, args []string) error {
 		return c.do("GET", "/v1/webhooks", nil, os.Stdout)
 	case "feedback", "fb":
 		return runFeedback(c, tw, args)
+	case "claim", "claims":
+		return runClaim(c, tw, args)
 	default:
 		usage()
 		return fmt.Errorf("unknown command %q", cmd)

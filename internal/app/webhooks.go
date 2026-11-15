@@ -20,7 +20,8 @@ import (
 
 // Events a webhook can subscribe to.
 var Events = []string{"signup.created", "signup.confirmed", "signup.referred", "signup.invited", "signup.joined", "signup.removed",
-	"feedback.reported", "feedback.issue_opened", "feedback.issue_fixed"}
+	"feedback.reported", "feedback.issue_opened", "feedback.issue_fixed",
+	"claim.opened", "claim.claimed"}
 
 type Webhook struct {
 	ID             int64  `json:"id"`
@@ -393,6 +394,23 @@ func slackText(d *Delivery) string {
 		if f.Report != nil {
 			return fmt.Sprintf("%s added feedback to issue #%d: %s", f.Report.Reporter, f.Issue.ID, f.Issue.Title)
 		}
+	case "claim.opened", "claim.claimed":
+		var c struct {
+			Claim struct {
+				AccountRef string `json:"account_ref"`
+				Label      string `json:"label"`
+				Email      string `json:"email"`
+			} `json:"claim"`
+		}
+		json.Unmarshal(ev.Data, &c)
+		who := c.Claim.Label
+		if who == "" {
+			who = c.Claim.AccountRef
+		}
+		if ev.Type == "claim.opened" {
+			return "Claim link opened: " + who
+		}
+		return "Account claimed: " + who + " by " + c.Claim.Email
 	case "webhook.test":
 		return "Lobby test event: your Slack webhook works."
 	}

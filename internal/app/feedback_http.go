@@ -670,9 +670,10 @@ func (s *Server) publicFollowup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var q string
+	choices := []string{}
 	switch r.PathValue("action") {
 	case "question":
-		q, err = s.app.AskFollowup(r.Context(), p, body.Reporter, id)
+		q, choices, err = s.app.AskFollowup(r.Context(), p, body.Reporter, id)
 	case "answer":
 		err = s.app.AnswerFollowup(r.Context(), p, body.Reporter, id, body.Answer)
 	default:
@@ -682,7 +683,7 @@ func (s *Server) publicFollowup(w http.ResponseWriter, r *http.Request) {
 	var ve *ValidationError
 	switch {
 	case err == nil && r.PathValue("action") == "question":
-		writeJSON(w, 200, map[string]any{"ok": true, "question": q})
+		writeJSON(w, 200, map[string]any{"ok": true, "question": q, "choices": nonNil(choices)})
 	case err == nil:
 		writeJSON(w, 200, map[string]any{"ok": true, "message": "Thanks, that helps."})
 	case errors.As(err, &ve):

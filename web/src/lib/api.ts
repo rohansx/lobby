@@ -424,6 +424,8 @@ export interface FeedbackReport {
   has_screenshot: boolean
   followup_question?: string // asked by Claude when the report was vague
   followup_answer?: string // the reporter's words: untrusted
+  state?: string // the picked element as they saw it: "disabled, loading"
+  steps: string[] // recent clicks and page changes, oldest first: "12s ago · click button · Save"
   email?: string
   source?: string
   wave?: string

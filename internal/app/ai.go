@@ -200,6 +200,12 @@ func (a *App) summarizeIssue(ctx context.Context, j aiIssueJob) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "<issue id=\"%d\" type=\"%s\" reporters=\"%d\">\n<page>%s</page>\n<element selector=\"%s\" context=\"%s\" links_to=\"%s\" outline=\"%s\">%s</element>\n",
 		iss.ID, x(iss.Type), iss.Reporters, x(iss.Path), x(iss.Selector), x(iss.Context), x(iss.Href), x(iss.Outline), x(iss.ElementText))
+	if pk.Location.State != "" {
+		fmt.Fprintf(&b, "<element_state>%s</element_state>\n", x(pk.Location.State))
+	}
+	for _, st := range pk.Evidence.Steps {
+		fmt.Fprintf(&b, "<step_before_report>%s</step_before_report>\n", x(st))
+	}
 	for _, e := range pk.Evidence.ConsoleErrors {
 		fmt.Fprintf(&b, "<console_error>%s</console_error>\n", x(e))
 	}

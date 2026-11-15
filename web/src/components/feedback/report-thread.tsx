@@ -63,6 +63,23 @@ export function ReportThread({ slug, reports, blocked, onBlock, onSplit }: Props
                     <p className="whitespace-pre-wrap">{r.followup_answer || <span className="text-muted-foreground">No answer.</span>}</p>
                   </div>
                 )}
+                {(r.state || r.steps?.length > 0) && (
+                  <div className="grid gap-1 text-xs text-muted-foreground">
+                    {r.state && (
+                      <span>
+                        Element was: <span className="text-foreground">{r.state}</span>
+                      </span>
+                    )}
+                    {r.steps?.length > 0 && <span>Before reporting:</span>}
+                    {r.steps?.length > 0 && (
+                      <ol className="list-decimal pl-5 font-mono">
+                        {r.steps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
                 {r.has_screenshot && <Screenshot src={`/api/admin${projectPath(slug, `/feedback/reports/${r.id}/screenshot`)}`} />}
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer select-none">

@@ -390,6 +390,11 @@ var migrations = []string{
 	// 14: whether the widget honours data-lobby-mask. Off by default, so early
 	// reports carry everything; a founder turns it on when real users arrive.
 	`ALTER TABLE feedback_settings ADD COLUMN masks INTEGER NOT NULL DEFAULT 0;`,
+
+	// 15: what led up to a report (recent clicks and page changes, described like
+	// the widget's chip) and the picked element's state (disabled, loading, empty…).
+	`ALTER TABLE feedback_reports ADD COLUMN steps TEXT NOT NULL DEFAULT '[]';
+	ALTER TABLE feedback_reports ADD COLUMN state TEXT NOT NULL DEFAULT '';`,
 }
 
 func (s *Store) migrate() error {

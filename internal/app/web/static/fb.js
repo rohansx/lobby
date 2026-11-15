@@ -102,7 +102,7 @@
     ".mic.rec{background:var(--err);color:#fff}.mic.rec svg{animation:pulse 1s ease-in-out infinite}.mic[disabled]{opacity:.6;cursor:default}" +
     "@keyframes pulse{50%{opacity:.35}}" +
     ".fu{width:100%;text-align:left;margin-top:8px}.fu p{margin:0 0 8px;color:var(--ink);font-weight:500}.fu textarea{min-height:70px}" +
-    ".fu .foot{justify-content:flex-end}.fu .foot .n{display:none}" +
+    ".fu .foot{justify-content:flex-end}.choices{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.choices button{text-align:left}.fu .foot .n{display:none}" +
     ".done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px 10px}" +
     ".done i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--a);color:var(--ai)}.done i svg{width:20px;height:20px;stroke-width:2.5}" +
     ".done b{font-weight:600;font-size:15px}.done p{margin:0;color:var(--mut)}" +
@@ -132,7 +132,7 @@
     '<p class="msg" role="alert" hidden></p>' +
     '<p class="fine"></p></div>' +
     '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p>' +
-    '<div class="fu" hidden><p></p><textarea name="answer" maxlength="1000" aria-label="Your answer"></textarea>' +
+    '<div class="fu" hidden><p></p><div class="choices"></div><textarea name="answer" maxlength="1000" aria-label="Your answer"></textarea>' +
     '<div class="foot"><button class="pill" type="button" data-skip>Skip</button><button class="send" type="button" data-answer disabled>Send</button></div></div></div></form>' +
     '<span class="sr" aria-live="polite"></span>';
 
@@ -154,8 +154,9 @@
       var talk = j.voice && micAllowed();
       mic.hidden = !talk;
       $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area" + (masks ? " with private parts blanked" : "") : "") +
-        " and recent errors. Never what you typed into the page." + (talk ? " Voice is transcribed by Sarvam AI and not kept." : "");
+        ", your last few clicks and recent errors. Never what you typed into the page." + (talk ? " Voice is transcribed by Sarvam AI and not kept." : "");
       mount();
+      track();
       // Single-page apps sometimes replace the whole document body; stay attached.
       new MutationObserver(mount).observe(document.documentElement, { childList: true });
     }).catch(function () {});
@@ -187,6 +188,8 @@
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     // Cancelling touchend stops the browser making a click, so a tap picks here.
     if (e.type === "click" || e.type === "touchend") choose(e.target);
+    // Disabled buttons and fields get no click, only pointer events: pick them on pointerup.
+    else if (e.type === "pointerup" && e.target.closest && e.target.closest(":disabled")) choose(e.target.closest(":disabled"));
   }
   function over(e) { if (picking && !ours(e.target)) frame(e.target); }
   function key(e) {
@@ -285,7 +288,7 @@
       project: d.project, reporter: d.reporter, release: d.release || "",
       type: type, comment: ta.value, url: location.pathname,
       selector: whole ? "body" : selector(picked), tag: whole ? "body" : picked.tagName.toLowerCase(), text: whole ? "" : textOf(picked), context: whole ? "" : contextOf(picked),
-      href: whole ? "" : hrefOf(picked), outline: whole ? "" : outlineOf(picked),
+      href: whole ? "" : hrefOf(picked), outline: whole ? "" : outlineOf(picked), state: whole ? "" : stateOf(picked), steps: stepsNow(),
       viewport: innerWidth + "x" + innerHeight, browser: navigator.userAgent,
       console_errors: errs.slice(), failed_requests: reqs.slice(), screenshot: shotURL
     };
@@ -535,6 +538,15 @@
         if (!j.question) return thanks();
         doneState(false, "Thanks! One quick question", "");
         fu.querySelector("p").textContent = j.question;
+        var ch = fu.querySelector(".choices");
+        ch.innerHTML = "";
+        (j.choices || []).forEach(function (c) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "pill"; b.textContent = c;
+          b.onclick = function () { fuText.value = c; answer(); };
+          ch.appendChild(b);
+        });
+        ch.hidden = !ch.firstChild;
         fu.hidden = false; fuText.value = ""; fuSend.disabled = true; fuText.focus();
         live.textContent = "One quick question: " + j.question;
         fu.dataset.rid = rid;
@@ -542,8 +554,8 @@
   }
   function answer() {
     var a = fuText.value.trim(), mine = round;
-    if (!a) return;
-    fuSend.disabled = true;
+    if (!a || fuSend.dataset.busy) return;
+    fuSend.disabled = true; fuSend.dataset.busy = "1";
     of0(api + "/v1/feedback/reports/" + fu.dataset.rid + "/answer", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project: d.project, reporter: d.reporter, answer: a })
@@ -552,7 +564,7 @@
       fu.hidden = true;
       doneState(false, j.ok ? "Thanks, that helps" : "Couldn't send that", j.ok ? "" : (j.error || "Please try again."));
       setTimeout(function () { if (mine === round) reset(); }, 2500);
-    }, function () { fuSend.disabled = false; });
+    }, function () { fuSend.disabled = false; }).then(function () { delete fuSend.dataset.busy; });
   }
   fuText.oninput = function () { fuSend.disabled = !fuText.value.trim(); };
   fuText.onkeydown = function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); answer(); } };
@@ -657,6 +669,59 @@
   function outlineOf(el) {
     var kids = [].slice.call(el.children, 0, 6).map(tok);
     return (tok(el) + (kids.length ? " > " + kids.join(" + ") + (el.children.length > 6 ? " + …" : "") : "")).slice(0, 300);
+  }
+  // What the element looked like: disabled, loading, empty, cut off… Never values.
+  function stateOf(el) {
+    var out = [], cs = getComputedStyle(el), a = function (k) { return el.getAttribute(k); };
+    var field = /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+    if (el.disabled || a("aria-disabled") === "true" || el.closest("fieldset[disabled]")) out.push("disabled");
+    if (el.readOnly) out.push("read-only");
+    if (el.closest("[aria-busy=true]") || el.querySelector("[aria-busy=true],[role=progressbar],[class*=spinner],[class*=skeleton],[class*=loading]") ||
+      /(^|[\s_-])(loading|spinner|skeleton|pending)/i.test(typeof el.className == "string" ? el.className : "")) out.push("loading");
+    if (a("aria-expanded")) out.push(a("aria-expanded") === "true" ? "expanded" : "collapsed");
+    if (a("aria-selected") === "true") out.push("selected");
+    if (a("aria-pressed") === "true") out.push("pressed");
+    if (el.type === "checkbox" || el.type === "radio" || a("aria-checked")) out.push(el.checked || a("aria-checked") === "true" ? "checked" : "unchecked");
+    if (a("aria-invalid") === "true" || (field && el.matches(":invalid") && el.value)) out.push("invalid");
+    if (field) { if (!el.value) out.push("empty"); if (el.required) out.push("required"); }
+    else if (!el.textContent.trim() && !el.querySelector("img,svg,canvas,video,input,iframe")) out.push("empty");
+    if (cs.visibility === "hidden" || +cs.opacity < 0.1) out.push("invisible");
+    if (cs.pointerEvents === "none") out.push("not clickable");
+    if (!field && el.scrollWidth > el.clientWidth + 1 && /hidden|clip/.test(cs.overflowX)) out.push("text cut off");
+    var r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) out.push("zero size");
+    return out.join(", ");
+  }
+
+  // The last few things they did before reporting: clicks and page changes,
+  // described like the chip (so masked text stays out). Never typed values.
+  var steps = [], lastPath = location.pathname;
+  function step(t) { if (t && (!steps.length || steps[steps.length - 1].t !== t)) push(steps, { t: t, at: Date.now() }, 12); }
+  function moved() { if (location.pathname !== lastPath) { lastPath = location.pathname; step("go " + lastPath); } }
+  function track() {
+    var act = "a,button,summary,label,input,select,textarea,[role=button],[role=tab],[role=menuitem],[role=option],[role=checkbox],[role=switch],[role=link],[onclick]";
+    document.addEventListener("click", function (e) {
+      if (picking || !e.target || !e.target.closest || ours(e.target)) return;
+      var el = e.target.closest(act) || e.target;
+      if (el === document.body || el === document.documentElement) return;
+      moved(); step("click " + label(el));
+    }, true);
+    document.addEventListener("change", function (e) {
+      var el = e.target;
+      if (!picking && el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !ours(el)) step("changed " + label(el));
+    }, true);
+    // Client-side routers change the URL through history; note it as it happens.
+    ["pushState", "replaceState"].forEach(function (k) {
+      var o = history[k];
+      if (typeof o == "function") history[k] = function () { var r = o.apply(this, arguments); try { moved(); } catch (e) {} return r; };
+    });
+    addEventListener("popstate", moved);
+    addEventListener("hashchange", moved);
+  }
+  function stepsNow() {
+    moved();
+    var t = Date.now();
+    return steps.map(function (x) { var s = Math.round((t - x.at) / 1000); return (s < 60 ? s + "s" : Math.round(s / 60) + "m") + " ago · " + x.t; });
   }
   function esc(v) { return String(v).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
 

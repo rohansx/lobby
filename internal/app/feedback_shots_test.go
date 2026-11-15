@@ -103,13 +103,15 @@ func TestFeedbackFollowup(t *testing.T) {
 	e := newFBEnv(t)
 	ctx := context.Background()
 	fc := &fakeClaude{reply: func(user string) (any, error) {
-		return map[string]any{"ask": true, "question": "  Which number looks wrong,\n and what should it be? "}, nil
+		return map[string]any{"ask": true, "question": "  Which number looks wrong,\n and what should it be? ",
+			"choices": []string{"The total", " The total ", "The date", ""}}, nil
 	}}
 	e.a.ai = fc.call
 	_, rt := e.invited("ana@example.com")
 	_, other := e.invited("ben@example.com")
 	png := "data:image/png;base64," + base64.StdEncoding.EncodeToString(testPNG)
-	out := e.reportWith(rt, map[string]any{"screenshot": png})
+	out := e.reportWith(rt, map[string]any{"screenshot": png, "state": "disabled,  loading",
+		"steps": []string{"go /engagements/:id", "click button · Run checks"}})
 	path := fmt.Sprintf("/v1/feedback/reports/%d/", int64(out["report"].(float64)))
 	call := func(action, reporter, answer string) (int, map[string]any) {
 		b, _ := json.Marshal(map[string]any{"project": e.p.PublicKey, "reporter": reporter, "answer": answer})
@@ -126,8 +128,21 @@ func TestFeedbackFollowup(t *testing.T) {
 	if code != 200 || m["question"] != "Which number looks wrong, and what should it be?" {
 		t.Fatalf("question: %d %v", code, m)
 	}
+	if ch, _ := m["choices"].([]any); len(ch) != 2 || ch[0] != "The total" || ch[1] != "The date" {
+		t.Fatalf("choices not cleaned: %v", m["choices"])
+	}
 	if len(fc.images) != 1 || fc.images[0] != 1 || !strings.Contains(fc.prompts[0], "<on_the_page>Ledger check › Checks failing</on_the_page>") {
 		t.Fatalf("Claude didn't get the screenshot and context: %v", fc.images)
+	}
+	if !strings.Contains(fc.prompts[0], "<element_state>disabled, loading</element_state>") || !strings.Contains(fc.prompts[0], "<step>click button · Run checks</step>") {
+		t.Fatal("Claude didn't get the element state and steps")
+	}
+	iss := issueByPath(t, e, "/ledger")
+	pk, _ := e.a.BuildPacket(ctx, e.p, iss)
+	md := pk.Markdown()
+	if pk.Location.State != "disabled, loading" || len(pk.Evidence.Steps) != 2 || !strings.Contains(md, "2. `click button · Run checks`") ||
+		!strings.Contains(md, "Element state when reported: `disabled, loading`") {
+		t.Fatalf("packet lacks state or steps:\n%s", md)
 	}
 	if _, m := call("question", rt, ""); m["question"] != "" || len(fc.prompts) != 1 {
 		t.Fatal("asked twice about one report")
@@ -141,8 +156,8 @@ func TestFeedbackFollowup(t *testing.T) {
 	if code, _ := call("answer", rt, "again"); code != 409 {
 		t.Fatalf("second answer: %d", code)
 	}
-	iss, _ := e.a.Issue(ctx, e.p, int64(out["issue"].(float64)))
-	pk, _ := e.a.BuildPacket(ctx, e.p, iss)
+	iss, _ = e.a.Issue(ctx, e.p, int64(out["issue"].(float64)))
+	pk, _ = e.a.BuildPacket(ctx, e.p, iss)
 	if !strings.Contains(pk.Markdown(), "> Answer: Checks failing says 3, there are none") {
 		t.Fatalf("packet lacks the answer:\n%s", pk.Markdown())
 	}

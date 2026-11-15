@@ -131,7 +131,7 @@ func TestCampaignMoves(t *testing.T) {
 func TestCampaignFlow(t *testing.T) {
 	e := newPackEnv(t)
 	msgs := e.flushMail(t)
-	if !mailTo(msgs, "alice@example.com", "describe your product") || !mailTo(msgs, "ops@example.com", "New Launch Pack") {
+	if !mailTo(msgs, "alice@example.com", "describe your product") || !mailTo(msgs, "ops@example.com", "New Lobby Pro") {
 		t.Fatalf("start emails: %v", msgs)
 	}
 	if ac, _ := e.a.Account(context.Background(), e.aliceID); ac.Plan != "pack" {
@@ -437,7 +437,7 @@ func uploadAsset(t *testing.T, e *packEnv, c *client, slug, kind, name string, d
 
 func TestAssetLimits(t *testing.T) {
 	e := newPackEnv(t)
-	// Bob owns a waitlist but has no Launch Pack: no uploads.
+	// Bob owns a waitlist but has no Lobby Pro: no uploads.
 	if rec := uploadAsset(t, e, e.bob, "bobs", "logo", "x.png", pngBytes(10)); rec.Code != 403 {
 		t.Fatalf("upload without a campaign: %d %s", rec.Code, rec.Body)
 	}

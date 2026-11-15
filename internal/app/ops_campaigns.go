@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Operator endpoints for Launch Pack campaigns and the destination catalogue.
+// Operator endpoints for Lobby Pro campaigns and the destination catalogue.
 // Registered in campaignRoutes behind cloudOnly and operatorOnly.
 
 func (s *Server) opsDestinations(w http.ResponseWriter, r *http.Request) {

@@ -108,7 +108,7 @@ func (s *Server) adminBilling(w http.ResponseWriter, r *http.Request) {
 	}
 	packs, err := s.app.Campaigns(r.Context(), ac.ID)
 	if err != nil {
-		jsonError(w, 500, "couldn't load your Launch Packs")
+		jsonError(w, 500, "couldn't load your Lobby Pro purchases")
 		return
 	}
 	for i, c := range packs {

@@ -1,0 +1,21 @@
+{
+  "name": "lobby-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render FeedbackDemo out/feedback-demo.webm --codec=vp9 --crf=36",
+    "poster": "remotion still FeedbackDemo out/feedback-poster.jpg --frame=520 --image-format=jpeg --jpeg-quality=85"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.543",
+    "@remotion/google-fonts": "4.0.543",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.543"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "6.0.3"
+  }
+}

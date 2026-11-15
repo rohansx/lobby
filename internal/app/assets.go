@@ -131,7 +131,7 @@ func (a *App) DeleteAsset(ctx context.Context, projectID, id int64) error {
 	return nil
 }
 
-// hasCampaign reports whether the account has a Launch Pack campaign that isn't cancelled.
+// hasCampaign reports whether the account has a Lobby Pro launch campaign that isn't cancelled.
 func (a *App) hasCampaign(ctx context.Context, ownerID int64) (bool, error) {
 	var ok bool
 	err := a.db.R.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM campaigns WHERE owner_id = ? AND status != ?)`, ownerID, statusCancelled).Scan(&ok)

@@ -58,8 +58,8 @@ export default function BillingPage() {
                   ? `Your ${data.plan.name} subscription ends on ${date(a.period_end)}.`
                   : `Your ${data.plan.name} subscription renews ${date(a.period_end)}. It stays as it is; we no longer sell new subscriptions.`
                 : data.plan.id === "pack"
-                  ? "Your Launch Pack keeps these limits for good. There is nothing to renew."
-                  : "Free for small lists. A Launch Pack removes the signup limit."}
+                  ? "Your Lobby Pro keeps these limits for good. There is nothing to renew."
+                  : "Free for small lists. Lobby Pro removes the signup limit."}
               {data.subscriber && a?.status === "past_due" && " Update your card in Manage billing to keep your plan."}
             </CardDescription>
           </CardHeader>
@@ -81,7 +81,7 @@ export default function BillingPage() {
       )}
 
       <div className="mt-10 mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-lg font-normal tracking-[-0.03em]">Launch Packs</h2>
+        <h2 className="text-lg font-normal tracking-[-0.03em]">Lobby Pro purchases</h2>
         {data && packs.length > 0 && data.billing_enabled && (
           <Button variant="outline" disabled={pack.busy} onClick={pack.buy}>
             {pack.busy && <LoaderIcon className="animate-spin" />}
@@ -92,7 +92,7 @@ export default function BillingPage() {
       {!data ? (
         <Skeleton className="h-24" />
       ) : packs.length === 0 ? (
-        data.billing_enabled ? <PackOffer /> : <p className="text-sm text-muted-foreground">The Launch Pack opens soon. Everything on Free works today.</p>
+        data.billing_enabled ? <PackOffer /> : <p className="text-sm text-muted-foreground">Lobby Pro opens soon. Everything on Free works today.</p>
       ) : (
         <div className="overflow-hidden rounded-xl border">
           <Table>

@@ -148,6 +148,23 @@ export interface Signup {
   feedback_set: boolean // switched by hand rather than following the project's audience
 }
 
+export interface Claim {
+  id: number
+  account_ref: string
+  label: string
+  email_lock: string
+  email: string
+  pending_email: string
+  signup_id: number | null
+  state: "open" | "opened" | "verified" | "claimed" | "revoked" | "expired"
+  claim_url: string
+  created_at: number
+  expires_at: number
+  opened_at: number | null
+  verified_at: number | null
+  claimed_at: number | null
+}
+
 export interface Webhook {
   id: number
   url: string
@@ -181,7 +198,7 @@ export interface Broadcast {
   created_at: number
 }
 
-// Launch Pack (cloud only).
+// Lobby Pro (cloud only).
 export type CampaignStatus = "intake" | "readiness" | "planning" | "awaiting_approval" | "executing" | "reporting" | "done" | "cancelled"
 
 export const campaignLabel: Record<CampaignStatus, string> = {

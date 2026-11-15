@@ -10,9 +10,9 @@ export interface CheckoutIntent {
 }
 
 // checkoutIntent says what a /checkout link from the pricing page buys. Every link
-// leads to the Launch Pack now; old ?plan=launch|pro links included.
+// leads to Lobby Pro now; old ?plan=launch|pro links included.
 export function checkoutIntent(): CheckoutIntent {
-  return { name: "Launch Pack" }
+  return { name: "Lobby Pro" }
 }
 
 export function intentLine(i: CheckoutIntent): string {

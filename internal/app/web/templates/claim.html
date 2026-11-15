@@ -1,0 +1,22 @@
+{{define "title"}}Claim your {{.Project.Name}} account{{end}}
+{{define "meta"}}<meta name="robots" content="noindex">{{end}}
+{{define "content"}}
+<div class="card">
+  <p class="eyebrow">{{.Project.Name}}</p>
+  {{if .Confirm}}
+  <h1>Take over your account</h1>
+  <p class="lead">Your address {{.Email}} is confirmed. Continue to {{.Project.Name}} to finish.</p>
+  <form method="post"><button type="submit">Continue to {{.Project.Name}}</button></form>
+  {{else}}
+  <h1>Your account is ready</h1>
+  <p class="lead">{{if .Claim.Label}}{{.Project.Name}} set up an account for {{.Claim.Label}}.{{else}}{{.Project.Name}} set up an account for you.{{end}} Confirm your email and it's yours.</p>
+  <form class="join" method="post">
+    {{if .Claim.EmailLock}}<input type="email" name="email" value="{{.Email}}" readonly aria-label="Email address">
+    {{else}}<input type="email" name="email" required autocomplete="email" placeholder="you@example.com" value="{{.Email}}" aria-label="Email address">
+    {{end}}<button type="submit">Email me a link</button>
+  </form>
+  {{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}
+  <p class="fine">We'll send one email to confirm the address. Nothing changes hands until you open it.</p>
+  {{end}}
+</div>
+{{end}}

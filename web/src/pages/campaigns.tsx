@@ -17,7 +17,7 @@ export default function Campaigns() {
   const activating = useAfterCheckout(data?.data, reload)
   if (error) return <LoadError error={error} />
   return (
-    <Page title="Launch" description="Your Launch Pack campaigns: one product, one plan, every submission tracked.">
+    <Page title="Launch" description="Launch once, with Lobby Pro: one product, one plan, every submission tracked.">
       {activating && (
         <div className="mb-6 flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm">
           <LoaderIcon className="size-4 animate-spin" />
@@ -68,7 +68,7 @@ function useAfterCheckout(list: Campaign[] | undefined, reload: () => Promise<un
     }
     if (arrived) {
       refreshMe()
-      finish("Your Launch Pack is ready. Start with your product profile.")
+      finish("Your Lobby Pro is ready. Start with your product profile.")
       return
     }
     let tries = 0

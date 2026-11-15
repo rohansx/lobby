@@ -29,19 +29,19 @@ type Plan struct {
 
 var plans = map[string]Plan{
 	"free":   {ID: "free", Name: "Free", Signups: 500, Projects: 1, Emails: 1000, Branding: true},
-	"launch": {ID: "launch", Name: "Launch", Signups: -1, Projects: 3, Emails: 5000, Webhooks: true, Monthly: 5, YearlyPer: 4},
-	"pro":    {ID: "pro", Name: "Pro", Signups: -1, Projects: -1, Emails: 25000, Webhooks: true, Monthly: 12, YearlyPer: 10},
-	// pack: any account that has bought a Launch Pack. One-time, so it never expires.
-	"pack": {ID: "pack", Name: "Launch Pack", Signups: -1, Projects: 3, Emails: 5000, Webhooks: true},
+	"launch": {ID: "launch", Name: "Launch (monthly)", Signups: -1, Projects: 3, Emails: 5000, Webhooks: true, Monthly: 5, YearlyPer: 4},
+	"pro":    {ID: "pro", Name: "Pro (monthly)", Signups: -1, Projects: -1, Emails: 25000, Webhooks: true, Monthly: 12, YearlyPer: 10},
+	// pack: any account that has bought Lobby Pro. One-time, so it never expires.
+	"pack": {ID: "pack", Name: "Lobby Pro", Signups: -1, Projects: 3, Emails: 5000, Webhooks: true},
 }
 
 var selfHosted = Plan{ID: "self", Name: "Self-hosted", Signups: -1, Projects: -1, Emails: -1, Webhooks: true}
 
-// moreHint tells a Free account what the Launch Pack adds. Paid plans have
+// moreHint tells a Free account what Lobby Pro adds. Paid plans have
 // nothing to upgrade to, so they're pointed at support instead.
 func moreHint(p Plan) string {
 	if p.ID == "free" {
-		return " A Launch Pack raises this: unlimited signups, 3 waitlists and 5,000 emails a month."
+		return " Lobby Pro raises this: unlimited signups, 3 waitlists and 5,000 emails a month."
 	}
 	return " Contact support if you need more."
 }
@@ -437,9 +437,9 @@ func (a *App) mailLimitReached(ctx context.Context, ac *Account, plan Plan) {
 		Heading:   "Your waitlist is full",
 		Paras: []string{
 			fmt.Sprintf("Your waitlists have reached the %d signups included in the %s plan, so new visitors can't join right now.", plan.Signups, plan.Name),
-			"Everyone already on the list keeps their place. A Launch Pack includes unlimited signups, and the form starts accepting people again as soon as it's paid.",
+			"Everyone already on the list keeps their place. Lobby Pro includes unlimited signups, and the form starts accepting people again as soon as it's paid.",
 		},
-		CTA:    "See the Launch Pack",
+		CTA:    "See Lobby Pro",
 		URL:    a.cfg.BaseURL + "/billing",
 		Footer: "You get this at most once a week while the limit is reached.",
 	}.render()

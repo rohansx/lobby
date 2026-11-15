@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lobby: a launch campaign, measured by your waitlist</title>
-<meta name="description" content="The Lobby Launch Pack: a readiness review, an approved shortlist of up to 20 suitable launch destinations, submissions done or guided, and a report of which ones brought signups. $99 once. The waitlist is free to start or self-host.">
+<title>Lobby: launch once, let people in, hear what's broken</title>
+<meta name="description" content="Lobby covers the stretch between a landing page and a product with real users: a waitlist with referrals, one launch for every platform, invites and claimable accounts, and in-app feedback. Free for 500 signups, or self-host.">
 <meta name="theme-color" content="#fbfaf7">
-<meta property="og:title" content="Lobby: a launch campaign, measured by your waitlist">
-<meta property="og:description" content="A readiness review, an approved shortlist of launch destinations, submissions tracked, and a report of which ones brought signups. $99 once.">
+<meta property="og:title" content="Lobby: launch once, let people in, hear what's broken">
+<meta property="og:description" content="A waitlist with referrals, one launch for every platform, invites and claimable accounts, and in-app feedback from your first users.">
 <meta property="og:image" content="https://trylobby.app/og.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trylobby.app/">
@@ -28,7 +28,9 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
-      <a href="/launch">Launch Pack</a>
+      <a href="/launch">Launch</a>
+      <a href="/#claim">Claim</a>
+      <a href="/#feedback">Feedback</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -44,7 +46,9 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/launch">Launch Pack</a>
+          <a href="/launch">Launch</a>
+      <a href="/#claim">Claim</a>
+      <a href="/#feedback">Feedback</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -61,19 +65,19 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="kicker"><i></i>Launch Pack · $99 once · <a href="https://github.com/rohansx/lobby">Open-source waitlist</a></div>
-          <h1>Launch in the right places.<span>See which ones brought signups.</span></h1>
+          <div class="kicker"><i></i>Open source · Free for 500 signups · <a href="https://github.com/rohansx/lobby">Self-host it</a></div>
+          <h1>Launch it once. Let people in.<span>Hear what's broken.</span></h1>
         </div>
         <div class="hero-side">
-          <p class="sub">Describe your product once. We check that it's ready to launch, agree a shortlist of up to 20 suitable directories and communities with you, do the submissions where that's allowed and guide you through the rest. Your Lobby waitlist tags every signup by where it came from, so the report shows what each place brought in.</p>
+          <p class="sub">Lobby covers the stretch between a landing page and a product with real users. A waitlist with referrals, one launch you can take to every platform, invites and ready-made accounts your prospects can claim, and a feedback button for the people you let in.</p>
           <div class="hero-ctas">
-            <a class="btn btn-primary" href="/launch">See the Launch Pack
+            <a class="btn btn-primary" href="/signup">Start free
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
             <a class="btn btn-ghost" href="#demo">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
               Watch the demo</a>
           </div>
-          <p class="hero-note">Only need a waitlist? <a href="/signup">Start free</a> up to 500 signups, or <a href="#self-host">self-host it</a>.</p>
+          <p class="hero-note">No card needed. Free up to 500 signups, or <a href="#self-host">self-host it</a> with no limits.</p>
         </div>
       </div>
     </div>
@@ -95,17 +99,34 @@
   <div class="numbers reveal">
     <div class="num"><b>5 min</b><span>to a live waitlist</span></div>
     <div class="num"><b>500</b><span>signups free, no card</span></div>
-    <div class="num"><b>$99</b><span>once for a Launch Pack</span></div>
+    <div class="num"><b>1 tag</b><span>adds in-app feedback</span></div>
     <div class="num"><b>&lt;2 KB</b><span>embed widget, gzipped</span></div>
     <div class="num"><b>MIT</b><span>open source, self-host free</span></div>
   </div>
 
+  <section id="what">
+    <div class="wrap">
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">What Lobby does</div>
+          <h2>Four jobs before you have users. <span>One tool.</span></h2>
+        </div>
+        <p>Most products stitch this together from a waitlist tool, a spreadsheet of launch sites, hand-written onboarding code and a feedback inbox. Lobby is one binary and one dashboard for all of it.</p>
+      </div>
+      <div class="flow reveal">
+        <div class="step"><h3><a href="#features">Collect</a></h3><p>A waitlist with double opt-in, a place in line and referral links that move people up.</p></div>
+        <div class="step"><h3><a href="#launch-once">Launch</a></h3><p>Describe the product once and take it to every directory and community, with a tracked link for each.</p></div>
+        <div class="step"><h3><a href="#claim">Let in</a></h3><p>Invite the line in waves, or build a prospect's account ahead of time and let them claim it.</p></div>
+        <div class="step"><h3><a href="#feedback">Listen</a></h3><p>The people you let in click what's broken. Reports become issues your coding agent can pick up.</p></div>
+      </div>
+    </div>
+  </section>
   <section id="features">
     <div class="wrap">
       <div class="head split reveal">
         <div>
-          <div class="eyebrow">Features</div>
-          <h2>Everything a launch needs. <span>Even on the free plan.</span></h2>
+          <div class="eyebrow">Waitlist</div>
+          <h2>A waitlist that does the work. <span>Even on the free plan.</span></h2>
         </div>
         <p>The parts hosted waitlist tools charge extra for are built in: referrals, invite waves, webhooks, broadcasts, and one dashboard for all your products.</p>
       </div>
@@ -159,13 +180,13 @@
     <div class="wrap">
       <div class="head reveal">
         <div class="eyebrow">How it works</div>
-        <h2>From first visit <span>to first invite.</span></h2>
+        <h2>From first visit <span>to first bug report.</span></h2>
       </div>
       <div class="flow reveal">
         <div class="step"><h3>Sign up</h3><p>From your widget, a plain HTML form or the hosted page. Gmail dots and +tags fold together, so nobody signs up twice.</p></div>
         <div class="step"><h3>Confirm</h3><p>The confirmation link opens their status page: their place in line, how many are behind them, and a link to share.</p></div>
         <div class="step"><h3>Refer</h3><p>Friends who join and confirm through that link move the referrer up. Your dashboard shows who's driving growth.</p></div>
-        <div class="step"><h3>Invite</h3><p>Send invites in waves from the front of the line, then a launch broadcast to everyone when you go live.</p></div>
+        <div class="step"><h3>Invite</h3><p>Send invites in waves from the front of the line. The people you let in get a Feedback button inside your app, and everyone gets a launch broadcast when you go live.</p></div>
       </div>
 
       <div class="showcase reveal">
@@ -197,6 +218,137 @@
     </div>
   </section>
 
+  <section id="launch-once">
+    <div class="wrap">
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Launch once <span class="soon">Early access in Pro</span></div>
+          <h2>Describe it once. <span>Launch it everywhere.</span></h2>
+        </div>
+        <p>Every directory and community asks for the same facts in a different shape. Fill in your product once and Lobby prepares the submission for each place, with its own tracked link, so you can see what each one brought in. In early access, we set it up with you. <a class="inline-link" href="/launch">How it works</a>.</p>
+      </div>
+      <div class="bento">
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+          <h3>One profile, every format</h3>
+          <p>Name, tagline, descriptions at each length, logo, screenshots and links, entered once. Lobby fits them to each site's fields and character limits.</p>
+        </div>
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 2 2 3-4M4 16l2 2 3-4M13 7h7M13 16h7"/></svg></div>
+          <h3>A checklist, not a spreadsheet</h3>
+          <p>Each place is one task with the ready text beside it: what to post, where and in what order. Copy it, press submit on their site, tick it off.</p>
+        </div>
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M8 17V11M13 17V7M18 17v-4"/></svg></div>
+          <h3>See what each place brought</h3>
+          <p>Every destination gets its own link. The report shows visits, signups and confirmed signups per place, so the next launch starts from what worked.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="claim">
+    <div class="wrap">
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Claimable accounts <span class="soon new">New</span></div>
+          <h2>Set up their account first. <span>Let them claim it.</span></h2>
+        </div>
+        <p>Selling to a prospect? Build their account before the call, with their data already in it, and send one link. Lobby verifies their email and hands the account over, so you don't write claim links, expiry and verification into every product. <a class="inline-link" href="/docs/claims">How it works</a>.</p>
+      </div>
+      <div class="showcase flip reveal" style="margin-top:56px">
+        <div class="copy-col">
+          <div class="eyebrow">For your prospects</div>
+          <h3>One link, their own email</h3>
+          <p>They open the link, confirm their address and land in an account that's already theirs. Your product makes one API call to finish the handover.</p>
+          <ul class="ticks">
+            <li>The email is verified before anything changes hands</li>
+            <li>Lock a claim to one address, or leave it open to whoever holds the link</li>
+            <li>See when a prospect opened their link</li>
+            <li>Links expire after 30 days and can be revoked</li>
+          </ul>
+        </div>
+        <div class="code">
+          <div class="code-bar"><span>claim.ts</span></div>
+<pre><span class="c">// 1. Create a claim for an account you built</span>
+<span class="c">// lobby claim create --ref acct_123</span>
+<span class="c">//   → https://trylobby.app/c/9f2k…</span>
+
+<span class="c">// 2. They confirm their email, then arrive at</span>
+<span class="c">//    your app with ?claim=&lt;code&gt;</span>
+<span class="t">const</span> res = <span class="t">await</span> fetch(
+  <span class="s">"https://trylobby.app/v1/claims/redeem"</span>, {
+    method: <span class="s">"POST"</span>,
+    headers: { Authorization: <span class="s">"Bearer sk_…"</span> },
+    body: JSON.stringify({ code }),
+  })
+<span class="t">const</span> { account_ref, email } = <span class="t">await</span> res.json()
+
+<span class="c">// 3. The account is theirs</span>
+<span class="t">await</span> accounts.update(account_ref, { email })</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="feedback">
+    <div class="wrap">
+      <div class="head split reveal">
+        <div>
+          <div class="eyebrow">Feedback <span class="soon new">New</span></div>
+          <h2>Your first users find the bugs. <span>Lobby brings them to you.</span></h2>
+        </div>
+        <p>The people you invite get a small Feedback button inside your app. They click the thing that's wrong and say why. Lobby groups the reports into issues, and emails everyone who reported one when you mark it fixed.</p>
+      </div>
+      <div class="showcase reveal" style="margin-top:56px">
+        <div class="copy-col">
+          <div class="eyebrow">For the people you let in</div>
+          <h3>Click the element, say what's wrong</h3>
+          <p>A report is a bug, something confusing or an idea, pinned to one element on one page. It arrives with what you need to reproduce it.</p>
+          <ul class="ticks">
+            <li>A screenshot of the picked area, with the element outlined</li>
+            <li>Their last few clicks and page changes, never what they typed</li>
+            <li>The element's state: disabled, loading, empty or cut off</li>
+            <li>Speak instead of typing, in English or any Indian language</li>
+          </ul>
+        </div>
+        <div class="frame">
+          <video autoplay muted loop playsinline preload="metadata" poster="/feedback-poster.jpg" aria-label="A person picks the In prep card in PaperHQ, sends a bug report with a screenshot, and Lobby shows it as one issue with Claude's summary and a packet for a coding agent"><source src="/feedback-demo.webm" type='video/webm; codecs="vp9"'></video>
+        </div>
+      </div>
+      <div class="bento">
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg></div>
+          <h3>Twenty reports, one issue</h3>
+          <p>Reports on the same element land in one issue. Claude writes a clear title and a short summary, suggests duplicates for you to merge, and can ask the reporter one question when a report is vague.</p>
+        </div>
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></svg></div>
+          <h3>Hand issues to your coding agent</h3>
+          <p>Approve an issue and it becomes a work packet: the selector, page context, screenshot and what people said. An agent key can read approved issues and post notes, and nothing else.</p>
+        </div>
+        <div class="card span-2 reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="m16 11 2 2 4-4"/></svg></div>
+          <h3>You choose who sees it</h3>
+          <p>Everyone you've invited, only the people you switch on, or testers you add by email who never joined the waitlist. A weekly digest tells you what to look at first.</p>
+        </div>
+      </div>
+        <div class="code reveal" style="margin-top:14px">
+          <div class="code-bar"><span>after login</span></div>
+<pre><span class="c"># 1. On your server: is this person allowed?</span>
+curl -X POST https://trylobby.app/v1/reporters \
+  -H <span class="s">"Authorization: Bearer sk_…"</span> \
+  -d <span class="s">'{"email": "user@example.com"}'</span>
+
+<span class="c">&lt;!-- 2. In the page: one script tag --&gt;</span>
+<span class="t">&lt;script</span> <span class="a">defer</span>
+  <span class="a">src</span>=<span class="s">"https://trylobby.app/v1/fb.js"</span>
+  <span class="a">data-project</span>=<span class="s">"pk_…"</span>
+  <span class="a">data-reporter</span>=<span class="s">"rt_…"</span><span class="t">&gt;&lt;/script&gt;</span>
+
+<span class="c"># 3. Optional: your coding agent takes it from here</span>
+lobby feedback next --format md</pre>
+        </div>
+    </div>
+  </section>
   <section id="embed">
     <div class="wrap">
       <div class="head split reveal">
@@ -267,18 +419,19 @@ curl -X POST https://trylobby.app/v1/invites \
       <div class="head split reveal">
         <div>
           <div class="eyebrow">Why Lobby</div>
-          <h2>Your launch list is <span>your most valuable list.</span></h2>
+          <h2>Your first users are <span>your most valuable list.</span></h2>
         </div>
         <p>It's the people who asked to hear from you before you existed. Lobby never holds it hostage: export it any time, or take the open-source code and run it on your own server.</p>
       </div>
       <div class="compare reveal">
         <table>
-          <thead><tr><th></th><th>Lobby</th><th>Typical hosted waitlist</th></tr></thead>
+          <thead><tr><th></th><th>Lobby</th><th>The usual stack</th></tr></thead>
           <tbody>
-            <tr><td>Price</td><td>Free for 500 signups. A one-time Launch Pack removes the limit. Or self-host for free</td><td>A monthly plan, often priced per list or per signup</td></tr>
-            <tr><td>Multiple products</td><td>Three waitlists with a Launch Pack, unlimited self-hosted, all in one dashboard</td><td>Often one list per plan</td></tr>
+            <tr><td>Price</td><td>Free for 500 signups on Lobby Cloud, $99 once for Pro. Self-hosted is free with no limits</td><td>A monthly plan per tool, often priced per list or per signup</td></tr>
+            <tr><td>Multiple products</td><td>Every product in one dashboard, unlimited when you self-host</td><td>Often one list per plan</td></tr>
             <tr><td>Referrals and invites</td><td>On every plan, with fraud checks</td><td>Often on higher tiers</td></tr>
-            <tr><td>Webhooks and API</td><td>Included with a Launch Pack, with a CLI and <code>/llms.txt</code> for agents</td><td>Usually the top tier</td></tr>
+            <tr><td>Feedback from early users</td><td>A widget inside your app: 100 reports per waitlist free on Cloud, unlimited with Pro or self-hosted</td><td>A separate tool and another bill</td></tr>
+            <tr><td>Webhooks and API</td><td>Signed webhooks, a REST API, a CLI and <code>/llms.txt</code> for agents. Included self-hosted, and with Lobby Pro on Cloud</td><td>Usually the top tier</td></tr>
             <tr><td>Leaving</td><td>CSV or NDJSON export on every plan. The code is MIT, so you can always run it yourself</td><td>Export, if your plan includes it</td></tr>
           </tbody>
         </table>
@@ -336,7 +489,9 @@ lobby export --format csv</pre>
       </div>
       <div class="faq reveal">
         <details><summary>Is it really free?</summary><p>Self-hosted, yes. Lobby is MIT licensed with no signup limits and no phone-home. You pay for the server it runs on and for your email provider, and Resend's free tier is enough for a small launch. Rather not run a server? <a class="inline-link" href="/pricing">Lobby Cloud</a> is free up to 500 signups.</p></details>
-        <details><summary>What is the Launch Pack?</summary><p>A one-time, $99 launch campaign run by a person: a readiness review, a shortlist of up to 20 suitable destinations that you approve, submissions done or guided, 30 days of follow-up and a results report. It doesn't promise acceptance, rankings, traffic or customers. <a class="inline-link" href="/launch">What's included</a>.</p></details>
+        <details><summary>How do early users report problems?</summary><p>Add one script tag to your app for logged-in users. People you've invited, or testers you add by email, get a Feedback button: they click an element and say what's wrong. Reports are grouped into issues in your dashboard, and reporters get an email when you mark an issue fixed. The <a class="inline-link" href="https://github.com/rohansx/lobby/blob/main/docs/feedback-integration.md">integration guide</a> is written so you can hand it to a coding agent.</p></details>
+        <details><summary>What does Lobby use AI for?</summary><p>Only feedback. Claude titles and summarizes issues, suggests duplicates, may ask a reporter one follow-up question and writes an overview in the weekly digest. Nothing merges or changes state by itself, and you can switch it off per waitlist. Self-hosted, it stays off unless you set <code>ANTHROPIC_API_KEY</code>.</p></details>
+        <details><summary>Is Lobby just a waitlist?</summary><p>It started as one. Today it also runs in-app feedback from the people you let in, and ready-made accounts your prospects can claim. Launching to every platform from one profile is in early access with Lobby Pro. Use one part or all of them.</p></details>
         <details><summary>What do I need to run it?</summary><p>Anything that runs a Docker container: a small VPS, Dokploy, Coolify, Fly.io or Railway. It idles at about 20 MB of memory. Mount a volume at <code>/data</code> so your list survives restarts.</p></details>
         <details><summary>Can I run waitlists for several products?</summary><p>Yes. Each project has its own form, keys, allowed origins, emails, referral rules and settings, and they all share one dashboard.</p></details>
         <details><summary>How do I stop people gaming referrals?</summary><p>A referral only counts after the friend confirms their email, credits are capped per IP address and per hour, and addresses are normalized so Gmail dots and +tags can't create duplicates. Disposable domains are rejected.</p></details>
@@ -349,10 +504,9 @@ lobby export --format csv</pre>
   <div class="final reveal">
     <img src="/logo.svg" alt="">
     <h2>Open the doors <span>on your terms.</span></h2>
-    <p>Buy a Launch Pack, start a free waitlist in five minutes, or run Lobby on your own server. Either way, the list is yours.</p>
+    <p>Start free in five minutes, or run Lobby on your own server. Either way, the list is yours.</p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="/launch">See the Launch Pack</a>
-      <a class="btn btn-ghost" href="/signup">Start for free</a>
+      <a class="btn btn-primary" href="/signup">Start for free</a>
       <a class="btn btn-ghost" href="/docs/self-hosting">Self-host it</a>
     </div>
   </div>
@@ -364,7 +518,6 @@ lobby export --format csv</pre>
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
-      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// Launch Pack campaigns (cloud only). A founder buys a pack, which opens a
+// Lobby Pro campaigns (cloud only). A founder buys a pack, which opens a
 // campaign in intake; operators review readiness, build a plan of up to
 // maxCampaignTasks destinations, the founder approves it, the work is done and
 // tracked per task, and a report closes it. Every status change goes through
@@ -210,7 +210,7 @@ func (a *App) CreateCampaign(ctx context.Context, ownerID, priceCents int64, pol
 }
 
 // basePlan is the plan an account falls back to when a subscription ends:
-// pack if it has ever bought a Launch Pack, free otherwise.
+// pack if it has ever bought Lobby Pro, free otherwise.
 func (a *App) basePlan(ctx context.Context, ownerID int64) string {
 	var n int
 	a.db.W.QueryRowContext(ctx, `SELECT COUNT(*) FROM campaigns WHERE owner_id = ?`, ownerID).Scan(&n)

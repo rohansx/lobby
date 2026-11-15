@@ -198,7 +198,7 @@ var migrations = []string{
 		PRIMARY KEY (provider, subject));
 	CREATE INDEX oauth_identities_admin ON oauth_identities(admin_id);`,
 	`ALTER TABLE admins ADD COLUMN suspended_at INTEGER;`,
-	// Launch Pack (cloud): profile, assets, the operator's destination catalogue,
+	// Lobby Pro (cloud): profile, assets, the operator's destination catalogue,
 	// campaigns and their tasks, plus what measurement needs on pages and signups.
 	`ALTER TABLE projects ADD COLUMN qualification_question TEXT NOT NULL DEFAULT '';
 	ALTER TABLE signups ADD COLUMN answer TEXT NOT NULL DEFAULT '';
@@ -395,6 +395,29 @@ var migrations = []string{
 	// the widget's chip) and the picked element's state (disabled, loading, empty…).
 	`ALTER TABLE feedback_reports ADD COLUMN steps TEXT NOT NULL DEFAULT '[]';
 	ALTER TABLE feedback_reports ADD COLUMN state TEXT NOT NULL DEFAULT '';`,
+
+	// 16: claimable accounts. A founder builds an account in their product and
+	// sends a link; Lobby verifies the prospect's email and hands back a code
+	// the product redeems for its own account id (account_ref).
+	`CREATE TABLE claims (
+		id INTEGER PRIMARY KEY,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		account_ref TEXT NOT NULL,
+		label TEXT NOT NULL DEFAULT '',
+		email_lock TEXT NOT NULL DEFAULT '',
+		pending_email TEXT NOT NULL DEFAULT '',
+		verified_email TEXT NOT NULL DEFAULT '',
+		code_hash TEXT NOT NULL DEFAULT '',
+		code_expires_at INTEGER,
+		signup_id INTEGER REFERENCES signups(id) ON DELETE SET NULL,
+		created_at INTEGER NOT NULL,
+		expires_at INTEGER NOT NULL,
+		opened_at INTEGER,
+		verified_at INTEGER,
+		claimed_at INTEGER,
+		revoked_at INTEGER);
+	CREATE INDEX claims_project ON claims(project_id, account_ref);
+	CREATE INDEX claims_code ON claims(code_hash) WHERE code_hash != '';`,
 }
 
 func (s *Store) migrate() error {

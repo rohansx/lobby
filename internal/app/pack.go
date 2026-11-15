@@ -10,14 +10,14 @@ import (
 	"strconv"
 )
 
-// Selling the Launch Pack: a one-time Polar product (POLAR_PRODUCT_LAUNCH_PACK).
+// Selling Lobby Pro: a one-time Polar product (POLAR_PRODUCT_LAUNCH_PACK).
 // The order.paid webhook opens a campaign through CreateCampaign, which also
 // moves the account to the pack plan. Refunds only alert the operators; the
 // campaign is left as it is for a person to decide.
 
-var errPackBuyer = errors.New("This account can't buy a Launch Pack. Contact support.")
+var errPackBuyer = errors.New("This account can't get Lobby Pro. Contact support.")
 
-// PackCheckout returns a Polar checkout URL for one Launch Pack.
+// PackCheckout returns a Polar checkout URL for one Lobby Pro.
 func (a *App) PackCheckout(ctx context.Context, ac *Account) (string, error) {
 	if !a.cfg.Polar.Enabled() {
 		return "", errBillingOff
@@ -53,7 +53,7 @@ type polarOrder struct {
 	} `json:"customer"`
 }
 
-// ApplyOrder opens a campaign for a paid Launch Pack order. Orders for any
+// ApplyOrder opens a campaign for a paid Lobby Pro order. Orders for any
 // other product (subscription renewals, say) are ignored. Replays are safe:
 // CreateCampaign returns the campaign it already made for the order id.
 func (a *App) ApplyOrder(ctx context.Context, o *polarOrder) error {
@@ -69,8 +69,8 @@ func (a *App) ApplyOrder(ctx context.Context, o *polarOrder) error {
 	if _, err := a.Account(ctx, id); err != nil {
 		// Paid but nobody to give it to: a person has to sort this out.
 		a.log.Error("polar: launch pack paid for unknown account", "order", o.ID, "customer", o.CustomerID)
-		a.mailOperators(ctx, "Launch Pack paid, no matching account", email{
-			Heading: "A Launch Pack order has no account",
+		a.mailOperators(ctx, "Lobby Pro paid, no matching account", email{
+			Heading: "Lobby Pro order has no account",
 			Paras:   []string{fmt.Sprintf("Polar order %s (customer %s) was paid, but it doesn't match a Lobby account. No campaign was opened. Find the buyer in Polar and open a manual campaign, or refund.", o.ID, o.CustomerID)},
 		})
 		return nil
@@ -95,7 +95,7 @@ func (a *App) refundedOrder(ctx context.Context, o *polarOrder) {
 	}
 	what := "a subscription order"
 	if o.ProductID != "" && o.ProductID == a.cfg.Polar.LaunchPack {
-		what = "a Launch Pack"
+		what = "Lobby Pro"
 	}
 	a.log.Warn("billing: order refunded", "order", o.ID, "account", id, "product", o.ProductID, "status", o.Status)
 	a.mailOperators(ctx, "Refund: "+who, email{

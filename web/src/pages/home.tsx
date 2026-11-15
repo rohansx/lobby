@@ -81,10 +81,10 @@ function FreeUsage({ used, limit }: { used: number; limit: number }) {
         {full
           ? `Your waitlists have reached the ${num(limit)} signups on the Free plan, so new visitors can't join.`
           : `${num(used)} of ${num(limit)} free signups used.`}{" "}
-        A Launch Pack removes the signup limit.
+        Lobby Pro removes the signup limit.
       </span>
       <Button asChild size="sm">
-        <Link href="/campaigns">See the Launch Pack</Link>
+        <Link href="/campaigns">See Lobby Pro</Link>
       </Button>
     </div>
   )

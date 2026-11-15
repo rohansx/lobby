@@ -29,7 +29,7 @@ func (s *Server) requireKey(next http.Handler) http.Handler {
 			return
 		}
 		if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
-			jsonError(w, http.StatusPaymentRequired, "the REST API comes with a Launch Pack")
+			jsonError(w, http.StatusPaymentRequired, "the REST API comes with Lobby Pro")
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), projectKey, p)))

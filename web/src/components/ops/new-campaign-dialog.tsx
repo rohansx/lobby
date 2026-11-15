@@ -9,7 +9,7 @@ import { api, type Campaign, type OpsAccount } from "@/lib/api"
 import { invalidate } from "@/lib/use-api"
 import { badCents, toCents } from "./units"
 
-// Opens a Launch Pack campaign by hand, e.g. for a pack paid outside Polar.
+// Opens a Lobby Pro launch by hand, e.g. for a pack paid outside Polar.
 export function NewCampaignDialog({ account, children }: { account: OpsAccount; children: ReactNode }) {
   const [, navigate] = useLocation()
   const [open, setOpen] = useState(false)
@@ -43,7 +43,7 @@ export function NewCampaignDialog({ account, children }: { account: OpsAccount; 
         <form className="grid gap-4" onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>New campaign for {account.email}</DialogTitle>
-            <DialogDescription>Opens a Launch Pack in intake, puts the account on the pack plan and emails the founder.</DialogDescription>
+            <DialogDescription>Opens a Lobby Pro launch in intake, puts the account on the pack plan and emails the founder.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
             <Label htmlFor="nc-price">Price paid (USD)</Label>

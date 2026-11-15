@@ -333,7 +333,7 @@ const relevantChoices: { v: boolean | null; label: string; title: string }[] = [
   { v: null, label: "–", title: "Not reviewed" },
 ]
 
-// Relevant, not relevant or not reviewed: the founder's call, counted in the Launch Pack report.
+// Relevant, not relevant or not reviewed: the founder's call, counted in Lobby Pro report.
 function RelevantPicker({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
   return (
     <div role="radiogroup" aria-label="Relevant" className="inline-flex rounded-md border">

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Measurement for Launch Pack campaigns (cloud only): visits to the hosted
+// Measurement for Lobby Pro campaigns (cloud only): visits to the hosted
 // page counted per project, UTC day and utm_source, the optional
 // qualification question, and the campaign link for each task.
 

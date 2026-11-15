@@ -39,7 +39,7 @@ export default function OpsCampaigns() {
   const rows = [...(data?.data ?? [])].sort((a, b) => rank(a) - rank(b) || a.updated_at - b.updated_at)
 
   return (
-    <Page title="Operator" description="Launch Pack campaigns, the ones waiting on you first.">
+    <Page title="Operator" description="Lobby Pro launches, the ones waiting on you first.">
       <OpsNav />
       {!data ? (
         <Skeleton className="h-40" />

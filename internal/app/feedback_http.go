@@ -259,7 +259,7 @@ func (s *Server) requireIssueKey(next http.Handler) http.Handler {
 			return
 		}
 		if plan, _ := s.app.planForOwner(r.Context(), p.OwnerID); !plan.Webhooks {
-			jsonError(w, http.StatusPaymentRequired, "the feedback API, CLI and agent key come with a Launch Pack; Copy as prompt in the dashboard is free")
+			jsonError(w, http.StatusPaymentRequired, "the feedback API, CLI and agent key come with Lobby Pro; Copy as prompt in the dashboard is free")
 			return
 		}
 		ctx := context.WithValue(context.WithValue(r.Context(), projectKey, p), keyRole{}, role)

@@ -105,7 +105,7 @@ export function CampaignPlan({ campaign: c, tasks, onChange }: PlanProps) {
             </TableFooter>
           </Table>
           <p className="mt-3 px-6 text-xs text-muted-foreground">
-            Platform fees are charged by each destination and are separate from the Launch Pack{c.price_cents > 0 && `, which you paid ${money(c.price_cents)} for`}. If a destination turns out to be unavailable, its task records why.
+            Platform fees are charged by each destination and are separate from Lobby Pro{c.price_cents > 0 && `, which you paid ${money(c.price_cents)} for`}. If a destination turns out to be unavailable, its task records why.
           </p>
         </CardContent>
       </Card>

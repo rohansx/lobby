@@ -41,14 +41,14 @@ type PolarConfig struct {
 	WebhookSecret string // POLAR_WEBHOOK_SECRET
 	Sandbox       bool   // POLAR_SANDBOX=1 uses sandbox-api.polar.sh
 	APIURL        string // POLAR_API_URL overrides both, for tests
-	LaunchPack    string // POLAR_PRODUCT_LAUNCH_PACK, the one-time Launch Pack product
+	LaunchPack    string // POLAR_PRODUCT_LAUNCH_PACK, the one-time Lobby Pro product
 	// Products maps "launch_month" etc. to the legacy subscription products
 	// (POLAR_PRODUCT_LAUNCH_MONTHLY etc.). Only existing subscribers use them:
 	// no new subscriptions are sold, but their webhooks still need the mapping.
 	Products map[string]string
 }
 
-// Enabled reports whether the Launch Pack can be bought.
+// Enabled reports whether Lobby Pro can be bought.
 func (p PolarConfig) Enabled() bool { return p.Token != "" && p.LaunchPack != "" }
 
 func ConfigFromEnv() Config {

@@ -99,7 +99,7 @@ export function NewProjectDialog({ children, onCreated }: { children: ReactNode;
                 {error.message}{" "}
                 {error instanceof ApiError && error.upgrade && (
                   <Link href="/campaigns" onClick={() => setOpen(false)} className="font-medium text-foreground underline underline-offset-2">
-                    See the Launch Pack
+                    See Lobby Pro
                   </Link>
                 )}
               </p>

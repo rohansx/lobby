@@ -42,7 +42,9 @@
   <div class="wrap">
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <nav class="nav-links" aria-label="Main">
-      <a href="/launch">Launch Pack</a>
+      <a href="/launch">Launch</a>
+      <a href="/#claim">Claim</a>
+      <a href="/#feedback">Feedback</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -58,7 +60,9 @@
       <details class="menu">
         <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
         <nav aria-label="Main">
-          <a href="/launch">Launch Pack</a>
+          <a href="/launch">Launch</a>
+      <a href="/#claim">Claim</a>
+      <a href="/#feedback">Feedback</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/docs/self-hosting">Self-host</a>
@@ -75,6 +79,32 @@
 <h1>Changelog</h1>
 <p class="sub">What changed in Lobby, newest first. Every change is also on <a href="https://github.com/rohansx/lobby/commits/main">GitHub</a>.</p>
 
+<article class="entry">
+  <time datetime="2026-11-15">15 November 2026</time>
+  <div>
+    <h2>Claimable accounts <span class="tag">New</span></h2>
+    <ul>
+      <li>The Launch Pack is now <a href="/pricing">Lobby Pro</a>: the same $99 one-time payment, which lifts the Cloud limits and includes unlimited feedback, claimable accounts and <a href="/launch">Launch once</a> for one product. Earlier Launch Pack purchases are Lobby Pro.</li>
+      <li>Set up an account in your product for a prospect, then send one link. Lobby confirms their email and gives your app a one-time code to redeem for the account. <a href="/docs/claims">How it works</a>.</li>
+      <li>Lock a claim to one address or leave it open to whoever has the link. Links expire after 30 days and can be revoked.</li>
+      <li>A Claims page in the dashboard, <code>/v1/claims</code> in the API, <code>lobby claim</code> in the CLI, and <code>claim.opened</code> and <code>claim.claimed</code> webhooks.</li>
+    </ul>
+  </div>
+</article>
+<article class="entry">
+  <time datetime="2026-11-15">15 November 2026</time>
+  <div>
+    <h2>Lobby Feedback <span class="tag">New</span></h2>
+    <ul>
+      <li>A Feedback button inside your app for the people you've invited. They click any element and report a bug, something confusing or an idea. Reports are grouped into issues, and reporters are emailed when you mark one fixed.</li>
+      <li>Reports carry a screenshot of the picked area, where the element sits on the page, its state, and the reporter's last few clicks and page changes. A Privacy masks switch blanks the regions you mark; typed values are never captured.</li>
+      <li>Choose who sees the widget: everyone invited, people you switch on, or testers you add by email without them joining the waitlist.</li>
+      <li>Claude titles and summarizes issues, suggests duplicates, can ask the reporter one follow-up question and writes a weekly digest. Off per waitlist with one switch.</li>
+      <li>Voice input: reporters can speak for up to 30 seconds in English or an Indian language. The audio isn't kept.</li>
+      <li>An agent key and <code>lobby feedback next</code> hand approved issues to a coding agent as work packets, and an <a href="https://github.com/rohansx/lobby/blob/main/docs/feedback-integration.md">integration guide</a> you can give to the agent that adds the widget.</li>
+    </ul>
+  </div>
+</article>
 <article class="entry">
   <time datetime="2026-11-04">4 November 2026</time>
   <div>
@@ -146,7 +176,6 @@
     <a class="logo" href="/"><img src="/logo.svg" alt="">Lobby</a>
     <span>MIT licensed. Made by <a class="inline-link" href="https://github.com/rohansx">@rohansx</a>.</span>
     <nav>
-      <a href="/launch">Launch Pack</a>
       <a href="/docs">Docs</a>
       <a href="/pricing">Pricing</a>
       <a href="/changelog">Changelog</a>

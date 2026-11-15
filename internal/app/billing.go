@@ -19,7 +19,7 @@ import (
 
 // Billing runs through Polar (polar.sh), which is the merchant of record:
 // it takes the payment, handles sales tax and hosts the customer portal.
-// Lobby only creates Launch Pack checkouts (pack.go) and portal sessions, and
+// Lobby only creates Lobby Pro checkouts (pack.go) and portal sessions, and
 // keeps each account in step with Polar's webhooks. Subscriptions are no
 // longer sold; the subscription code below serves existing subscribers.
 
@@ -75,7 +75,7 @@ var errBillingOff = errors.New("Billing isn't set up on this instance yet.")
 
 // errNoSubscriptions answers the old subscription checkout. Existing
 // subscribers keep their plan and manage it from the customer portal.
-var errNoSubscriptions = errors.New("Lobby Cloud no longer sells subscriptions. Buy a Launch Pack instead: one payment, no renewal.")
+var errNoSubscriptions = errors.New("Lobby Cloud no longer sells subscriptions. Get Lobby Pro instead: one payment, no renewal.")
 
 // Portal returns a link to Polar's customer portal, where the customer
 // changes plan, updates their card, downloads invoices or cancels.

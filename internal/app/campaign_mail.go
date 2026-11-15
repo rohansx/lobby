@@ -34,17 +34,17 @@ func (a *App) opsCampaignURL(c *Campaign) string {
 }
 
 func (a *App) mailCampaignStarted(ctx context.Context, c *Campaign) {
-	a.mailLobby(ctx, c.OwnerEmail, "Your Launch Pack: describe your product", email{
+	a.mailLobby(ctx, c.OwnerEmail, "Your Lobby Pro: describe your product", email{
 		Preheader: "First step: fill in your product profile.",
 		Heading:   "Your launch campaign has started",
 		Paras: []string{
-			"Thanks for buying the Launch Pack. The first step is yours: choose the waitlist for the product, fill in the product profile and upload your logo and screenshots.",
+			"Thanks for getting Lobby Pro. The first step is yours: choose the waitlist for the product, fill in the product profile and upload your logo and screenshots.",
 			"Leave out anything you don't know yet. We list what's missing rather than guess, and nothing is submitted anywhere until you approve the plan.",
 		},
 		CTA: "Fill in the profile", URL: a.campaignURL(c),
 	})
-	a.mailOperators(ctx, "New Launch Pack: "+c.OwnerEmail, email{
-		Heading: "New campaign", Paras: []string{c.OwnerEmail + " started a Launch Pack campaign. It's in intake until they submit the profile."},
+	a.mailOperators(ctx, "New Lobby Pro: "+c.OwnerEmail, email{
+		Heading: "New campaign", Paras: []string{c.OwnerEmail + " started a Lobby Pro launch. It's in intake until they submit the profile."},
 		CTA: "Open campaign", URL: a.opsCampaignURL(c),
 	})
 }

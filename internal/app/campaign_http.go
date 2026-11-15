@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-// Launch Pack endpoints for founders, all cloud-only and scoped to the
+// Lobby Pro endpoints for founders, all cloud-only and scoped to the
 // signed-in account: another account's campaign, profile or files read as 404.
 
 func (s *Server) campaignRoutes(mux *http.ServeMux) {
@@ -236,12 +236,12 @@ func (s *Server) adminUploadAsset(w http.ResponseWriter, r *http.Request) {
 	if p == nil {
 		return
 	}
-	// Files are stored in the database, so only Launch Pack buyers get to add them.
+	// Files are stored in the database, so only Lobby Pro buyers get to add them.
 	if ok, err := s.app.hasCampaign(r.Context(), p.OwnerID); err != nil {
 		s.packError(w, err)
 		return
 	} else if !ok {
-		jsonError(w, 403, "Uploads open once you have a Launch Pack.")
+		jsonError(w, 403, "Uploads open once you have Lobby Pro.")
 		return
 	}
 	// Room for the multipart framing and the kind field around a 5 MB file.

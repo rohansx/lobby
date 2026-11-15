@@ -19,7 +19,7 @@ export function PackOffer() {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Launch Pack</CardTitle>
+        <CardTitle>Lobby Pro</CardTitle>
         <CardDescription>
           One payment, no subscription. <span className="text-foreground tabular-nums">{PACK_PRICE}</span> pilot price.
         </CardDescription>
@@ -38,7 +38,7 @@ export function PackOffer() {
       <CardFooter className="border-t">
         <Button disabled={busy} onClick={buy}>
           {busy && <LoaderIcon className="animate-spin" />}
-          Buy the Launch Pack
+          Get Lobby Pro
         </Button>
       </CardFooter>
     </Card>

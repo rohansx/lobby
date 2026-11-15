@@ -169,8 +169,8 @@ export default function CampaignReportPage() {
               <CardTitle>Cost</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-2 text-sm">
-              <Line label="Launch Pack" value={money(rep.pack_price_cents)} />
-              <Line label="Platform fees on the plan (paid to the platforms, separate from the pack)" value={money(rep.platform_fees_cents)} />
+              <Line label="Lobby Pro" value={money(rep.pack_price_cents)} />
+              <Line label="Platform fees on the plan (paid to the platforms, separate from Lobby Pro)" value={money(rep.platform_fees_cents)} />
               <Line
                 label={`Cost per confirmed signup from plan destinations (${num(rep.attributed_confirmed)} confirmed)`}
                 value={rep.cost_per_confirmed_cents === null ? "not shown until one is confirmed" : money(rep.cost_per_confirmed_cents)}

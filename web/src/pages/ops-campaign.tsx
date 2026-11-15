@@ -93,7 +93,7 @@ export default function OpsCampaignPage() {
             <p className="text-sm text-muted-foreground">{c.status === "planning" ? "No destinations on the plan yet." : "Destinations are added during planning."}</p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              {tasks.length} {tasks.length === 1 ? "destination" : "destinations"}, platform fees {money(fees)} (separate from the pack price).
+              {tasks.length} {tasks.length === 1 ? "destination" : "destinations"}, platform fees {money(fees)} (separate from Lobby Pro).
             </p>
           )}
           {tasks.map((t) => (

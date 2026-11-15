@@ -366,7 +366,7 @@ export function FeedbackSetup({
                 href="/campaigns"
                 className="text-foreground underline underline-offset-2"
               >
-                Launch Pack
+                Lobby Pro
               </Link>
               . Copy as prompt works on every plan.
             </p>

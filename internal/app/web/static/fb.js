@@ -79,7 +79,7 @@
     "background:var(--bg);color:var(--ink);border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.16);max-width:calc(100vw - 24px)}" +
     ".bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar kbd{font:600 11px/1 ui-monospace,monospace;padding:3px 5px;border:1px solid var(--line);border-radius:4px;color:var(--mut)}" +
     ".pill{padding:6px 11px;border-radius:999px;background:var(--soft);font-weight:500;white-space:nowrap}.pill:hover{background:var(--line)}" +
-    ".panel{position:fixed;z-index:2147483647;width:340px;max-width:calc(100vw - 24px);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);" +
+    ".panel{position:fixed;z-index:2147483647;width:340px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);" +
     "padding:14px;box-shadow:0 16px 48px rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.08);animation:in .16s ease-out}" +
     "@keyframes in{from{opacity:0;transform:translateY(4px) scale(.98)}}" +
     ".head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.head b{font-weight:600;font-size:15px}" +
@@ -403,6 +403,9 @@
     place();
   }, true);
   addEventListener("resize", place);
+  // The panel grows after it opens (the screenshot arriving, the (i) details, Claude's
+  // question): place it again each time, so it never hangs off the bottom of the screen.
+  if (window.ResizeObserver) new ResizeObserver(function () { place(); }).observe(form);
 
   form.onsubmit = function (e) {
     e.preventDefault();

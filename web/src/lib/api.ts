@@ -457,6 +457,7 @@ export interface FeedbackSettings {
   screenshots: boolean // the widget captures the picked area
   voice: boolean // reporters can speak instead of typing
   masks: boolean // the widget honours data-lobby-mask (off by default)
+  context: string // the founder's notes on the product, for Claude's questions and summaries
 }
 
 export interface FeedbackList {

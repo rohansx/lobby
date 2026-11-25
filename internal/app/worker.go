@@ -118,6 +118,9 @@ func (a *App) runJob(ctx context.Context, kind, payload string) error {
 		// give them their own worker if feedback volume ever delays signup mail.
 		return a.runFeedbackJob(ctx, kind, payload)
 	}
+	if kind == "email.feedback_batch" { // owner notification: doesn't count against the plan
+		return a.sendFeedbackBatch(ctx, payload)
+	}
 	if kind == "email.lobby" { // account mail from Lobby itself, already composed (see mailLobby)
 		var m Message
 		if err := json.Unmarshal([]byte(payload), &m); err != nil {

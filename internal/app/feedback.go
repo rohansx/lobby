@@ -326,13 +326,14 @@ type FeedbackSettings struct {
 	Screenshots bool   `json:"screenshots"` // the widget captures the picked area
 	Voice       bool   `json:"voice"`       // reporters can speak instead of typing
 	Masks       bool   `json:"masks"`       // the widget honours data-lobby-mask
+	Context     string `json:"context"`     // the founder's notes on the product, for Claude
 }
 
 func (a *App) FeedbackSettings(ctx context.Context, p *Project) FeedbackSettings {
 	st := FeedbackSettings{Console: true, Audience: AudienceInvited, AI: true, Digest: true, Screenshots: true, Voice: true, Masks: false}
 	var hash sql.NullString
-	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots, voice, masks FROM feedback_settings WHERE project_id = ?`, p.ID).
-		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots, &st.Voice, &st.Masks); err == nil {
+	if err := a.db.R.QueryRowContext(ctx, `SELECT console, agent_key_hash, audience, ai, digest, screenshots, voice, masks, product_context FROM feedback_settings WHERE project_id = ?`, p.ID).
+		Scan(&st.Console, &hash, &st.Audience, &st.AI, &st.Digest, &st.Screenshots, &st.Voice, &st.Masks, &st.Context); err == nil {
 		st.AgentKeySet = hash.Valid && hash.String != ""
 	}
 	return st
@@ -342,6 +343,29 @@ func (a *App) SetFeedbackConsole(ctx context.Context, p *Project, on bool) error
 	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, console) VALUES (?, ?)
 		ON CONFLICT(project_id) DO UPDATE SET console = excluded.console`, p.ID, on)
 	return err
+}
+
+const maxProductContext = 2000
+
+// SetFeedbackContext stores what the founder wants Claude to know about the
+// product: what it does, its words for things, the flows that matter.
+func (a *App) SetFeedbackContext(ctx context.Context, p *Project, text string) error {
+	text = strings.TrimSpace(text)
+	if utf8.RuneCountInString(text) > maxProductContext {
+		return &ValidationError{fmt.Sprintf("Keep the product context under %d characters.", maxProductContext)}
+	}
+	_, err := a.db.W.ExecContext(ctx, `INSERT INTO feedback_settings (project_id, product_context) VALUES (?, ?)
+		ON CONFLICT(project_id) DO UPDATE SET product_context = excluded.product_context`, p.ID, text)
+	return err
+}
+
+// productBlock is the founder's context as a prompt prefix, or nothing.
+func (a *App) productBlock(ctx context.Context, p *Project) string {
+	c := a.FeedbackSettings(ctx, p).Context
+	if c == "" {
+		return ""
+	}
+	return "<about_the_product>\n" + x(c) + "\n</about_the_product>\n\n"
 }
 
 func (a *App) SetFeedbackAudience(ctx context.Context, p *Project, audience string) error {
@@ -466,7 +490,7 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 			return nil, nil, err
 		}
 		if p.NotifyEmail != "" {
-			if err := a.enqueue(ctx, tx, "email.feedback_notify", emailJob{ProjectID: p.ID, SignupID: su.ID, IssueID: issueID}); err != nil {
+			if err := a.queueFeedbackBatch(ctx, tx, p, t); err != nil {
 				return nil, nil, err
 			}
 		}

@@ -368,6 +368,20 @@ func TestFeedbackLimitsAndBlocking(t *testing.T) {
 	if rec := e.report(rt, "/one-more", "a", "x"); rec.Code != 429 {
 		t.Fatalf("daily cap: %d", rec.Code)
 	}
+	// Switched on by hand: a tester, with the much higher ceiling.
+	on := true
+	e.a.SetFeedbackAccess(context.Background(), e.p, []int64{s.ID}, &on)
+	if rec := e.report(rt, "/tester", "a", "x"); rec.Code != 201 {
+		t.Fatalf("switched-on tester past the default cap: %d", rec.Code)
+	}
+	e.a.db.W.Exec(`UPDATE feedback_reports SET created_at = ? WHERE signup_id = ?`, now(), s.ID)
+	for i := 0; i < reportsPerTesterDay-reportsPerReporterDay-1; i++ {
+		e.a.db.W.Exec(`INSERT INTO feedback_reports (project_id, issue_id, signup_id, type, comment, origin, path, selector, created_at)
+			SELECT project_id, issue_id, signup_id, type, comment, origin, path, selector, created_at FROM feedback_reports WHERE signup_id = ? LIMIT 1`, s.ID)
+	}
+	if rec := e.report(rt, "/flood", "a", "x"); rec.Code != 429 {
+		t.Fatalf("tester ceiling: %d", rec.Code)
+	}
 	_, rt2 := e.invited("ben@example.com")
 	off := false
 	e.a.SetFeedbackAccess(context.Background(), e.p, []int64{s.ID}, &off)

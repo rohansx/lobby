@@ -29,6 +29,9 @@ const (
 	maxFeedbackComment    = 2000
 	reporterTTL           = 90 * 86400
 	reportsPerReporterDay = 20
+	// People the founder switched on by hand are their testers: they can report all
+	// day. The ceiling only stops a leaked reporter token from flooding the project.
+	reportsPerTesterDay   = 500
 	freeReportsPerProject = 100
 	feedbackRetention     = 90 * 86400
 	maxConsoleErrors      = 20
@@ -433,7 +436,11 @@ func (a *App) SubmitReport(ctx context.Context, p *Project, reporter string, in 
 		su.ID, now()-86400).Scan(&today); err != nil {
 		return nil, nil, err
 	}
-	if today >= reportsPerReporterDay {
+	limit := reportsPerReporterDay
+	if access != nil && *access {
+		limit = reportsPerTesterDay
+	}
+	if today >= limit {
 		return nil, nil, ErrReporterLimit
 	}
 	if a.cfg.Cloud && !plan.Webhooks {

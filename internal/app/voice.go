@@ -14,16 +14,17 @@ import (
 	"time"
 )
 
-// Voice lets reporters speak instead of typing. The widget records up to 30
-// seconds; Lobby passes the audio to Sarvam AI, which transcribes it and
+// Voice lets reporters speak instead of typing. The widget listens until they
+// stop and sends each phrase (up to 25 seconds, cut at pauses) on its own;
+// Lobby passes the audio to Sarvam AI, which transcribes it and
 // translates it to English, and hands the text back for the reporter to check
 // and edit. The audio is never stored. Optional: without SARVAM_API_KEY, or
 // with a waitlist's Voice switch off, the widget shows no mic button.
 
 const (
 	maxVoiceAudio       = 2 << 20 // 30 s of Opus is well under this
-	voicePerReporterDay = 40
-	voicePerProjectDay  = 400
+	voicePerReporterDay = 150     // continuous voice sends short segments, not one 30 s clip
+	voicePerProjectDay  = 1500
 	voiceTimeout        = 40 * time.Second
 )
 

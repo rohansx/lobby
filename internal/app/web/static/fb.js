@@ -50,8 +50,10 @@
     idea: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.2 1 2V16h5v-.1c0-.8.4-1.6 1-2A6 6 0 0 0 12 3Z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
     x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
+    mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>'
   };
+  var mac = /Mac|iP/.test(navigator.platform), shortcut = mac ? "⌥⇧F" : "Alt+Shift+F";
   var hints = {
     bug: "What happened, and what did you expect?",
     confusing: "What was unclear, and what were you trying to do?",
@@ -94,15 +96,21 @@
     ".send{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;background:var(--a);color:var(--ai);font-weight:600}.send[disabled]{opacity:.55;cursor:default}" +
     ".send kbd{font:11px/1 system-ui;opacity:.7}.fine{margin:10px 0 0;font-size:12px;color:var(--mut)}" +
     ".msg{margin:10px 0 0;font-size:13px;color:var(--err)}" +
+    ".hb{display:flex;gap:2px}.icon[aria-expanded=true]{background:var(--soft);color:var(--ink)}" +
+    ".info{margin:-2px 0 10px;padding:8px 10px;border-radius:8px;background:var(--soft);font-size:12px;color:var(--mut);max-height:190px;overflow:auto}" +
+    ".info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px}.info dt{font-weight:600;color:var(--ink)}" +
+    ".info dd{margin:0;min-width:0;overflow-wrap:anywhere;font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}.info p{margin:8px 0 0}" +
+    ".offer{display:block;width:100%;padding:10px;font-size:12.5px;font-weight:600;color:var(--ink);text-align:left}.offer:hover{background:var(--line)}" +
+    ".acts{display:flex;gap:6px;margin-top:8px}" +
     ".shot{margin-bottom:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}" +
     ".shot img{display:block;width:100%;max-height:150px;object-fit:cover;object-position:top}.shot .wait{padding:14px 10px;font-size:12.5px;color:var(--mut)}" +
     ".shotbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px 5px 10px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}" +
     ".shotbar button{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;color:var(--ink)}.shotbar button:hover{background:var(--line)}" +
     ".mic{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;background:var(--soft);font-weight:500;font-size:13px}.mic:hover{background:var(--line)}" +
-    ".mic.rec{background:var(--err);color:#fff}.mic.rec svg{animation:pulse 1s ease-in-out infinite}.mic[disabled]{opacity:.6;cursor:default}" +
+    ".mic.rec{background:var(--err);color:#fff}.mic.rec.hear{box-shadow:0 0 0 3px color-mix(in srgb,var(--err) 35%,transparent)}.mic.rec svg{animation:pulse 1s ease-in-out infinite}.mic[disabled]{opacity:.6;cursor:default}" +
     "@keyframes pulse{50%{opacity:.35}}" +
     ".fu{width:100%;text-align:left;margin-top:8px}.fu p{margin:0 0 8px;color:var(--ink);font-weight:500}.fu textarea{min-height:70px}" +
-    ".fu .foot{justify-content:flex-end}.choices{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.choices button{text-align:left}.fu .foot .n{display:none}" +
+    ".fu .foot{justify-content:flex-end}.fu .mic{margin-right:auto}.choices{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.choices button{text-align:left}.fu .foot .n{display:none}" +
     ".done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px 10px}" +
     ".done i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--a);color:var(--ai)}.done i svg{width:20px;height:20px;stroke-width:2.5}" +
     ".done b{font-weight:600;font-size:15px}.done p{margin:0;color:var(--mut)}" +
@@ -114,34 +122,37 @@
 
   root.innerHTML =
     "<style>" + css + "</style>" +
-    '<button class="fab" type="button" part="button" aria-haspopup="dialog">' + icon.chat + "<span>" + esc(d.button || "Feedback") + "</span></button>" +
+    '<button class="fab" type="button" part="button" aria-haspopup="dialog" title="' + shortcut + '">' + icon.chat + "<span>" + esc(d.button || "Feedback") + "</span></button>" +
     '<div class="box"><span class="tag"></span></div>' +
-    '<div class="bar" hidden><span>Click what\'s wrong<span class="hide-sm">, or Tab to it and press <kbd>Enter</kbd></span></span>' +
-    '<button class="pill" type="button" data-page>Whole page</button><button class="pill" type="button" data-cancel>Cancel <kbd>Esc</kbd></button></div>' +
+    '<div class="bar" hidden><span>Click or drag over what\'s wrong<span class="hide-sm">, <kbd>↑</kbd> <kbd>↓</kbd> to resize</span></span>' +
+    '<button class="pill" type="button" data-page>Just write</button><button class="pill" type="button" data-cancel>Cancel <kbd>Esc</kbd></button></div>' +
     '<form class="panel" role="dialog" aria-label="Send feedback" hidden novalidate>' +
-    '<div class="body"><div class="head"><b>Send feedback</b><button class="icon" type="button" data-cancel aria-label="Close">' + icon.x + "</button></div>" +
+    '<div class="body"><div class="head"><b>Send feedback</b><span class="hb"><button class="icon" type="button" data-info aria-label="What gets sent" aria-expanded="false">' + icon.info + "</button>" +
+    '<button class="icon" type="button" data-cancel aria-label="Close">' + icon.x + "</button></span></div>" +
+    '<div class="info" hidden></div>' +
     '<div class="chip"><code></code><button type="button" data-repick>Change</button></div>' +
-    '<div class="shot" hidden><div class="wait">Taking a screenshot of this area…</div><img alt="Screenshot of the area you picked" hidden>' +
+    '<div class="shot" hidden><div class="wait">Taking a screenshot of this area…</div><button class="offer" type="button" data-addshot hidden></button><img alt="Screenshot of the area you picked" hidden>' +
     '<div class="shotbar"><span>Screenshot of this area</span><button type="button" data-noshot>Remove</button></div></div>' +
     '<div class="types" role="radiogroup" aria-label="What kind of feedback">' +
     '<button type="button" role="radio" data-type="bug" aria-checked="true">' + icon.bug + "Bug</button>" +
     '<button type="button" role="radio" data-type="confusing" aria-checked="false">' + icon.confusing + "Confusing</button>" +
     '<button type="button" role="radio" data-type="idea" aria-checked="false">' + icon.idea + "Idea</button></div>" +
     '<textarea name="comment" maxlength="2000" aria-label="Your feedback"></textarea>' +
-    '<div class="foot"><button class="mic" type="button" hidden aria-label="Speak instead of typing">' + icon.mic + '<span>Speak</span></button><span class="n">0 / 2000</span><button class="send" type="submit" disabled>Send <kbd class="hide-sm">' + (/Mac|iP/.test(navigator.platform) ? "⌘" : "Ctrl") + " ↵</kbd></button></div>" +
-    '<p class="msg" role="alert" hidden></p>' +
-    '<p class="fine"></p></div>' +
+    '<div class="foot"><button class="mic" type="button" hidden aria-label="Speak instead of typing">' + icon.mic + '<span>Speak</span></button><span class="n">0 / 2000</span><button class="send" type="submit" disabled>Send <kbd class="hide-sm">' + (mac ? "⌘" : "Ctrl") + " ↵</kbd></button></div>" +
+    '<p class="msg" role="alert" hidden></p></div>' +
     '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p>' +
     '<div class="fu" hidden><p></p><div class="choices"></div><textarea name="answer" maxlength="1000" aria-label="Your answer"></textarea>' +
-    '<div class="foot"><button class="pill" type="button" data-skip>Skip</button><button class="send" type="button" data-answer disabled>Send</button></div></div></div></form>' +
+    '<div class="foot"><button class="mic" type="button" hidden aria-label="Speak your answer">' + icon.mic + '<span>Speak</span></button><button class="pill" type="button" data-skip>Skip</button><button class="send" type="button" data-answer disabled>Send</button></div></div>' +
+    '<div class="acts" hidden><button class="pill" type="button" data-again>Send another</button><button class="pill" type="button" data-cancel>Close</button></div></div></form>' +
     '<span class="sr" aria-live="polite"></span>';
 
   function $(q) { return root.querySelector(q); }
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
-    picking = false, picked = null, type = "bug", shots = false, ask = false, masks = false, sentMsg = "", shot = null, shotURL = "", round = 0,
-    mic = $(".mic"), rec = null,
-    shotBox = $(".shot"), shotImg = $(".shot img"), fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
+    picking = false, picked = null, region = null, type = "bug", shots = false, ask = false, masks = false, sentMsg = "", shot = null, shotURL = "", round = 0, shotRound = 0,
+    fine = "", talk = false, usedVoice = false, info = $(".info"), infoBtn = $("[data-info]"), acts = $(".acts"),
+    shotBox = $(".shot"), shotImg = $(".shot img"), shotWait = $(".shot .wait"), shotBar = $(".shotbar"), offerBtn = $("[data-addshot]"),
+    fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
   function mount() { if (!host.isConnected) document.documentElement.appendChild(host); }
   // Ask Lobby first: the founder can switch the widget off for someone at any
@@ -151,9 +162,9 @@
     .then(function (j) {
       if (!j.enabled) return;
       shots = !!j.screenshots; ask = !!j.ask; masks = !!j.masks;
-      var talk = j.voice && micAllowed();
-      mic.hidden = !talk;
-      $(".fine").textContent = "Sends the page path, this element" + (shots ? ", a screenshot of this area" + (masks ? " with private parts blanked" : "") : "") +
+      talk = j.voice && micAllowed();
+      main.btn.hidden = fuMic.btn.hidden = !talk;
+      fine = "Sends the page path, this element" + (shots ? ", a screenshot of this area" + (masks ? " with private parts blanked" : "") : "") +
         ", your last few clicks and recent errors. Never what you typed into the page." + (talk ? " Voice is transcribed by Sarvam AI and not kept." : "");
       mount();
       track();
@@ -175,44 +186,98 @@
   }
   function frame(el) {
     if (!el || ours(el) || el === document.body || el === document.documentElement) { box.style.display = "none"; return; }
-    var r = el.getBoundingClientRect();
+    frameAt(el.getBoundingClientRect(), label(el));
+  }
+  function frameAt(r, text) {
     box.style.cssText = "display:block;left:" + (r.left - 3) + "px;top:" + (r.top - 3) + "px;width:" + (r.width + 6) + "px;height:" + (r.height + 6) + "px";
     box.className = "box" + (r.top < 34 ? " low" : "");
-    tag.textContent = label(el);
+    tag.textContent = text;
   }
+  function whole(el) { return el === document.body || el === document.documentElement; }
+
+  // What a click most likely means: the button, not the icon or the span inside it.
+  // Up and down arrows walk from there to bigger or smaller parts of the page.
+  var act = "a,button,summary,label,input,select,textarea,[role=button],[role=tab],[role=menuitem],[role=option],[role=checkbox],[role=switch],[role=link],[onclick]";
+  function smart(t) {
+    if (!t || !t.closest) return t;
+    var g = t.closest("svg");
+    if (g && g.parentElement) t = g;
+    return t.closest(act) || t;
+  }
+  var cur = null, smaller = [], down = null, dragged = false;
 
   // Pick mode: swallow the page's own pointer events so picking doesn't act.
   var block = ["click", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart", "touchend", "dblclick", "contextmenu"];
   function stop(e) {
     if (!picking || ours(e.target)) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    if (e.type === "pointerdown" && e.pointerType === "mouse" && e.button === 0) { down = { x: e.clientX, y: e.clientY }; dragged = false; return; }
+    if (e.type === "pointerup" && dragged) return area(rectOf(down, e));
+    if (e.type === "pointerup") down = null;
     // Cancelling touchend stops the browser making a click, so a tap picks here.
-    if (e.type === "click" || e.type === "touchend") choose(e.target);
+    if (e.type === "click" || e.type === "touchend") choose(cur && cur.contains(e.target) ? cur : smart(e.target));
     // Disabled buttons and fields get no click, only pointer events: pick them on pointerup.
     else if (e.type === "pointerup" && e.target.closest && e.target.closest(":disabled")) choose(e.target.closest(":disabled"));
   }
-  function over(e) { if (picking && !ours(e.target)) frame(e.target); }
+  function rectOf(a, e) {
+    var l = Math.min(a.x, e.clientX), t = Math.min(a.y, e.clientY);
+    return { left: l, top: t, width: Math.abs(e.clientX - a.x), height: Math.abs(e.clientY - a.y), right: Math.max(a.x, e.clientX), bottom: Math.max(a.y, e.clientY) };
+  }
+  // Dragging draws an area, for problems that aren't one element: a gap, a layout, a chart.
+  function move(e) {
+    if (!picking || !down) return;
+    if (!dragged && Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) < 8) return;
+    dragged = true;
+    frameAt(rectOf(down, e), "Area");
+  }
+  function over(e) {
+    if (!picking || ours(e.target) || dragged) return;
+    var t = e.target;
+    cur = smart(t); smaller = cur !== t ? [t] : [];
+    frame(cur);
+  }
   function key(e) {
+    if (e.isTrusted === false) return; // our own Escape that closes a dropdown after picking from it
     var open = !form.hidden;
+    if (e.altKey && e.shiftKey && e.code === "KeyF" && !picking && !open && host.isConnected) { e.preventDefault(); e.stopPropagation(); return start(); }
     if (e.key === "Escape" && (picking || open)) { e.preventDefault(); e.stopPropagation(); return reset(); }
+    if (picking && cur && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault(); e.stopPropagation();
+      var p = cur.parentElement;
+      if (e.key === "ArrowUp" && p && !whole(p)) { smaller.push(cur); cur = p; }
+      else if (e.key === "ArrowDown" && smaller.length) cur = smaller.pop();
+      else if (e.key === "ArrowDown" && cur.firstElementChild) { smaller = []; cur = cur.firstElementChild; }
+      return frame(cur);
+    }
     if (picking && (e.key === "Enter" || e.key === " ") && document.activeElement && document.activeElement !== document.body && !ours(document.activeElement)) {
-      e.preventDefault(); e.stopPropagation(); choose(document.activeElement);
+      e.preventDefault(); e.stopPropagation(); choose(cur && cur.contains(document.activeElement) ? cur : document.activeElement);
     }
   }
   addEventListener("keydown", key, true);
   var cursor = document.createElement("style");
   cursor.textContent = "*{cursor:crosshair!important}";
 
+  // Opening the widget mustn't close what's open on the page: menus and popovers
+  // close on a press or a focus change outside them. So the button takes no focus
+  // and its press never reaches the page.
+  ["pointerdown", "mousedown", "touchstart"].forEach(function (t) {
+    fab.addEventListener(t, function (e) { e.stopPropagation(); if (t === "mousedown") e.preventDefault(); });
+  });
+
   function start() {
     picking = true; fab.hidden = true; bar.hidden = false; form.hidden = true; box.style.display = "none"; tag.style.display = "";
+    cur = null; smaller = []; down = null; dragged = false;
     document.head.appendChild(cursor);
-    // The button just hid itself; start Tab from the top of the page, not after the widget.
-    var b = document.body, had = b.hasAttribute("tabindex");
-    if (!had) b.setAttribute("tabindex", "-1");
-    b.focus({ preventScroll: true });
-    if (!had) b.removeAttribute("tabindex");
-    live.textContent = "Pick mode. Click the part of the page that's wrong, or Tab to it and press Enter. Escape cancels.";
+    // Opened from the keyboard, focus was on the button that just hid itself: start Tab from the top of the page.
+    if (document.activeElement === host || document.activeElement === document.body) {
+      var b = document.body, had = b.hasAttribute("tabindex");
+      if (!had) b.setAttribute("tabindex", "-1");
+      b.focus({ preventScroll: true });
+      if (!had) b.removeAttribute("tabindex");
+    }
+    live.textContent = "Pick mode. Click the part of the page that's wrong, or drag over an area, or Tab to it and press Enter. Arrow up picks a bigger part. Escape cancels.";
     block.forEach(function (t) { document.addEventListener(t, stop, true); });
+    document.addEventListener("pointermove", move, true);
     document.addEventListener("mouseover", over, true);
     document.addEventListener("focusin", over, true);
   }
@@ -220,31 +285,63 @@
     picking = false; bar.hidden = true;
     if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
     block.forEach(function (t) { document.removeEventListener(t, stop, true); });
+    document.removeEventListener("pointermove", move, true);
     document.removeEventListener("mouseover", over, true);
     document.removeEventListener("focusin", over, true);
   }
   function reset() {
-    endPick(); picked = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++;
-    body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; sync(); fab.focus();
-    shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = "";
-    stopMic(true);
+    endPick(); picked = null; region = null; facts = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++; shotRound++;
+    body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; fab.focus();
+    shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = ""; acts.hidden = true; usedVoice = false;
+    showInfo(false);
+    main.stop(true); fuMic.stop(true);
+    sync();
   }
-  function choose(el) {
-    endPick(); picked = el; frame(el);
-    snap(el);
+  // A drag: the smallest element holding the whole area is what the report is about.
+  function area(r) {
+    var els = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2), el = document.body;
+    for (var i = 0; i < els.length; i++) if (!ours(els[i])) { el = els[i]; break; }
+    for (; el && !whole(el); el = el.parentElement) {
+      var b = el.getBoundingClientRect();
+      if (b.left <= r.left + 2 && b.top <= r.top + 2 && b.right >= r.right - 2 && b.bottom >= r.bottom - 2) break;
+    }
+    // The drag's click lands after pick mode ends; it mustn't press whatever is under the mouse.
+    var eat = function (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); document.removeEventListener("click", eat, true); };
+    document.addEventListener("click", eat, true);
+    setTimeout(function () { document.removeEventListener("click", eat, true); }, 400);
+    choose(el || document.body, r);
+  }
+  // The open menu, listbox or popover the element is in: picking from one shouldn't lose it.
+  function popupOf(el) {
+    return !whole(el) && el.closest && el.closest("[role=menu],[role=listbox],[role=tooltip],[data-radix-popper-content-wrapper]");
+  }
+  function choose(el, r) {
+    endPick(); picked = el; region = r || null; facts = factsOf(el);
+    if (region) frameAt(region, "Area"); else frame(el);
+    var pop = popupOf(el);
+    snap(false);
     tag.style.display = "none"; // the panel's chip says the same
-    $(".chip code").textContent = label(el);
-    body.hidden = false; done.hidden = true; msg.hidden = true;
-    form.hidden = false; place(); ta.focus();
+    $(".chip code").textContent = (region ? "Area in " : "") + label(el);
+    body.hidden = false; done.hidden = true; msg.hidden = true; acts.hidden = true;
+    form.hidden = false; place(); showInfo(false);
+    // Focus moving into the widget closes the menu (or it pulls focus back): screenshot it
+    // first, then close it the way a person would, with Escape, and only then focus the box.
+    if (!pop) return ta.focus();
+    (shot || Promise.resolve()).then(function () {
+      if (picked !== el) return;
+      var t = pop.contains(document.activeElement) ? document.activeElement : pop;
+      if (pop.isConnected) t.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true, composed: true }));
+      setTimeout(function () { ta.focus(); }, 0);
+    });
   }
   // Open the panel beside the picked element; phones get a bottom sheet (CSS).
   function place() {
     if (!picked || form.hidden) return;
     var w = form.offsetWidth, h = form.offsetHeight, W = innerWidth, H = innerHeight, g = 12, top, left;
-    if (picked === document.body || picked === document.documentElement) {
+    if (whole(picked)) {
       left = side === "left" ? 20 : W - w - 20; top = H - h - 20;
     } else {
-      var r = picked.getBoundingClientRect();
+      var r = region || picked.getBoundingClientRect();
       left = Math.min(Math.max(r.left, g), W - w - g);
       top = r.bottom + 10 + h <= H - g ? r.bottom + 10 : r.top - 10 - h >= g ? r.top - 10 - h : H - h - g;
       if (top === H - h - g && r.right + 10 + w <= W - g) { left = r.right + 10; top = Math.min(Math.max(r.top, g), H - h - g); }
@@ -256,12 +353,40 @@
     [].forEach.call(root.querySelectorAll("[data-type]"), function (b) { b.setAttribute("aria-checked", String(b.dataset.type === t)); });
     ta.placeholder = hints[t];
   }
-  function sync() { count.textContent = ta.value.length + " / 2000"; send.disabled = !ta.value.trim(); }
+  // Send works while listening: it stops the mic and waits for the last words.
+  function sync() { count.textContent = ta.value.length + " / 2000"; send.disabled = !ta.value.trim() && !main.busy(); }
+
+  // The (i) button: exactly what this report will carry, before it's sent.
+  function showInfo(on) {
+    infoBtn.setAttribute("aria-expanded", String(on)); info.hidden = !on;
+    if (!on) return;
+    var pl = payload(), dl = document.createElement("dl");
+    function row(k, v) {
+      var dt = document.createElement("dt"), dd = document.createElement("dd");
+      dt.textContent = k; dd.textContent = v; dl.appendChild(dt); dl.appendChild(dd);
+    }
+    row("Page", pl.url);
+    row("Element", pl.selector + (pl.text ? " · " + pl.text.slice(0, 80) : ""));
+    if (pl.context) row("Where", pl.context);
+    if (pl.state) row("State", pl.state);
+    row("Screenshot", shotURL ? "yes, shown above" : shotBox.hidden || !offerBtn.hidden ? "no" : "being taken");
+    row("Steps", pl.steps.length ? pl.steps.slice(-6).join("\n") : "none");
+    row("Errors", pl.console_errors.length ? pl.console_errors.slice(-5).join("\n") : "none");
+    row("Requests", pl.failed_requests.length ? pl.failed_requests.map(function (r) { return r.status + " " + r.path; }).join("\n") : "none failed");
+    row("Screen", pl.viewport);
+    var p = document.createElement("p");
+    p.textContent = fine;
+    info.innerHTML = ""; info.appendChild(dl); info.appendChild(p);
+    [].forEach.call(dl.querySelectorAll("dd"), function (d) { d.style.whiteSpace = "pre-line"; });
+  }
 
   fab.onclick = start;
   [].forEach.call(root.querySelectorAll("[data-cancel]"), function (b) { b.onclick = reset; });
-  $("[data-page]").onclick = function () { choose(document.body); };
+  $("[data-page]").onclick = function () { choose(document.body); }; // no screenshot unless they add one
   $("[data-repick]").onclick = function () { box.style.display = "none"; start(); };
+  $("[data-again]").onclick = function () { var t = type; reset(); setType(t); start(); };
+  infoBtn.onclick = function () { showInfo(info.hidden); };
+  offerBtn.onclick = function () { snap(true); };
   [].forEach.call(root.querySelectorAll("[data-type]"), function (b) { b.onclick = function () { setType(b.dataset.type); ta.focus(); }; });
   $(".types").onkeydown = function (e) {
     var order = ["bug", "confusing", "idea"], i = order.indexOf(type);
@@ -271,29 +396,45 @@
   };
   ta.oninput = sync;
   ta.onkeydown = function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); form.requestSubmit ? form.requestSubmit() : form.onsubmit(e); } };
-  addEventListener("scroll", function () { if (picked && !form.hidden && body.hidden === false) { frame(picked); place(); } }, true);
+  addEventListener("scroll", function () {
+    if (!picked || form.hidden || body.hidden) return;
+    if (region) box.style.display = "none"; // an area is where it was on screen; it doesn't follow the page
+    else frame(picked);
+    place();
+  }, true);
   addEventListener("resize", place);
-  setType("bug"); sync();
 
   form.onsubmit = function (e) {
     e.preventDefault();
-    if (!picked || !ta.value.trim() || send.disabled) return;
+    if (!picked || send.disabled) return;
     send.disabled = true;
     var pending = shot ? Promise.race([shot, new Promise(function (ok) { setTimeout(function () { ok(""); }, 5000); })]) : Promise.resolve("");
-    pending.then(function () { submit(); });
+    Promise.all([pending, main.flush()]).then(function () {
+      if (!ta.value.trim()) { sync(); return note("Say or type what's wrong first."); }
+      submit();
+    });
   };
-  function submit() {
-    var whole = picked === document.body || picked === document.documentElement, mine = round;
-    var payload = {
+  // What the element was when they picked it: menus close and lists re-render after.
+  var facts = null;
+  function factsOf(el) {
+    if (whole(el)) return { selector: "body", tag: "body", text: "", context: "", href: "", outline: "", state: "" };
+    return { selector: selector(el), tag: el.tagName.toLowerCase(), text: textOf(el), context: contextOf(el),
+      href: hrefOf(el), outline: outlineOf(el), state: region ? "area picked inside it" : stateOf(el) };
+  }
+  function payload() {
+    var f = facts || factsOf(picked);
+    return {
       project: d.project, reporter: d.reporter, release: d.release || "",
       type: type, comment: ta.value, url: location.pathname,
-      selector: whole ? "body" : selector(picked), tag: whole ? "body" : picked.tagName.toLowerCase(), text: whole ? "" : textOf(picked), context: whole ? "" : contextOf(picked),
-      href: whole ? "" : hrefOf(picked), outline: whole ? "" : outlineOf(picked), state: whole ? "" : stateOf(picked), steps: stepsNow(),
+      selector: f.selector, tag: f.tag, text: f.text, context: f.context, href: f.href, outline: f.outline, state: f.state, steps: stepsNow(),
       viewport: innerWidth + "x" + innerHeight, browser: navigator.userAgent,
       console_errors: errs.slice(), failed_requests: reqs.slice(), screenshot: shotURL
     };
+  }
+  function submit() {
+    var mine = round;
     of0(api + "/v1/feedback", {
-      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload)
+      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload())
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.ok) { sync(); return note(j.error || "Something went wrong. Please try again."); }
       body.hidden = true; done.hidden = false; box.style.display = "none";
@@ -318,19 +459,36 @@
       document.head.appendChild(sc);
     }));
   }
-  function snap(el) {
-    shot = null; shotURL = ""; shotImg.hidden = true; $(".shot .wait").hidden = false;
-    shotBox.hidden = !shots;
+  // Rendering copies every element under the captured one, which can freeze a page
+  // showing thousands of rows; past this, the screenshot waits until they ask for it.
+  // ponytail: element count is a proxy for render cost; measure real timings if it misfires.
+  var bigDOM = 3000;
+  function snap(force) {
+    var mine = ++shotRound, el = picked, reg = region;
+    shot = null; shotURL = ""; shotImg.hidden = true; shotBox.hidden = !shots;
     if (!shots) return;
-    var mine = ++round, take = capture(el); // a newer pick or Remove makes this one stale
-    shot = take.then(function (url) { if (mine === round) { shotURL = url; shotImg.src = url; shotImg.hidden = false; $(".shot .wait").hidden = true; } return url; },
-      function () { if (mine === round) shotBox.hidden = true; return ""; });
+    // "Just write" sends no screenshot unless they add one.
+    if (whole(el) && !force) return offer("Add a screenshot of the page");
+    shotWait.hidden = false; offerBtn.hidden = true; shotBar.hidden = true;
+    // A frame's pause lets the panel appear before the render starts.
+    shot = new Promise(function (ok) { setTimeout(ok, 32); }).then(function () { return capture(el, reg, force); })
+      .then(function (url) {
+        if (mine === shotRound) { shotURL = url; shotImg.src = url; shotImg.hidden = false; shotWait.hidden = true; shotBar.hidden = false; }
+        return url;
+      }, function (e) {
+        if (mine === shotRound) { if (e === "big") offer("This part of the page is large. Add a screenshot anyway"); else shotBox.hidden = true; }
+        return "";
+      });
   }
+  function offer(t) { shotWait.hidden = true; shotImg.hidden = true; shotBar.hidden = true; offerBtn.hidden = false; offerBtn.textContent = "+ " + t; }
   // In the copy that gets rendered: hidden parts and fields become solid blocks
   // (exactly where they are, whatever the layout), and the picked element gets a marker.
   var fieldTags = /^(INPUT|TEXTAREA|SELECT)$/;
   function blank(n) {
     if (n.nodeType !== 1) return;
+    // A table keeps its rows' total height; with the rows below the area left out, the
+    // copied height would stretch the rest to fill it. Tables size from their rows anyway.
+    if (/^(TABLE|TBODY|THEAD|TFOOT)$/.test(n.tagName)) n.style.setProperty("height", "auto", "important");
     if (n.hasAttribute("data-lobby-picked")) {
       n.removeAttribute("data-lobby-picked");
       n.style.setProperty("outline", "2px solid rgb(255, 0, 255)", "important");
@@ -374,18 +532,62 @@
       if (/^(IMG|PICTURE|VIDEO|CANVAS|IFRAME|OBJECT|EMBED)$/.test(m.tagName)) m.style.setProperty("visibility", "hidden", "important");
     });
   }
-  function capture(el) {
-    var whole = el === document.body || el === document.documentElement, W = innerWidth, H = innerHeight;
-    var r = whole ? { left: 0, top: 0, right: W, bottom: H, width: W, height: H } : el.getBoundingClientRect(), pad = whole ? 0 : 56;
-    var area = { left: Math.max(0, r.left - pad), top: Math.max(0, r.top - pad), right: Math.min(W, r.right + pad), bottom: Math.min(H, r.bottom + pad) };
+  // Draws only the area out of the rendered copy. Drawing all of root made a canvas
+  // as tall as root: past the browser's canvas limit on long pages (thousands of
+  // rows), so the screenshot came out blank.
+  function raster(svg, area, rr, scale, bg) {
+    var w = area.right - area.left, h = area.bottom - area.top, fo = svg.querySelector("foreignObject");
+    fo.setAttribute("width", rr.width); fo.setAttribute("height", rr.height);
+    svg.setAttribute("viewBox", (area.left - rr.left) + " " + (area.top - rr.top) + " " + w + " " + h);
+    svg.setAttribute("width", w); svg.setAttribute("height", h);
+    var src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(svg)
+      .replace(/[\u0000-\u0008\v\f\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/gu, ""));
+    return new Promise(function (ok, no) {
+      var img = new Image();
+      img.onload = function () {
+        var c = document.createElement("canvas"), g = c.getContext("2d");
+        c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+        function draw() { g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); }
+        // Safari and Firefox paint the images inside an SVG a little late; a second draw picks them up.
+        draw(); setTimeout(function () { draw(); ok(c); }, 100);
+      };
+      img.onerror = function () { no(new Error("couldn't draw the screenshot")); };
+      img.src = src;
+    });
+  }
+  // reg is a dragged area: it's what gets outlined, and el is only the element holding it.
+  function capture(el, reg, force) {
+    var page = el === document.body || el === document.documentElement, W = innerWidth, H = innerHeight, pop = !reg && popupOf(el);
+    var r = page ? { left: 0, top: 0, right: W, bottom: H, width: W, height: H } : reg || el.getBoundingClientRect(), pad = page ? 0 : reg ? 16 : 56;
+    // From a dropdown: the whole dropdown, with the picked option outlined in it.
+    var base = pop ? pop.getBoundingClientRect() : r;
+    if (pop) pad = 4;
+    var area = { left: Math.max(0, base.left - pad), top: Math.max(0, base.top - pad), right: Math.min(W, base.right + pad), bottom: Math.min(H, base.bottom + pad) };
     if (area.right - area.left < 4 || area.bottom - area.top < 4) return Promise.reject();
     // Render the smallest ancestor that holds the whole area, not the whole page.
-    var root = whole ? document.body : el;
+    var root = page ? document.body : el;
     while (root !== document.body && root.parentElement) {
       var b = root.getBoundingClientRect();
       if (b.left <= area.left && b.top <= area.top && b.right >= area.right && b.bottom >= area.bottom) break;
       root = root.parentElement;
     }
+    // Copying costs about a millisecond per element, so a page with thousands of rows
+    // froze here. Parts entirely below the area are left out: they can't move what's
+    // above them. Other parts outside it are copied as empty boxes of the same size,
+    // so the layout holds.
+    // ponytail: a box whose children overflow it into the area loses them; zero-size
+    // wrappers (portals, anchors) are kept whole because that's where it happens most.
+    // Content pinned to the bottom of a flex column could shift; revisit if seen.
+    var cut = new WeakSet(), gone = new WeakSet(), kept = 0;
+    var tw = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, { acceptNode: function (n) {
+      if (n === host) return NodeFilter.FILTER_REJECT;
+      var b = n.getBoundingClientRect();
+      if (b.width && b.height && b.top > area.bottom) { gone.add(n); return NodeFilter.FILTER_REJECT; }
+      if (b.width && b.height && (b.right < area.left || b.left > area.right || b.bottom < area.top)) { cut.add(n); kept++; return NodeFilter.FILTER_REJECT; }
+      kept++; return NodeFilter.FILTER_ACCEPT;
+    } });
+    while (tw.nextNode() && (force || kept <= bigDOM));
+    if (!force && kept > bigDOM) return Promise.reject("big");
     var rr = root.getBoundingClientRect(), scale = Math.min(window.devicePixelRatio || 1, 2), masks = [];
     [].forEach.call(document.querySelectorAll(fields), function (n) {
       if (ours(n)) return;
@@ -396,21 +598,29 @@
     if (/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bg = getComputedStyle(document.documentElement).backgroundColor;
     if (/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) bg = "#ffffff";
     var mark = getComputedStyle(host).getPropertyValue("--wl-accent").trim() || "#e11d48";
-    if (!whole) el.setAttribute("data-lobby-picked", ""); // invisible; lets the copy find it
+    // The marker goes on the picked element, or on the element holding a dragged area.
+    var mark0 = !page, mr = reg ? el.getBoundingClientRect() : r;
+    if (mark0) el.setAttribute("data-lobby-picked", ""); // invisible; lets the copy find it
+    // Render a margin past the area: the copy can land a little off, and the marker
+    // has to be in the render to tell by how much.
+    var M = 96, view = { left: area.left - M, top: area.top - M, right: area.right + M, bottom: area.bottom + M };
     return loadShot().then(function (m) {
       capturing++;
-      return m.domToCanvas(root, { scale: scale, backgroundColor: bg, timeout: 4000, filter: function (n) { return n !== host; }, onCloneEachNode: blank })
+      return m.domToForeignObjectSvg(root, { backgroundColor: bg, timeout: 4000, filter: function (n) { return n !== host && !gone.has(n) && !(n.parentNode && cut.has(n.parentNode)); },
+        features: { restoreScrollPosition: true }, onCloneEachNode: blank })
+        .then(function (svg) { return raster(svg, view, rr, scale, bg); })
         .finally(function () { capturing--; el.removeAttribute("data-lobby-picked"); });
     }, function (e) { el.removeAttribute("data-lobby-picked"); throw e; }).then(function (full) {
+      rr = { left: view.left, top: view.top }; // the render starts at the view, not at root
       // The copy can lay out a few pixels off the page (margins, defaults); find the
       // picked element's marker in the render to learn the shift.
       // mk is the marker's box in the render: the picked element as the copy drew it,
       // which can be wider than on the page (no scrollbar, different clipping).
       var dx = 0, dy = 0, mk = null;
-      if (!whole && r.top >= area.top && r.left >= area.left) {
-        var ex = Math.round((r.left - rr.left - 5) * scale), ey = Math.round((r.top - rr.top - 5) * scale), R = Math.round(48 * scale), X = Math.round(96 * scale);
+      if (mark0 && mr.top >= view.top && mr.left >= view.left) {
+        var ex = Math.round((mr.left - rr.left - 5) * scale), ey = Math.round((mr.top - rr.top - 5) * scale), R = Math.round(48 * scale), X = Math.round(96 * scale);
         var x0 = Math.max(0, ex - R), y0 = Math.max(0, ey - R);
-        var ww = Math.min(full.width - x0, Math.round((r.width + 10) * scale) + R + X), hh = Math.min(full.height - y0, Math.round((r.height + 10) * scale) + R + X);
+        var ww = Math.min(full.width - x0, Math.round((mr.width + 10) * scale) + R + X), hh = Math.min(full.height - y0, Math.round((mr.height + 10) * scale) + R + X);
         if (ww > 0 && hh > 0) {
           var px = full.getContext("2d").getImageData(x0, y0, ww, hh).data, mx = 1e9, my = 1e9, Mx = -1, My = -1;
           for (var i = 0; i < px.length; i += 4) if (px[i] > 250 && px[i + 1] < 6 && px[i + 2] > 249) {
@@ -427,13 +637,15 @@
       g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); // past the rendered element: page background, not black
       g.drawImage(full, cx, cy, w, h, 0, 0, c.width, c.height);
       // Where the outline goes in the output: the marker's box, or the page's measurements without one.
-      var box = mk ? { x: (mk.x - cx) * k, y: (mk.y - cy) * k, w: mk.w * k, h: mk.h * k }
-        : { x: (r.left - area.left - 5) * s, y: (r.top - area.top - 5) * s, w: (r.width + 10) * s, h: (r.height + 10) * s };
+      // A dragged area is drawn where it was measured: the crop already moved with the shift.
+      var mkBox = mk && { x: (mk.x - cx) * k, y: (mk.y - cy) * k, w: mk.w * k, h: mk.h * k }, o = reg ? 0 : 5;
+      var box = mkBox && !reg ? mkBox
+        : { x: (r.left - area.left - o) * s, y: (r.top - area.top - o) * s, w: (r.width + 2 * o) * s, h: (r.height + 2 * o) * s };
       // The copy can be a little wider than the page (no scrollbar, clipping), so some of
       // the marker can survive past the outline: repaint it with the page background.
-      if (!whole) {
-        var ring = 4 * s, rx = Math.max(0, Math.floor(box.x - ring)), ry = Math.max(0, Math.floor(box.y - ring));
-        var rw = Math.min(c.width - rx, Math.ceil(box.w + 2 * ring)), rh = Math.min(c.height - ry, Math.ceil(box.h + 2 * ring));
+      if (mark0) {
+        var rb = mkBox || box, ring = 4 * s, rx = Math.max(0, Math.floor(rb.x - ring)), ry = Math.max(0, Math.floor(rb.y - ring));
+        var rw = Math.min(c.width - rx, Math.ceil(rb.w + 2 * ring)), rh = Math.min(c.height - ry, Math.ceil(rb.h + 2 * ring));
         if (rw > 0 && rh > 0) {
           var probe = document.createElement("canvas").getContext("2d"), bgc;
           probe.fillStyle = bg; probe.fillRect(0, 0, 1, 1); bgc = probe.getImageData(0, 0, 1, 1).data;
@@ -447,7 +659,7 @@
       // Second layer: paint over the same parts at their measured places.
       g.fillStyle = "#9ca3af";
       masks.forEach(function (b) { g.fillRect((b.left - area.left) * s, (b.top - area.top) * s, b.width * s, b.height * s); });
-      if (!whole) { // outline what they picked, over the marker
+      if (!page) { // outline what they picked, over the marker
         g.strokeStyle = mark; g.lineWidth = Math.max(4, 4 * s);
         g.strokeRect(box.x + s, box.y + s, box.w - 2 * s, box.h - 2 * s);
       }
@@ -459,57 +671,111 @@
     });
   }
 
-  // ---- Voice: speak instead of typing (up to 30 s), transcribed to English ----
+  // ---- Voice: speak instead of typing, transcribed to English ----
+  // It keeps listening until they press Stop (or Send), like talking to someone:
+  // each pause ends a phrase, which goes off to be transcribed while they carry on,
+  // so the text fills in as they talk. Silence is never sent.
+  // ponytail: the level threshold is a guess at a quiet room; tune `quiet` if
+  // phrases get cut mid-sentence or noise keeps it from ever pausing.
+  var quiet = 0.02, pauseMs = 1100, phraseMs = 25000, idleMs = 45000, maxMs = 300000;
   function micAllowed() {
     var fp = document.permissionsPolicy || document.featurePolicy; // a Permissions-Policy header can block the mic
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder) &&
       (!fp || !fp.allowsFeature || fp.allowsFeature("microphone"));
   }
-  function micLabel(t) { mic.querySelector("span").textContent = t; }
-  function stopMic(discard) {
-    if (!rec) return;
-    rec.discard = discard; clearInterval(rec.tick);
-    if (rec.r.state !== "inactive") rec.r.stop();
-  }
-  mic.onclick = function () {
-    if (rec) return stopMic(false);
-    var types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"], type = "";
-    for (var i = 0; i < types.length; i++) if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) { type = types[i]; break; }
-    mic.disabled = true;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      var r = new MediaRecorder(stream, type ? { mimeType: type } : undefined), parts = [], t0 = Date.now(), mine = round;
-      rec = { r: r, discard: false };
-      r.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
-      r.onstop = function () {
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        var discard = rec.discard; rec = null; mic.classList.remove("rec");
-        if (discard || mine !== round || !parts.length) { micLabel("Speak"); mic.disabled = false; return; }
-        var blob = new Blob(parts, { type: (r.mimeType || type || "audio/webm") });
-        mic.disabled = true; micLabel("Transcribing…"); live.textContent = "Transcribing your recording.";
-        of0(api + "/v1/feedback/voice", { method: "POST", headers: { "Content-Type": blob.type, "X-Lobby-Project": d.project, "X-Lobby-Reporter": d.reporter }, body: blob })
-          .then(function (res) { return res.json(); })
-          .then(function (j) {
+  // btn is the mic button; text is the box the words go into; changed runs after each phrase lands.
+  function makeMic(btn, text, changed) {
+    var on = null, last = Promise.resolve(), working = 0;
+    function lbl(t) { btn.querySelector("span").textContent = t; }
+    function go() {
+      var types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"], mt = "";
+      for (var i = 0; i < types.length; i++) if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) { mt = types[i]; break; }
+      btn.disabled = true;
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
+        var mine = round, t0 = Date.now(), heardAt = t0, chain = Promise.resolve(), ended = false, drop = false, seg = null, floor = 0, fin;
+        var ac = null, an = null, buf = null;
+        try {
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+          an = ac.createAnalyser(); an.fftSize = 1024; buf = new Uint8Array(an.fftSize);
+          ac.createMediaStreamSource(stream).connect(an);
+        } catch (e) { ac = null; } // no level meter: phrases are cut by length alone
+        function level() {
+          an.getByteTimeDomainData(buf);
+          for (var i = 0, s = 0; i < buf.length; i++) { var v = (buf[i] - 128) / 128; s += v * v; }
+          return Math.sqrt(s / buf.length);
+        }
+        function phrase() {
+          var r = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined), parts = [], me = { r: r, at: Date.now(), heard: !ac };
+          r.ondataavailable = function (e) { if (e.data && e.data.size) parts.push(e.data); };
+          r.onstop = function () {
+            if (!drop && mine === round && me.heard && parts.length) transcribe(new Blob(parts, { type: r.mimeType || mt || "audio/webm" }));
+            if (ended && me === seg) finish();
+          };
+          r.start();
+          return me;
+        }
+        function transcribe(blob) {
+          working++;
+          var req = of0(api + "/v1/feedback/voice", { method: "POST", headers: { "Content-Type": blob.type, "X-Lobby-Project": d.project, "X-Lobby-Reporter": d.reporter }, body: blob })
+            .then(function (res) { return res.json(); }, function () { return { error: "Couldn't reach the server. Please type instead." }; });
+          // Phrases come back in any order; they go into the box in the order they were said.
+          chain = chain.then(function () { return req; }).then(function (j) {
+            working--;
             if (mine !== round) return;
-            if (!j.ok) return note(j.error || "Couldn't transcribe that. Please type instead.");
-            if (j.text) { ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + " " : "") + j.text; sync(); }
-            else note("Didn't catch anything. Try again a little closer to the mic.");
-            ta.focus();
-          }, function () { note("Couldn't reach the server. Please type instead."); })
-          .then(function () { mic.disabled = false; micLabel("Speak"); });
-      };
-      r.start(1000);
-      mic.disabled = false; mic.classList.add("rec"); micLabel("0:00 · Stop"); msg.hidden = true;
-      live.textContent = "Recording. Speak now; press the button again to stop.";
-      rec.tick = setInterval(function () {
-        var s = Math.floor((Date.now() - t0) / 1000);
-        micLabel("0:" + (s < 10 ? "0" : "") + s + " · Stop");
-        if (s >= 30) stopMic(false);
-      }, 250);
-    }, function () {
-      mic.disabled = false;
-      note("The microphone is blocked. Allow it in your browser, or type instead.");
-    });
-  };
+            if (!j.ok) { note(j.error || "Couldn't transcribe that. Please type instead."); return end(false); }
+            if (j.text) { text.value = (text.value.trim() ? text.value.replace(/\s+$/, "") + " " : "") + j.text; changed(); }
+          }, function () { working--; });
+        }
+        function cut() { var old = seg; seg = phrase(); if (old.r.state !== "inactive") old.r.stop(); }
+        function end(discard) {
+          if (ended) return;
+          ended = true; drop = discard; clearInterval(tick);
+          if (seg.r.state !== "inactive") seg.r.stop(); else finish();
+        }
+        function finish() {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          if (ac) ac.close();
+          on = null; btn.classList.remove("rec", "hear");
+          if (working) { btn.disabled = true; lbl("Transcribing…"); live.textContent = "Transcribing what you said."; }
+          chain.then(function () { btn.disabled = false; lbl("Speak"); changed(); fin(); });
+        }
+        seg = phrase();
+        on = { end: end, done: new Promise(function (ok) { fin = ok; }) };
+        last = on.done;
+        btn.disabled = false; btn.classList.add("rec"); msg.hidden = true; lbl("0:00 · Stop"); changed();
+        live.textContent = "Listening. Keep talking; pause between thoughts. Press Stop or Send when you're done.";
+        var tick = setInterval(function () {
+          var t = Date.now(), speaking = !ac;
+          if (ac) {
+            var lv = level();
+            speaking = lv > Math.max(quiet, floor * 2.5);
+            if (!speaking) floor = floor ? floor * 0.97 + lv * 0.03 : lv; // the room's own noise
+          }
+          if (speaking) { heardAt = t; seg.heard = true; }
+          btn.classList.toggle("hear", !!ac && speaking);
+          if ((ac && seg.heard && t - heardAt > pauseMs) || t - seg.at > phraseMs) cut();
+          if ((ac && t - heardAt > idleMs) || t - t0 > maxMs) end(false); // nothing said for a while: stop listening
+          var s = Math.floor((t - t0) / 1000);
+          lbl(Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " · Stop");
+        }, 100);
+      }, function () {
+        btn.disabled = false;
+        note("The microphone is blocked. Allow it in your browser, or type instead.");
+      });
+    }
+    btn.onclick = function () { on ? on.end(false) : go(); };
+    return {
+      btn: btn,
+      start: function () { if (!on && talk) go(); },
+      stop: function (discard) { if (on) on.end(discard); },
+      busy: function () { return !!on || working > 0; },
+      // Stops listening and resolves once the last phrase is in the box.
+      flush: function () { if (on) on.end(false); return last; }
+    };
+  }
+  var main = makeMic(root.querySelector(".body .mic"), ta, function () { if (main) { usedVoice = true; sync(); } });
+  var fuMic = makeMic(fu.querySelector(".mic"), fuText, function () { fuSend.disabled = !fuText.value.trim() && !(fuMic && fuMic.busy()); });
+  setType("bug"); sync();
 
   // ---- One follow-up question from Claude, when the report is vague ----
   // The sent state: a spinner while Claude looks at the report, then either one
@@ -521,11 +787,13 @@
     p.textContent = text || ""; p.hidden = !text;
     live.textContent = title + (text ? ". " + text : "");
   }
+  // The panel stays open until they close it: sending one thing often reminds
+  // people of the next, and "Send another" goes straight back to picking.
   function followup(rid, mine) {
     function thanks() {
       if (mine !== round) return;
       doneState(false, "Thanks, got it", sentMsg);
-      setTimeout(function () { if (mine === round && fu.hidden) reset(); }, 2500);
+      acts.hidden = false;
     }
     if (!rid || !ask) return thanks();
     doneState(true, "Sent", "Checking if anything's missing…");
@@ -550,27 +818,34 @@
         fu.hidden = false; fuText.value = ""; fuSend.disabled = true; fuText.focus();
         live.textContent = "One quick question: " + j.question;
         fu.dataset.rid = rid;
+        if (usedVoice) fuMic.start(); // they talked the report through: listen for the answer too
       }, thanks);
   }
   function answer() {
-    var a = fuText.value.trim(), mine = round;
-    if (!a || fuSend.dataset.busy) return;
+    if (fuSend.dataset.busy) return;
     fuSend.disabled = true; fuSend.dataset.busy = "1";
+    fuMic.flush().then(function () {
+      var a = fuText.value.trim();
+      if (!a) { delete fuSend.dataset.busy; return; }
+      sendAnswer(a);
+    });
+  }
+  function sendAnswer(a) {
+    var mine = round;
     of0(api + "/v1/feedback/reports/" + fu.dataset.rid + "/answer", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project: d.project, reporter: d.reporter, answer: a })
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (mine !== round) return;
-      fu.hidden = true;
+      fu.hidden = true; acts.hidden = false;
       doneState(false, j.ok ? "Thanks, that helps" : "Couldn't send that", j.ok ? "" : (j.error || "Please try again."));
-      setTimeout(function () { if (mine === round) reset(); }, 2500);
     }, function () { fuSend.disabled = false; }).then(function () { delete fuSend.dataset.busy; });
   }
-  fuText.oninput = function () { fuSend.disabled = !fuText.value.trim(); };
+  fuText.oninput = function () { fuSend.disabled = !fuText.value.trim() && !fuMic.busy(); };
   fuText.onkeydown = function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); answer(); } };
   fuSend.onclick = answer;
-  $("[data-skip]").onclick = reset;
-  $("[data-noshot]").onclick = function () { round++; shot = null; shotURL = ""; shotBox.hidden = true; ta.focus(); };
+  $("[data-skip]").onclick = function () { fuMic.stop(true); fu.hidden = true; doneState(false, "Thanks, got it", sentMsg); acts.hidden = false; };
+  $("[data-noshot]").onclick = function () { shotRound++; shot = null; shotURL = ""; offer("Add a screenshot"); ta.focus(); };
 
   // The widget's own request bypasses the failed-request recorder.
   function of0() { return (of || window.fetch).apply(window, arguments); }
@@ -699,7 +974,6 @@
   function step(t) { if (t && (!steps.length || steps[steps.length - 1].t !== t)) push(steps, { t: t, at: Date.now() }, 12); }
   function moved() { if (location.pathname !== lastPath) { lastPath = location.pathname; step("go " + lastPath); } }
   function track() {
-    var act = "a,button,summary,label,input,select,textarea,[role=button],[role=tab],[role=menuitem],[role=option],[role=checkbox],[role=switch],[role=link],[onclick]";
     document.addEventListener("click", function (e) {
       if (picking || !e.target || !e.target.closest || ours(e.target)) return;
       var el = e.target.closest(act) || e.target;

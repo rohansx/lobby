@@ -564,10 +564,11 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 		Shots    *bool   `json:"screenshots"`
 		Voice    *bool   `json:"voice"`
 		Masks    *bool   `json:"masks"`
+		Context  *string `json:"context"`
 	}
 	if err := decodeJSON(r, &body); err != nil || (body.Console == nil && body.Audience == nil && body.AI == nil && body.Digest == nil &&
-		body.Shots == nil && body.Voice == nil && body.Masks == nil) {
-		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool, "voice": bool, "masks": bool}`)
+		body.Shots == nil && body.Voice == nil && body.Masks == nil && body.Context == nil) {
+		jsonError(w, 400, `send any of {"console": bool, "audience": "invited"|"selected", "ai": bool, "digest": bool, "screenshots": bool, "voice": bool, "masks": bool, "context": string}`)
 		return
 	}
 	for col, v := range map[string]*bool{"ai": body.AI, "digest": body.Digest, "screenshots": body.Shots, "voice": body.Voice, "masks": body.Masks} {
@@ -581,6 +582,12 @@ func (s *Server) adminFeedbackSettings(w http.ResponseWriter, r *http.Request) {
 	if body.Console != nil {
 		if err := s.app.SetFeedbackConsole(r.Context(), p, *body.Console); err != nil {
 			jsonError(w, 500, err.Error())
+			return
+		}
+	}
+	if body.Context != nil {
+		if err := s.app.SetFeedbackContext(r.Context(), p, *body.Context); err != nil {
+			jsonError(w, 400, err.Error())
 			return
 		}
 	}

@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -35,13 +37,131 @@ func (a *App) composeFeedbackNotify(ctx context.Context, p *Project, s *Signup, 
 		Rows:      rows,
 		CTA:       "Open the issue",
 		URL:       fmt.Sprintf("%s/p/%s/feedback/%d", a.cfg.BaseURL, p.Slug, iss.ID),
-		Footer:    "You get one of these for each new issue, not for every report. Change the address in the project's settings.",
+		Footer:    "New issues are gathered for 10 minutes into one email, and repeat reports don't send one. Change the address in the project's settings.",
 	}.render()
 	return &Message{
 		From: (&mail.Address{Name: p.Name + " feedback", Address: a.senderEmail()}).String(),
 		To:   p.NotifyEmail, ReplyTo: s.Email,
 		Subject: "New feedback on " + p.Name + ": " + iss.Title, Text: text, HTML: htm,
 	}, nil
+}
+
+// feedbackBatchWindow is how long the founder's "new feedback" email waits
+// after the first new issue, so a testing session arrives as one email.
+const (
+	feedbackBatchWindow = 10 * 60
+	feedbackBatchList   = 20 // issues listed in one email; the rest are a count
+)
+
+type feedbackBatchJob struct {
+	ProjectID int64 `json:"project_id"`
+	Since     int64 `json:"since"` // issues opened in [since, until)
+	Until     int64 `json:"until"`
+}
+
+// queueFeedbackBatch schedules one email for the issues opened in the next
+// window, unless a window is already waiting. A window whose job has started
+// (run_at passed) is closed: this issue starts the next one.
+func (a *App) queueFeedbackBatch(ctx context.Context, tx *sql.Tx, p *Project, at int64) error {
+	var open int
+	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM jobs WHERE kind = 'email.feedback_batch' AND status = 'queued'
+		AND run_at > ? AND json_extract(payload, '$.project_id') = ?`, at, p.ID).Scan(&open)
+	if err != nil || open > 0 {
+		return err
+	}
+	until := at + feedbackBatchWindow
+	return a.enqueueAt(ctx, tx, "email.feedback_batch", feedbackBatchJob{ProjectID: p.ID, Since: at, Until: until}, until)
+}
+
+func (a *App) sendFeedbackBatch(ctx context.Context, payload string) error {
+	var j feedbackBatchJob
+	if err := json.Unmarshal([]byte(payload), &j); err != nil {
+		return fmt.Errorf("%w: %v", ErrPermanent, err)
+	}
+	p, err := a.ProjectByID(ctx, j.ProjectID)
+	if errors.Is(err, ErrNotFound) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if p.NotifyEmail == "" {
+		return nil
+	}
+	if a.ownerSuspended(ctx, p.OwnerID) {
+		return fmt.Errorf("%w: account suspended, email not sent", ErrPermanent)
+	}
+	rows, err := a.db.W.QueryContext(ctx, `SELECT i.id, i.type, i.title, i.path,
+		(SELECT s.email FROM feedback_reports r JOIN signups s ON s.id = r.signup_id WHERE r.issue_id = i.id ORDER BY r.id LIMIT 1),
+		(SELECT r.comment FROM feedback_reports r WHERE r.issue_id = i.id ORDER BY r.id LIMIT 1)
+		FROM feedback_issues i WHERE i.project_id = ? AND i.created_at >= ? AND i.created_at < ? AND i.merged_into IS NULL
+		ORDER BY i.id`, p.ID, j.Since, j.Until)
+	if err != nil {
+		return err
+	}
+	type item struct {
+		id                         int64
+		kind, title, path, from, c string
+	}
+	var list []item
+	for rows.Next() {
+		var it item
+		var from, c sql.NullString
+		if err := rows.Scan(&it.id, &it.kind, &it.title, &it.path, &from, &c); err != nil {
+			rows.Close()
+			return err
+		}
+		it.from, it.c = from.String, c.String
+		list = append(list, it)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	switch len(list) {
+	case 0:
+		return nil // all merged or deleted since
+	case 1: // the detailed single-issue email
+		var sid int64
+		a.db.W.QueryRowContext(ctx, `SELECT signup_id FROM feedback_reports WHERE issue_id = ? ORDER BY id LIMIT 1`, list[0].id).Scan(&sid)
+		s, err := getSignup(ctx, a.db.W, p.ID, sid)
+		if err != nil {
+			return nil // reporter deleted since
+		}
+		m, err := a.composeFeedbackNotify(ctx, p, s, list[0].id)
+		if err != nil || m == nil {
+			return err
+		}
+		return a.mailer.Send(ctx, m)
+	}
+	var rs [][2]string
+	var links [][2]string
+	for i, it := range list {
+		if i == feedbackBatchList {
+			break
+		}
+		rs = append(rs, [2]string{it.kind + " · " + it.path, it.title + "\n" + it.from + ": " + clipRunes(it.c, 200)})
+		links = append(links, [2]string{clipRunes(it.title, 60), fmt.Sprintf("%s/p/%s/feedback/%d", a.cfg.BaseURL, p.Slug, it.id)})
+	}
+	paras := []string{fmt.Sprintf("%d new issues came in over the last few minutes.", len(list))}
+	if len(list) > feedbackBatchList {
+		paras = append(paras, fmt.Sprintf("The first %d are below; the rest are on the feedback page.", feedbackBatchList))
+	}
+	text, htm := email{
+		Project:   p.Name,
+		Preheader: fmt.Sprintf("%d new feedback issues in %s.", len(list), p.Name),
+		Heading:   fmt.Sprintf("%d new feedback issues", len(list)),
+		Paras:     paras,
+		Rows:      rs,
+		CTA:       "Open feedback",
+		URL:       fmt.Sprintf("%s/p/%s/feedback", a.cfg.BaseURL, p.Slug),
+		Links:     links,
+		Footer:    "New issues are gathered for 10 minutes into one email. Change the address in the project's settings.",
+	}.render()
+	return a.mailer.Send(ctx, &Message{
+		From:    (&mail.Address{Name: p.Name + " feedback", Address: a.senderEmail()}).String(),
+		To:      p.NotifyEmail,
+		Subject: fmt.Sprintf("New feedback on %s: %d new issues", p.Name, len(list)), Text: text, HTML: htm,
+	})
 }
 
 type pendingReply struct {

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { api, projectPath, type FeedbackList } from "@/lib/api";
 import { toastError } from "@/lib/errors";
 import { num } from "@/lib/format";
@@ -46,6 +47,7 @@ export function FeedbackSetup({
 }: Props) {
   const [agentKey, setAgentKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [context, setContext] = useState(data.settings.context ?? "");
   const snippet = `<script defer src="${baseUrl}/v1/fb.js" data-project="${publicKey}" data-reporter="REPORTER_TOKEN" data-release="optional"></script>`;
   const cli = `LOBBY_URL=${baseUrl} LOBBY_KEY=ak_... lobby feedback next --format md`;
 
@@ -73,6 +75,17 @@ export function FeedbackSetup({
         body: { [key]: on },
       });
       toast.success(msg);
+      onChange();
+    } catch (err) {
+      toastError(err);
+    }
+  }
+
+  async function saveContext() {
+    if (context.trim() === (data.settings.context ?? "")) return;
+    try {
+      await api(projectPath(slug, "/feedback/settings"), { body: { context } });
+      toast.success("Product context saved");
       onChange();
     } catch (err) {
       toastError(err);
@@ -197,6 +210,25 @@ export function FeedbackSetup({
               }
             />
           </div>
+          {data.ai_available && data.settings.ai && (
+            <div className="grid gap-2">
+              <Label htmlFor="fb-context">About your product</Label>
+              <Textarea
+                id="fb-context"
+                value={context}
+                maxLength={2000}
+                rows={4}
+                placeholder="What it does, who uses it, your names for things (e.g. a 'check' is a reconciliation run), and the flows that matter most."
+                onChange={(e) => setContext(e.target.value)}
+                onBlur={saveContext}
+              />
+              <p className="text-xs text-muted-foreground">
+                Claude reads this before asking a reporter a follow-up question
+                and before summarizing an issue, so it asks less and uses your
+                words. Saved when you click away. {context.length} / 2000
+              </p>
+            </div>
+          )}
           <div className="flex items-start justify-between gap-3">
             <div>
               <Label htmlFor="fb-shots">Screenshots</Label>

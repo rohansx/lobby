@@ -418,6 +418,10 @@ var migrations = []string{
 		revoked_at INTEGER);
 	CREATE INDEX claims_project ON claims(project_id, account_ref);
 	CREATE INDEX claims_code ON claims(code_hash) WHERE code_hash != '';`,
+
+	// 17: what the founder tells Claude about their product, so follow-up
+	// questions and summaries use the product's own words.
+	`ALTER TABLE feedback_settings ADD COLUMN product_context TEXT NOT NULL DEFAULT '';`,
 }
 
 func (s *Store) migrate() error {

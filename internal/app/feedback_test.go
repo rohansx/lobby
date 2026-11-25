@@ -434,8 +434,13 @@ func TestFeedbackFixLoop(t *testing.T) {
 	e.report(rt2, "/a", "button", "Me too")
 	e.report(rt1, "/b", "button", "Second thing")
 	e.runJobs()
-	if !mailTo(e.mail.snapshot(), "owner@example.com", "New feedback") {
-		t.Fatal("founder should hear about new issues")
+	if mailTo(e.mail.snapshot(), "owner@example.com", "New feedback") {
+		t.Fatal("new issues wait for the batch window")
+	}
+	e.a.db.W.Exec(`UPDATE jobs SET run_at = 0 WHERE kind = 'email.feedback_batch'`)
+	e.runJobs()
+	if !mailTo(e.mail.snapshot(), "owner@example.com", "2 new issues") {
+		t.Fatal("founder should hear about new issues in one email")
 	}
 	list, _ := e.a.Issues(ctx, e.p, IssueFilter{})
 	var a, b *Issue
@@ -714,5 +719,57 @@ func TestFeedbackPrivateElement(t *testing.T) {
 		if !strings.Contains(md, want) {
 			t.Errorf("packet lacks %q:\n%s", want, md)
 		}
+	}
+}
+
+func TestFeedbackNotifyBatch(t *testing.T) {
+	e := newFBEnv(t)
+	ctx := context.Background()
+	_, rt := e.invited("ana@example.com")
+	owner := func() (n int) {
+		for _, m := range e.mail.snapshot() {
+			if m.To == "owner@example.com" && strings.Contains(m.Subject, "New feedback") {
+				n++
+			}
+		}
+		return
+	}
+	flush := func() {
+		e.a.db.W.Exec(`UPDATE jobs SET run_at = 0 WHERE kind = 'email.feedback_batch' AND status = 'queued'`)
+		e.runJobs()
+	}
+	e.runJobs() // signup mail
+	e.report(rt, "/a", "button", "One")
+	e.report(rt, "/b", "button", "Two")
+	e.report(rt, "/a", "button", "Same issue again")
+	var jobs int
+	e.a.db.W.QueryRow(`SELECT COUNT(*) FROM jobs WHERE kind = 'email.feedback_batch'`).Scan(&jobs)
+	if jobs != 1 {
+		t.Fatalf("one window per burst, got %d jobs", jobs)
+	}
+	flush()
+	if owner() != 1 || !mailTo(e.mail.snapshot(), "owner@example.com", "2 new issues") {
+		t.Fatalf("one email for both new issues, got %d", owner())
+	}
+	// After the window closes, the next issue opens a new one with only itself.
+	e.a.db.W.Exec(`UPDATE feedback_issues SET created_at = created_at - 1000`) // the closed window is in the past
+	e.report(rt, "/c", "button", "Three")
+	flush()
+	last := e.mail.snapshot()[len(e.mail.snapshot())-1]
+	if owner() != 2 || strings.Contains(last.Subject, "new issues") || !strings.Contains(last.Text, "Three") {
+		t.Fatalf("single new issue gets the detailed email: %q", last.Subject)
+	}
+	// Product context reaches the settings.
+	if err := e.a.SetFeedbackContext(ctx, e.p, "  Ledger app for accountants. A 'check' is a reconciliation run.  "); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.a.FeedbackSettings(ctx, e.p).Context; !strings.HasPrefix(got, "Ledger app") {
+		t.Fatalf("context stored trimmed: %q", got)
+	}
+	if !strings.Contains(e.a.productBlock(ctx, e.p), "<about_the_product>") {
+		t.Fatal("context goes into the prompt")
+	}
+	if err := e.a.SetFeedbackContext(ctx, e.p, strings.Repeat("x", maxProductContext+1)); err == nil {
+		t.Fatal("overlong context accepted")
 	}
 }

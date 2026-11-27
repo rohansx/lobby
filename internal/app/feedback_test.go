@@ -787,3 +787,38 @@ func TestFeedbackNotifyBatch(t *testing.T) {
 		t.Fatal("overlong context accepted")
 	}
 }
+
+func TestEditReport(t *testing.T) {
+	e := newFBEnv(t)
+	_, rt := e.invited("ana@example.com")
+	_, rt2 := e.invited("ben@example.com")
+	var out map[string]any
+	json.Unmarshal(e.report(rt, "/a", "button", "Save is broken").Body.Bytes(), &out)
+	rid := int64(out["report"].(float64))
+	edit := func(rt, typ, comment string) int {
+		b, _ := json.Marshal(map[string]any{"project": e.p.PublicKey, "reporter": rt, "type": typ, "comment": comment})
+		return e.req("POST", fmt.Sprintf("/v1/feedback/reports/%d/edit", rid), string(b), "Origin", "https://app.example.com").Code
+	}
+	if c := edit(rt, "idea", "  Save could autosave instead  "); c != 200 {
+		t.Fatalf("own edit: %d", c)
+	}
+	var typ, comment, issueType string
+	e.a.db.W.QueryRow(`SELECT r.type, r.comment, i.type FROM feedback_reports r JOIN feedback_issues i ON i.id = r.issue_id WHERE r.id = ?`, rid).
+		Scan(&typ, &comment, &issueType)
+	if typ != "idea" || comment != "Save could autosave instead" || issueType != "idea" {
+		t.Fatalf("edit not stored: %q %q %q", typ, comment, issueType)
+	}
+	if c := edit(rt2, "bug", "hijack"); c != 404 {
+		t.Fatalf("someone else's report: %d", c)
+	}
+	if c := edit(rt, "rant", "x"); c != 400 {
+		t.Fatalf("bad type: %d", c)
+	}
+	if c := edit(rt, "bug", "   "); c != 400 {
+		t.Fatalf("empty comment: %d", c)
+	}
+	e.a.db.W.Exec(`UPDATE feedback_reports SET created_at = created_at - 7200 WHERE id = ?`, rid)
+	if c := edit(rt, "bug", "too late"); c != 400 {
+		t.Fatalf("edit after the window: %d", c)
+	}
+}

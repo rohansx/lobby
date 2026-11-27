@@ -651,12 +651,15 @@ func (s *Server) adminReporter(w http.ResponseWriter, r *http.Request) {
 }
 
 // publicFollowup is the widget asking for Claude's one question about a report
-// it just sent ({id}/question), or sending the reporter's answer ({id}/answer).
+// it just sent ({id}/question), sending the reporter's answer ({id}/answer), or
+// changing what they wrote after going Back ({id}/edit).
 func (s *Server) publicFollowup(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Project  string `json:"project"`
 		Reporter string `json:"reporter"`
 		Answer   string `json:"answer"`
+		Type     string `json:"type"`    // edit
+		Comment  string `json:"comment"` // edit
 	}
 	if err := decodeJSON(r, &body); err != nil {
 		jsonError(w, 400, "invalid JSON body")
@@ -683,6 +686,8 @@ func (s *Server) publicFollowup(w http.ResponseWriter, r *http.Request) {
 		q, choices, err = s.app.AskFollowup(r.Context(), p, body.Reporter, id)
 	case "answer":
 		err = s.app.AnswerFollowup(r.Context(), p, body.Reporter, id, body.Answer)
+	case "edit":
+		err = s.app.EditReport(r.Context(), p, body.Reporter, id, body.Type, body.Comment)
 	default:
 		jsonError(w, 404, "not found")
 		return

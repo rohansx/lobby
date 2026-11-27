@@ -154,7 +154,7 @@ func (a *App) followupFor(ctx context.Context, p *Project, reporter string, repo
 
 const followupSystem = `You help people send clear feedback about a web app, through a feedback widget inside that app. Someone just sent the report below. Decide whether a developer could act on it as it is: what the person was doing, what they saw, and for a bug what they expected instead.
 
-If it's clear enough, set ask to false and leave question empty. If not, write ONE short, friendly question, under 140 characters, that gets the most important missing detail. Refer to what's on the screen when it helps, for example "Which of these numbers looks wrong, and what should it be?". Use the element's state and the steps before the report to avoid asking what you can already see. When the likely answers are few and predictable, also give 2 to 4 short answer choices, under 40 characters each, that the person can tap; otherwise leave choices empty. Never add an "Other" choice: they can always type. Write in the same language as the report. Never ask for passwords, payment details, or personal or account information, and never promise a fix.
+If it's clear enough, set ask to false and leave question empty. If not, write ONE short, friendly question, under 140 characters, that gets the most important missing detail. Refer to what's on the screen when it helps, for example "Which of these numbers looks wrong, and what should it be?". Use the element's state and the steps before the report to avoid asking what you can already see. When the likely answers are few and predictable, also give 2 to 4 short answer choices, under 40 characters each, that the person can tap; they can pick more than one, so choices needn't exclude each other. Otherwise leave choices empty. Never add an "Other" choice: they can always type. Write in the same language as the report. Never ask for passwords, payment details, or personal or account information, and never promise a fix.
 
 <about_the_product>, when present, is the founder's description of the product: use it to understand the report, to skip asking what it already answers, and to use the product's own names for things.
 
@@ -230,6 +230,45 @@ func (a *App) AskFollowup(ctx context.Context, p *Project, reporter string, repo
 		return "", nil, err
 	}
 	return q, choices, nil
+}
+
+// EditReport lets the reporter change what they wrote, and its type, for the
+// same hour they can answer its question: they went Back in the widget. The
+// issue's summary is redone; the issue's type follows when this is its only report.
+func (a *App) EditReport(ctx context.Context, p *Project, reporter string, reportID int64, typ, comment string) error {
+	t, err := a.followupFor(ctx, p, reporter, reportID)
+	if errors.Is(err, ErrNoFollowup) {
+		return &ValidationError{"This report can't be changed any more. Send a new one instead."}
+	} else if err != nil {
+		return err
+	}
+	comment = strings.TrimSpace(comment)
+	if !contains(feedbackTypes, typ) {
+		return &ValidationError{"Type must be bug, confusing or idea."}
+	}
+	if comment == "" {
+		return &ValidationError{"Say what's wrong first."}
+	}
+	if utf8.RuneCountInString(comment) > maxFeedbackComment {
+		return &ValidationError{fmt.Sprintf("Keep it under %d characters.", maxFeedbackComment)}
+	}
+	tx, err := a.db.W.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `UPDATE feedback_reports SET type = ?, comment = ? WHERE id = ?`, typ, comment, reportID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE feedback_issues SET type = ?, updated_at = ? WHERE id = ?
+		AND (SELECT COUNT(*) FROM feedback_reports WHERE issue_id = ?) = 1`, typ, now(), t.issueID, t.issueID); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	a.queueIssueAI(ctx, p, t.issueID)
+	return nil
 }
 
 // AnswerFollowup stores the reporter's answer and refreshes the issue's summary.

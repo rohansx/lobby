@@ -152,7 +152,7 @@
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
     picking = false, picked = null, region = null, type = "bug", shots = false, ask = false, masks = false, sentMsg = "", shot = null, shotURL = "", round = 0, shotRound = 0,
-    fine = "", talk = false, usedVoice = false, sent = null, editing = null, chosen = [], info = $(".info"), infoBtn = $("[data-info]"), acts = $(".acts"),
+    fine = "", talk = false, sent = null, editing = null, chosen = [], info = $(".info"), infoBtn = $("[data-info]"), acts = $(".acts"),
     shotBox = $(".shot"), shotImg = $(".shot img"), shotWait = $(".shot .wait"), shotBar = $(".shotbar"), offerBtn = $("[data-addshot]"),
     fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
@@ -294,7 +294,7 @@
   function reset() {
     endPick(); picked = null; region = null; facts = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++; shotRound++;
     body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; fab.focus();
-    shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = ""; acts.hidden = true; usedVoice = false;
+    shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = ""; acts.hidden = true;
     sent = null; editMode(null);
     showInfo(false);
     main.stop(true); fuMic.stop(true);
@@ -803,14 +803,13 @@
     btn.onclick = function () { on ? on.end(false) : go(); };
     return {
       btn: btn,
-      start: function () { if (!on && talk) go(); },
       stop: function (discard) { if (on) on.end(discard); },
       busy: function () { return !!on || working > 0; },
       // Stops listening and resolves once the last phrase is in the box.
       flush: function () { if (on) on.end(false); return last; }
     };
   }
-  var main = makeMic(root.querySelector(".body .mic"), ta, function () { if (main) { usedVoice = true; sync(); } });
+  var main = makeMic(root.querySelector(".body .mic"), ta, function () { if (main) sync(); });
   var fuMic = makeMic(fu.querySelector(".mic"), fuText, function () { fuSync(); });
   setType("bug"); sync();
 
@@ -862,7 +861,6 @@
         fu.hidden = false; fuText.value = ""; fuSync(); fuText.focus();
         live.textContent = "One quick question: " + j.question;
         fu.dataset.rid = rid;
-        if (usedVoice) fuMic.start(); // they talked the report through: listen for the answer too
       }, thanks);
   }
   function answer() {

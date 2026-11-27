@@ -101,7 +101,9 @@
     ".info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px}.info dt{font-weight:600;color:var(--ink)}" +
     ".info dd{margin:0;min-width:0;overflow-wrap:anywhere;font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}.info p{margin:8px 0 0}" +
     ".offer{display:block;width:100%;padding:10px;font-size:12.5px;font-weight:600;color:var(--ink);text-align:left}.offer:hover{background:var(--line)}" +
-    ".acts{display:flex;gap:6px;margin-top:8px}" +
+    ".acts{display:flex;gap:6px;margin-top:8px}.acts [data-back]{margin-right:auto}" +
+    ".choices button[aria-pressed=true]{background:var(--a);color:var(--ai)}" +
+    ".editing [data-repick],.editing .shotbar button,.editing .offer{display:none}" +
     ".shot{margin-bottom:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}" +
     ".shot img{display:block;width:100%;max-height:150px;object-fit:cover;object-position:top}.shot .wait{padding:14px 10px;font-size:12.5px;color:var(--mut)}" +
     ".shotbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px 5px 10px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}" +
@@ -143,14 +145,14 @@
     '<div class="done" hidden><i>' + icon.check + '</i><b>Thanks, got it</b><p></p>' +
     '<div class="fu" hidden><p></p><div class="choices"></div><textarea name="answer" maxlength="1000" aria-label="Your answer"></textarea>' +
     '<div class="foot"><button class="mic" type="button" hidden aria-label="Speak your answer">' + icon.mic + '<span>Speak</span></button><button class="pill" type="button" data-skip>Skip</button><button class="send" type="button" data-answer disabled>Send</button></div></div>' +
-    '<div class="acts" hidden><button class="pill" type="button" data-again>Send another</button><button class="pill" type="button" data-cancel>Close</button></div></div></form>' +
+    '<div class="acts" hidden><button class="pill" type="button" data-back>← Back</button><button class="pill" type="button" data-again>Send another</button><button class="pill" type="button" data-cancel>Close</button></div></div></form>' +
     '<span class="sr" aria-live="polite"></span>';
 
   function $(q) { return root.querySelector(q); }
   var fab = $(".fab"), box = $(".box"), tag = $(".tag"), bar = $(".bar"), form = $("form"), body = $(".body"), done = $(".done"),
     msg = $(".msg"), count = $(".n"), send = $(".send"), ta = form.comment, live = $(".sr"),
     picking = false, picked = null, region = null, type = "bug", shots = false, ask = false, masks = false, sentMsg = "", shot = null, shotURL = "", round = 0, shotRound = 0,
-    fine = "", talk = false, usedVoice = false, info = $(".info"), infoBtn = $("[data-info]"), acts = $(".acts"),
+    fine = "", talk = false, usedVoice = false, sent = null, editing = null, chosen = [], info = $(".info"), infoBtn = $("[data-info]"), acts = $(".acts"),
     shotBox = $(".shot"), shotImg = $(".shot img"), shotWait = $(".shot .wait"), shotBar = $(".shotbar"), offerBtn = $("[data-addshot]"),
     fu = $(".fu"), fuText = fu.querySelector("textarea"), fuSend = $("[data-answer]");
 
@@ -293,6 +295,7 @@
     endPick(); picked = null; region = null; facts = null; form.hidden = true; fab.hidden = false; box.style.display = "none"; round++; shotRound++;
     body.hidden = false; done.hidden = true; msg.hidden = true; ta.value = ""; fab.focus();
     shot = null; shotURL = ""; shotBox.hidden = true; fu.hidden = true; fuText.value = ""; acts.hidden = true; usedVoice = false;
+    sent = null; editMode(null);
     showInfo(false);
     main.stop(true); fuMic.stop(true);
     sync();
@@ -414,7 +417,7 @@
     var pending = shot ? Promise.race([shot, new Promise(function (ok) { setTimeout(function () { ok(""); }, 5000); })]) : Promise.resolve("");
     Promise.all([pending, main.flush()]).then(function () {
       if (!ta.value.trim()) { sync(); return note("Say or type what's wrong first."); }
-      submit();
+      editing ? saveEdit() : submit();
     });
   };
   // What the element was when they picked it: menus close and lists re-render after.
@@ -442,10 +445,41 @@
       if (!j.ok) { sync(); return note(j.error || "Something went wrong. Please try again."); }
       body.hidden = true; done.hidden = false; box.style.display = "none";
       sentMsg = j.message || "Thanks for the feedback.";
+      sent = { rid: j.report, type: type, comment: ta.value };
       ta.value = ""; sync();
       followup(j.report, mine);
     }).catch(function () { sync(); note("Couldn't reach the server. Check your connection and try again."); });
   }
+  // ---- Back: change what was sent ----
+  // The report already exists, so Back edits it (for the hour its question is open)
+  // rather than sending a second one. What was picked and its screenshot stay.
+  function editMode(rid) {
+    editing = rid;
+    form.classList.toggle("editing", !!rid);
+    send.firstChild.nodeValue = rid ? "Save " : "Send ";
+    form.setAttribute("aria-label", rid ? "Edit your feedback" : "Send feedback");
+    $(".head b").textContent = rid ? "Edit feedback" : "Send feedback";
+  }
+  function back() {
+    if (!sent || !sent.rid) return;
+    fuMic.stop(true); main.stop(true);
+    fu.hidden = true; done.hidden = true; acts.hidden = true; msg.hidden = true; body.hidden = false;
+    editMode(sent.rid); setType(sent.type); ta.value = sent.comment; sync(); ta.focus();
+  }
+  function saveEdit() {
+    var mine = round, c = ta.value, t = type;
+    of0(api + "/v1/feedback/reports/" + editing + "/edit", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project: d.project, reporter: d.reporter, type: t, comment: c })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (mine !== round) return;
+      if (!j.ok) { sync(); return note(j.error || "Couldn't save that. Please try again."); }
+      sent.type = t; sent.comment = c.trim(); editMode(null);
+      body.hidden = true; done.hidden = false; acts.hidden = false; ta.value = ""; sync();
+      doneState(false, "Updated", "Your changes are saved.");
+    }).catch(function () { sync(); note("Couldn't reach the server. Check your connection and try again."); });
+  }
+
   // ---- Screenshot of the picked area ----
   // Measured the moment someone picks, rendered from the DOM (no screen-share
   // prompt), then every data-lobby-mask region and every typed-in field is painted
@@ -777,7 +811,7 @@
     };
   }
   var main = makeMic(root.querySelector(".body .mic"), ta, function () { if (main) { usedVoice = true; sync(); } });
-  var fuMic = makeMic(fu.querySelector(".mic"), fuText, function () { fuSend.disabled = !fuText.value.trim() && !(fuMic && fuMic.busy()); });
+  var fuMic = makeMic(fu.querySelector(".mic"), fuText, function () { fuSync(); });
   setType("bug"); sync();
 
   // ---- One follow-up question from Claude, when the report is vague ----
@@ -809,16 +843,23 @@
         if (!j.question) return thanks();
         doneState(false, "Thanks! One quick question", "");
         fu.querySelector("p").textContent = j.question;
+        // Choices toggle: more than one can be true, and they can add words of their own.
         var ch = fu.querySelector(".choices");
-        ch.innerHTML = "";
+        ch.innerHTML = ""; chosen = [];
         (j.choices || []).forEach(function (c) {
           var b = document.createElement("button");
-          b.type = "button"; b.className = "pill"; b.textContent = c;
-          b.onclick = function () { fuText.value = c; answer(); };
+          b.type = "button"; b.className = "pill"; b.textContent = c; b.setAttribute("aria-pressed", "false");
+          b.onclick = function () {
+            var i = chosen.indexOf(c);
+            if (i < 0) chosen.push(c); else chosen.splice(i, 1);
+            b.setAttribute("aria-pressed", String(i < 0));
+            fuSync();
+          };
           ch.appendChild(b);
         });
         ch.hidden = !ch.firstChild;
-        fu.hidden = false; fuText.value = ""; fuSend.disabled = true; fuText.focus();
+        fuText.placeholder = ch.firstChild ? "Pick any that apply, and add anything else" : "";
+        fu.hidden = false; fuText.value = ""; fuSync(); fuText.focus();
         live.textContent = "One quick question: " + j.question;
         fu.dataset.rid = rid;
         if (usedVoice) fuMic.start(); // they talked the report through: listen for the answer too
@@ -828,7 +869,7 @@
     if (fuSend.dataset.busy) return;
     fuSend.disabled = true; fuSend.dataset.busy = "1";
     fuMic.flush().then(function () {
-      var a = fuText.value.trim();
+      var typed = fuText.value.trim(), a = chosen.concat(typed ? [typed] : []).join("; ");
       if (!a) { delete fuSend.dataset.busy; return; }
       sendAnswer(a);
     });
@@ -844,7 +885,9 @@
       doneState(false, j.ok ? "Thanks, that helps" : "Couldn't send that", j.ok ? "" : (j.error || "Please try again."));
     }, function () { fuSend.disabled = false; }).then(function () { delete fuSend.dataset.busy; });
   }
-  fuText.oninput = function () { fuSend.disabled = !fuText.value.trim() && !fuMic.busy(); };
+  function fuSync() { fuSend.disabled = !chosen.length && !fuText.value.trim() && !(fuMic && fuMic.busy()); }
+  fuText.oninput = fuSync;
+  $("[data-back]").onclick = back;
   fuText.onkeydown = function (e) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); answer(); } };
   fuSend.onclick = answer;
   $("[data-skip]").onclick = function () { fuMic.stop(true); fu.hidden = true; doneState(false, "Thanks, got it", sentMsg); acts.hidden = false; };
